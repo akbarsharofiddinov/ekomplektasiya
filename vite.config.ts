@@ -2,17 +2,19 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react-swc";
 import tailwindcss from "@tailwindcss/vite";
 import * as path from "path";
+import { nodePolyfills } from 'vite-plugin-node-polyfills';
 
 // https://vite.dev/config/
 export default defineConfig({
-  plugins: [react(), tailwindcss()],
+  plugins: [react(), tailwindcss(), nodePolyfills()],
   server: {
     proxy: {
       "/api": {
         target: "https://ekomplektasiya.uz",
         changeOrigin: true,
         secure: true,
-        rewrite: (path) => path.replace(/^\/api/, "/ekomplektasiya_backend"),
+        rewrite: (path) =>
+          path.replace(/^\/api/, "/ekomplektasiya_backend"),
       },
     },
   },
@@ -27,14 +29,16 @@ export default defineConfig({
       "@store": path.resolve(__dirname, "./src/store"),
       "@UI": path.resolve(__dirname, "./src/components/UI"),
       "@services": path.resolve(__dirname, "./src/services"),
+      buffer: "buffer", // polyfill uchun
     },
   },
   optimizeDeps: {
-    exclude: ["html-docx-js"], // ESM ga transpile qilinmasin
+    include: ["buffer"], // polyfill uchun
+    exclude: ["html-docx-js"],
   },
   build: {
     commonjsOptions: {
-      include: [/html-docx-js/, /node_modules/], // CJS sifatida qoldirish
+      include: [/html-docx-js/, /node_modules/],
     },
   },
 });

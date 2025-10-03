@@ -2,6 +2,7 @@ import React from "react";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import { Home, Login, ProductInputDetailPage, ProductOutDetailPage, ProductOutput, ProductsInput, ProductTurnOverReport, WarehouseTransfer, WarehouseTransferDetail } from "@/pages";
 import { Layout } from "@/components";
+import { Toaster } from "react-hot-toast";
 import { ToastContainer } from "react-toastify"
 import ProductMaterialsBalance from "./pages/Reports/ProductMaterialsBalance";
 
@@ -69,6 +70,7 @@ const App: React.FC = () => {
     <>
       <RouterProvider router={routes} />
       <ToastContainer />
+      <Toaster position="top-right" reverseOrder={false} /> {/* Bu yerda hot-toast */}
     </>
   );
 };
