@@ -1,0 +1,9 @@
+export { default as Home } from "./Home/Home";
+export { default as Login } from "./Auth/Login";
+export { default as ProductsInput } from "./Products/ProductIn/ProductInput";
+export { default as ProductInputDetailPage } from "./Products/ProductIn/ProductInputDetailPage";
+export { default as ProductOutput } from "./Products/ProductsOut/ProductOutput";
+export { default as ProductOutDetailPage } from "./Products/ProductsOut/ProductOutDetailPage";
+export { default as WarehouseTransfer } from "./Transfer/WarehouseTransfer";
+export { default as WarehouseTransferDetail } from "./Transfer/WarehouseTransferDetail";
+export { default as ProductTurnOverReport } from "./Reports/ProductTurnOverReport";

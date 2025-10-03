@@ -1,0 +1,270 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:is(.dark *));
+
+:root {
+  /* Updated color tokens to match Telegram's design language */
+  --background: #ffffff;
+  --foreground: #374151;
+  --card: #f0f0f0;
+  --card-foreground: #374151;
+  --popover: #ffffff;
+  --popover-foreground: #374151;
+  --primary: #0088cc;
+  --primary-foreground: #ffffff;
+  --secondary: #0099dd;
+  --secondary-foreground: #ffffff;
+  --muted: #e0e0e0;
+  --muted-foreground: #374151;
+  --accent: #0088cc;
+  --accent-foreground: #ffffff;
+  --destructive: #dc2626;
+  --destructive-foreground: #ffffff;
+  --border: #e0e0e0;
+  --input: #ffffff;
+  --ring: rgba(0, 136, 204, 0.3);
+  --chart-1: #0088cc;
+  --chart-2: #0099dd;
+  --chart-3: #e0e0e0;
+  --chart-4: #f0f0f0;
+  --chart-5: #374151;
+  --radius: 0.5rem;
+  --sidebar: #f0f0f0;
+  --sidebar-foreground: #374151;
+  --sidebar-primary: #0088cc;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #0099dd;
+  --sidebar-accent-foreground: #ffffff;
+  --sidebar-border: #e0e0e0;
+  --sidebar-ring: rgba(0, 136, 204, 0.3);
+}
+
+.dark {
+  --background: #141414;
+  --foreground: #e0e0e0;
+  --card: #1f1f1f;
+  --card-foreground: #e0e0e0;
+  --popover: #1f1f1f;
+  --popover-foreground: #e0e0e0;
+  --primary: #0088cc;
+  --primary-foreground: #ffffff;
+  --secondary: #0099dd;
+  --secondary-foreground: #ffffff;
+  --muted: #2c2c2c;
+  --muted-foreground: #e0e0e0;
+  --accent: #0099dd;
+  --accent-foreground: #ffffff;
+  --destructive: #dc2626;
+  --destructive-foreground: #ffffff;
+  --border: #2c2c2c;
+  --input: #1f1f1f;
+  --ring: rgba(0, 136, 204, 0.3);
+  --chart-1: #0088cc;
+  --chart-2: #0099dd;
+  --chart-3: #2c2c2c;
+  --chart-4: #1f1f1f;
+  --chart-5: #e0e0e0;
+  --sidebar: #1f1f1f;
+  --sidebar-foreground: #e0e0e0;
+  --sidebar-primary: #0088cc;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #0099dd;
+  --sidebar-accent-foreground: #ffffff;
+  --sidebar-border: #2c2c2c;
+  --sidebar-ring: rgba(0, 136, 204, 0.3);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+}
+
+#sidebar::-webkit-scrollbar {
+  width: 8px;
+}
+
+#sidebar::-webkit-scrollbar-thumb {
+  background-color: #898989;
+  border-radius: 9999px;
+}
+
+#sidebar::-webkit-scrollbar-track {
+  background-color: #c1c1c1;
+}
+
+html,
+body {
+  background-color: #bcd2ff09;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+@keyframes borderMove {
+  0% {
+    background-position: 0% 50%;
+  }
+
+  100% {
+    background-position: 200% 50%;
+  }
+}
+
+/* Pagination umumiy box */
+.ant-pagination {
+  display: flex;
+  justify-content: center;
+  margin: 12px 0;
+  gap: 6px;
+  font-family: "Segoe UI", "Roboto", sans-serif;
+}
+
+/* Oddiy tugmalar */
+.ant-pagination-item {
+  border-radius: 10px !important;
+  border: 1px solid #e5e7eb !important;
+  /* gray-200 */
+  background: #ffffff !important;
+  min-width: 36px !important;
+  height: 36px !important;
+  line-height: 34px !important;
+  font-size: 14px !important;
+  transition: all 0.2s ease-in-out;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.ant-pagination-item a {
+  color: #374151 !important;
+  /* gray-700 */
+}
+
+/* Hover */
+.ant-pagination-item:hover {
+  border-color: #2563eb !important;
+  /* blue-600 */
+  color: #2563eb !important;
+  transform: translateY(-1px);
+}
+
+/* Active sahifa */
+.ant-pagination-item-active {
+  background-color: #2563eb !important;
+  border-color: #2563eb !important;
+  box-shadow: 0 2px 6px rgba(37, 99, 235, 0.3);
+}
+
+.ant-pagination-item-active a {
+  color: #fff !important;
+  font-weight: 500;
+}
+
+/* Oldingi / Keyingi tugmalar */
+.ant-pagination-prev,
+.ant-pagination-next {
+  border-radius: 10px;
+  min-width: 36px;
+  height: 36px;
+  transition: all 0.2s ease-in-out;
+}
+
+.ant-pagination-prev .ant-pagination-item-link,
+.ant-pagination-next .ant-pagination-item-link {
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  background: #fff;
+  color: #374151;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.ant-pagination-prev:hover .ant-pagination-item-link,
+.ant-pagination-next:hover .ant-pagination-item-link {
+  border-color: #2563eb;
+  color: #2563eb;
+  transform: translateY(-1px);
+}
+
+/* Disable holat */
+.ant-pagination-disabled .ant-pagination-item-link {
+  color: #9ca3af !important;
+  /* gray-400 */
+  border-color: #e5e7eb !important;
+  background: #f9fafb !important;
+  cursor: not-allowed !important;
+  box-shadow: none !important;
+}
+
+/* custom.css */
+
+.ant-checkbox-checked .ant-checkbox-inner {
+  background-color: #2563eb !important; /* bg-blue-600 */
+  border-color: #2563eb !important;
+}
+
+.ant-checkbox-inner {
+  background-color: rgba(0, 0, 0, 0.05) !important;
+}
+
+.ant-checkbox-inner {
+  border-color: #00000042 !important; /* border-gray-600 */
+}
+
+.ant-switch {
+  background-color: rgba(0, 0, 0, 0.1);
+}
+
+.ant-switch:hover {
+  background-color: rgba(0, 0, 0, 0.2) !important;
+}
+
+.ant-switch-checked:hover {
+  background-color: #599cf9 !important;
+}
+
+.MuiButtonBase-root {
+  max-width: 240px !important;
+}
+
+.MuiPaper-root {
+  box-shadow: none !important;
+}
