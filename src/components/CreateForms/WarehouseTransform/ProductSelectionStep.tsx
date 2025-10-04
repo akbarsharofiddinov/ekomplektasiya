@@ -19,6 +19,7 @@ const ProductSelectionStep: React.FC<ProductSelectionStepProps> = ({
   const [remainders, setRemainders] = useState<ProductRemainder[]>([]);
   const [openBarCodeModal, setOpenBarCodeModal] = useState("");
   const [selectedRemaindersList, setSelectedRemaindersList] = useState<ProductRemainder[]>([]);
+  console.log(selectedRemaindersList)
 
   // Add selected remainders to transfer products
   const handleSelectRemainders = () => {

@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 import { axiosAPI } from '@/services/axiosAPI';
 import { useAppSelector } from '@/store/hooks/hooks';
 import { Select } from 'antd'
@@ -16,7 +17,7 @@ const FromLocationSelection: React.FC<IToLocationSelectionProps> = ({ formData, 
   const [district, setDistrict] = React.useState<string>('');
   const [warehouse, setWarehouse] = React.useState<string>('');
 
-  const { regions } = useAppSelector(state => state.info);
+  const { regions, currentUserInfo } = useAppSelector(state => state.info);
 
   // get districts when from_region changes
   const getDistrictsList = useCallback(async () => {
@@ -74,7 +75,21 @@ const FromLocationSelection: React.FC<IToLocationSelectionProps> = ({ formData, 
 
   useEffect(() => {
     getResponsiblePersonsList()
-  }, [getResponsiblePersonsList, warehouse])
+  }, [getResponsiblePersonsList, warehouse]);
+
+  useEffect(() => {
+    if (currentUserInfo) {
+      setFormData(prev => ({
+        ...prev,
+        from_region: currentUserInfo.region.id,
+        from_district: currentUserInfo.district.id,
+        from_warehouse: currentUserInfo.warehouse.id,
+      }))
+      setRegion(currentUserInfo.region.name)
+      setDistrict(currentUserInfo.district.name)
+      setWarehouse(currentUserInfo.warehouse.name)
+    }
+  }, [currentUserInfo])
 
   return (
     <>
@@ -93,21 +108,7 @@ const FromLocationSelection: React.FC<IToLocationSelectionProps> = ({ formData, 
             placeholder="Viloyatni tanlang"
             className="w-full"
             value={region || undefined}
-            onChange={value => {
-              setRegion(value)
-              setDistrict('')
-              setWarehouse('')
-              setDistricts([])
-              setWarehouses([])
-              setResponsiblePersons([])
-              setFormData(prev => ({
-                ...prev,
-                from_region: regions.find(r => r.name === value)?.id || "",
-                from_district: "",
-                from_warehouse: "",
-                from_responsible_person: "",
-              }))
-            }}
+            disabled
           >
             {regions.map(region => (
               <Select.Option key={region.id} value={region.name}>
@@ -126,18 +127,7 @@ const FromLocationSelection: React.FC<IToLocationSelectionProps> = ({ formData, 
             placeholder="Tumanni tanlang"
             className="w-full"
             value={district || undefined}
-            onChange={value => {
-              setDistrict(value)
-              setWarehouses([])
-              setResponsiblePersons([])
-              setFormData(prev => ({
-                ...prev,
-                from_district: districts.find(d => d.name === value)?.id || "",
-                from_warehouse: "",
-                from_responsible_person: ""
-              }))
-            }}
-            disabled={!region}
+            disabled
           >
             {districts.map(district => (
               <Select.Option key={district.id} value={district.name}>
@@ -156,11 +146,7 @@ const FromLocationSelection: React.FC<IToLocationSelectionProps> = ({ formData, 
             placeholder="Omborni tanlang"
             className="w-full"
             value={warehouse || undefined}
-            onChange={(value) => {
-              setWarehouse(value)
-              setFormData(prev => ({ ...prev, from_warehouse: warehouses.find(w => w.name === value)?.id || "" }))
-            }}
-            disabled={!district}
+            disabled
           >
             {warehouses.map(warehouse => (
               <Select.Option key={warehouse.id} value={warehouse.name}>

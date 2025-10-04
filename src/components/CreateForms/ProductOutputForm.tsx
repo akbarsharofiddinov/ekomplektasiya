@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 import { DatePicker, Input, Select, type DatePickerProps } from "antd";
 import React, { useEffect } from "react";
 import dayjs, { Dayjs } from "dayjs";
@@ -5,8 +6,6 @@ import { axiosAPI } from "@/services/axiosAPI";
 import { useAppDispatch, useAppSelector } from "@/store/hooks/hooks";
 import {
   setCounterParties,
-  setDistricts,
-  setRegions,
   setTypesOfGoods,
   setWarehouses,
 } from "@/store/infoSlice/infoSlice";
@@ -23,7 +22,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from ".
 import { toast } from "react-toastify";
 import Barcode from "react-barcode";
 
-const DATE_FORMAT = "YYYY-MM-DD HH:mm:ss";
+const DATE_FORMAT = "DD-MM-YYYY HH:mm:ss";
 
 interface ProductOutputFormProps {
   setIsCreateFormModalOpen: React.Dispatch<React.SetStateAction<boolean>>
@@ -42,7 +41,7 @@ const ProductOutputForm: React.FC<ProductOutputFormProps> = ({ setIsCreateFormMo
     IReponsiblePerson[]
   >([]);
   const [formData, setFormData] = React.useState<WarehouseOutput>({
-    date: dateValue?.format("YYYY-MM-DDTHH:mm:ss") + "",
+    date: dateValue?.format("DD-MM-YYYYTHH:mm:ss") + "",
     region,
     warehouse,
     type_output: "",
@@ -58,7 +57,7 @@ const ProductOutputForm: React.FC<ProductOutputFormProps> = ({ setIsCreateFormMo
     React.useState<boolean>(false);
 
   // Redux
-  const { regions, districts, warehouses, counterparties, typesOfGoods } =
+  const { regions, districts, warehouses, counterparties, typesOfGoods, currentUserInfo } =
     useAppSelector((state) => state.info);
   const { product_types, products, product_models, product_sizes } =
     useAppSelector((state) => state.product);
@@ -94,29 +93,6 @@ const ProductOutputForm: React.FC<ProductOutputFormProps> = ({ setIsCreateFormMo
     handleCreateProductOutput(submitData);
   };
 
-  // API Requests
-  const getRegionsList = React.useCallback(async () => {
-    try {
-      const response = await axiosAPI.get("regions/list/?order_by=2");
-      if (response.status === 200) {
-        dispatch(setRegions(response.data));
-        setDistrict("");
-      }
-    } catch (error) {
-      console.log(error);
-    }
-  }, [dispatch]);
-
-  // get districts
-  const getDistrictsList = React.useCallback(async () => {
-    try {
-      const response = await axiosAPI.get(`districts/list/?region=${region}&order_by=2`);
-      if (response.status === 200) dispatch(setDistricts(response.data));
-    } catch (error) {
-      console.log(error);
-    }
-  }, [dispatch, region]);
-
   // get warehouses list with region and district name
   const getWarehousesList = React.useCallback(async () => {
     if (region && district) {
@@ -127,6 +103,19 @@ const ProductOutputForm: React.FC<ProductOutputFormProps> = ({ setIsCreateFormMo
         if (response.status === 200) {
           // Handle successful response
           dispatch(setWarehouses(response.data));
+          if (response.data.length === 1) {
+            setWarehouse(response.data[0].name);
+            setFormData((prev) => ({
+              ...prev,
+              warehouse: response.data[0].id,
+            }));
+          } else {
+            setWarehouse("");
+            setFormData((prev) => ({
+              ...prev,
+              warehouse: "",
+            }));
+          }
         }
       } catch (error) {
         console.log(error);
@@ -265,7 +254,7 @@ const ProductOutputForm: React.FC<ProductOutputFormProps> = ({ setIsCreateFormMo
     try {
       const response = await axiosAPI.post("remainders/warehouses/", {
         warehouse: warehouses.find((w) => w.name === warehouse)?.id,
-        date: dateValue?.format(DATE_FORMAT),
+        date: dateValue?.toISOString(),
       });
 
       setRemainders(response.data);
@@ -274,14 +263,22 @@ const ProductOutputForm: React.FC<ProductOutputFormProps> = ({ setIsCreateFormMo
     }
   }
 
-  // Effects
   useEffect(() => {
-    if (regions.length === 0) getRegionsList();
-  }, [regions, getRegionsList, districts, getDistrictsList]);
+    if (currentUserInfo) {
+      setFormData((prev) => ({
+        ...prev,
+        region: currentUserInfo.region.id,
+        district: currentUserInfo.district.id,
+      }));
+      setRegion(currentUserInfo.region.name);
+      setDistrict(currentUserInfo.district.name);
+    }
+    console.log(formData);
+  }, [currentUserInfo]);
 
   useEffect(() => {
-    if (region) getDistrictsList();
-  }, [region, getDistrictsList]);
+    if (warehouse && dateValue) getRemainders();
+  }, [warehouse, dateValue]);
 
   useEffect(() => {
     if (district) getWarehousesList();
@@ -337,7 +334,6 @@ const ProductOutputForm: React.FC<ProductOutputFormProps> = ({ setIsCreateFormMo
       ...prev,
       products: updatedFormDataProducts,
     }));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedRemaindersList.length]);
 
   useEffect(() => {
@@ -357,11 +353,6 @@ const ProductOutputForm: React.FC<ProductOutputFormProps> = ({ setIsCreateFormMo
     product_models.length,
     product_sizes.length,
   ]);
-
-  useEffect(() => {
-    if (dateValue && warehouse) getRemainders();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [dateValue, warehouse]);
 
   return (
     <>
@@ -389,18 +380,8 @@ const ProductOutputForm: React.FC<ProductOutputFormProps> = ({ setIsCreateFormMo
             <Select
               placeholder="Viloyat tanlang"
               value={region || undefined}
-              onChange={(value) => {
-                setRegion(value);
-                setDistrict("");
-                setWarehouse("");
-                setRemainders([])
-                setSelectedRemaindersList([]);
-                // set formmdata.region to selected region.id
-                setFormData((prev) => ({
-                  ...prev,
-                  region: regions.find((r) => r.name === value)?.id || "",
-                }));
-              }}
+              disabled
+              onChange={value => console.log(value)}
             >
               {regions.map((region) => (
                 <Select.Option key={region.id} value={region.name}>
@@ -415,16 +396,9 @@ const ProductOutputForm: React.FC<ProductOutputFormProps> = ({ setIsCreateFormMo
             <label className="mb-1">Tuman</label>
             <Select
               placeholder="Tumanni tanlang"
-              disabled={!region}
+              disabled={currentUserInfo?.district ? true : false}
               value={district || undefined}
-              onChange={(value) => {
-                setDistrict(value);
-                setWarehouse("");
-                setFormData((prev) => ({
-                  ...prev,
-                  district: districts.find((d) => d.name === value)?.id || "",
-                }));
-              }}
+              onChange={value => console.log(value)}
             >
               {districts.map((district) => (
                 <Select.Option key={district.id} value={district.name}>
@@ -479,15 +453,9 @@ const ProductOutputForm: React.FC<ProductOutputFormProps> = ({ setIsCreateFormMo
             <label className="mb-1">Ombor</label>
             <Select
               placeholder="Omborni tanlang"
-              disabled={warehouses.length === 0}
+              disabled
               value={warehouse || undefined}
-              onChange={(value) => {
-                setWarehouse(value);
-                setFormData((prev) => ({
-                  ...prev,
-                  warehouse: warehouses.find((w) => w.name === value)?.id || "",
-                }));
-              }}
+              onChange={value => console.log(value)}
             >
               {warehouses.map((warehouse) => (
                 <Select.Option key={warehouse.id} value={warehouse.name}>

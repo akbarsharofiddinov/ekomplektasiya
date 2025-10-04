@@ -252,6 +252,51 @@ const WarehouseTransferDetail: React.FC = () => {
     }
   };
 
+  // Confirmation Transfer
+  const handleConfirmTransfer = async () => {
+    if (!transferDetail) return;
+
+    try {
+      setActionLoading(true);
+      const response = await axiosAPI.post(`/transfers/confirmation/${transferDetail.id}/`, {
+        ...transferDetail,
+        from_district: transferDetail.from_district.id,
+        from_region: transferDetail.from_region.id,
+        from_warehouse: transferDetail.from_warehouse.id,
+        from_responsible_person: transferDetail.from_responsible_person.id,
+        to_district: transferDetail.to_district.id,
+        to_region: transferDetail.to_region.id,
+        to_warehouse: transferDetail.to_warehouse.id,
+        to_responsible_person: transferDetail.to_responsible_person.id,
+        transfer_type: transferTypes.find(t => t.name === transferDetail.transfer_type)?.id,
+        products: transferDetail.products?.map(p => ({
+          product: p.product.id,
+          product_type: p.product_type.id,
+          size: p.size.id,
+          unit: p.unit.id,
+          quantity: p.quantity,
+          price: p.price,
+          summa: p.summa,
+          bar_code: p.bar_code,
+          description: p.description,
+          row_number: p.row_number,
+          remaining_quantity: p.remaining_quantity
+        })),
+        user: transferDetail.user.id,
+      });
+
+      if (response.status === 200) {
+        toast.success('Transfer tasdiqlandi!');
+        setTransferDetail(prev => prev ? { ...prev, is_confirmed: true } : null);
+      }
+    } catch (error) {
+      console.error('Transfer tasdiqlashda xatolik:', error);
+      toast.error('Transfer tasdiqlashda xatolik yuz berdi');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
   // Cancel editing
   const handleCancelEdit = () => {
     setEditData(transferDetail);
@@ -1225,7 +1270,14 @@ const WarehouseTransferDetail: React.FC = () => {
             <div className="bg-gray-50 p-4 border-t border-gray-200">
               <div className="flex justify-between items-center">
                 <span className="text-gray-600">Jami tovarlar: {currentData?.products?.length || 0} ta</span>
-                <div className="text-right">
+
+                <div className="text-right flex items-center gap-4">
+                  <Button variant="outline" onClick={handleConfirmTransfer}>
+                    Tasdiqlash
+                  </Button>
+                  <Button variant={"outline"} className="bg-green-600 hover:bg-green-700 text-white cursor-pointer">
+                    Qabul qilish
+                  </Button>
                   <span className="text-lg font-bold text-gray-900">
                     Umumiy summa: {(currentData?.products?.reduce((acc, product) => acc + (product.summa || 0), 0) || 0).toLocaleString()} UZS
                   </span>

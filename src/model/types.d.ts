@@ -179,22 +179,27 @@ interface CurrentUserInfo {
   warehouse: NamedEntity;
 }
 
+interface test {
+  row_number: number;
+  bar_code: string;
+  product: NamedEntity;
+  product_type: string;
+  size: string;
+  unit: string;
+  price: number;
+  quantity: number;
+  remaining_quantity: number;
+  summa: number;
+  description: string;
+}
+
 interface TransferProduct {
   row_number: number;
   bar_code: string;
   product: NamedEntity;
-  product_type: {
-    id: string;
-    name: string;
-  };
-  size: {
-    id: string;
-    name: string;
-  };
-  unit: {
-    id: string;
-    name: string;
-  };
+  product_type: string;
+  size: string;
+  unit: string;
   price: number;
   quantity: number;
   remaining_quantity: number;

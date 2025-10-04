@@ -498,9 +498,9 @@ const ProductInputForm: React.FC<IProductInputFormProps> = ({
 
           {/* Responsible Person */}
           <div className="flex flex-col">
-            <label className="mb-1">Moddiy mas'ul shaxs</label>
+            <label className="mb-1">M.J.Sh</label>
             <Select
-              placeholder="Mas'ul shaxsni tanlang"
+              placeholder="Moddiy javobgar shaxsni tanlang"
               value={selectedResponsiblePerson || undefined}
               onChange={(value) => {
                 setSelectedResponsiblePerson(value);

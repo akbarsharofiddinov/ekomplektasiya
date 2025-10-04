@@ -46,6 +46,14 @@ const ProductInput: React.FC = () => {
   const [isFromDateOpen, setIsFromDateOpen] = useState(false);
   const [isToDateOpen, setIsToDateOpen] = useState(false);
 
+  // Get counts for each status
+  const [statusCounts, setStatusCounts] = useState({
+    all: 0,
+    approved: 0,
+    rejected: 0,
+    length: 0,
+  });
+
   // CreateInput state
   const [isCreateFormModalOpen, setIsCreateFormModalOpen] = useState(false);
 
@@ -319,20 +327,19 @@ const ProductInput: React.FC = () => {
   //   );
   // }
 
-  // Get counts for each status
-  const statusCounts = {
-    all: mockData.length,
-    approved: mockData.filter((item) => item.is_approved).length,
-    rejected: mockData.filter((item) => !item.is_approved).length,
-    length,
-  };
-
   // API Requests
   const getInputProducts = useCallback(async () => {
     try {
       const response = await axiosAPI.get(`receipts/list/?limit=${itemsPerPage}&offset=${currentPage}`);
       if (response.status === 200) {
         dispatch(setInputList(response.data.results));
+        setStatusCounts(prev => ({
+          ...prev,
+          all: response.data.count,
+          approved: response.data.approved,
+          rejected: response.data.unapproved,
+          length: response.data.count,
+        }));
       }
     } catch (error) {
       console.log(error);
@@ -770,11 +777,11 @@ const ProductInput: React.FC = () => {
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <span className="text-sm text-slate-600">
-                        Jami: <span className="font-medium text-slate-900">{totalItems}</span> ta transfer
+                        Jami: <span className="font-medium text-slate-900">{statusCounts.all}</span> ta transfer
                       </span>
                       <span className="text-slate-300">|</span>
                       <span className="text-sm text-slate-600">
-                        Ko'rsatilmoqda: <span className="font-medium text-slate-900">{startIndex + 1}</span>-<span className="font-medium text-slate-900">{Math.min(endIndex, totalItems)}</span>
+                        Ko'rsatilmoqda: <span className="font-medium text-slate-900">{startIndex + 1}</span>-<span className="font-medium text-slate-900">{Math.min(endIndex, statusCounts.all)}</span>
                       </span>
                     </div>
 
