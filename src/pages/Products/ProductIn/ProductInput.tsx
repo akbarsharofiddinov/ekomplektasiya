@@ -45,6 +45,7 @@ const ProductInput: React.FC = () => {
   const [toDate, setToDate] = useState<Date | undefined>(undefined);
   const [isFromDateOpen, setIsFromDateOpen] = useState(false);
   const [isToDateOpen, setIsToDateOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   // Get counts for each status
   const [statusCounts, setStatusCounts] = useState({
@@ -60,12 +61,12 @@ const ProductInput: React.FC = () => {
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 14;
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const endIndex = startIndex + itemsPerPage;
 
-  // Calculate pagination
-  const totalItems = filteredData.length;
-  const totalPages = Math.ceil(totalItems / itemsPerPage);
+  // Calculate pagination - Fix: Use statusCounts.all instead of local calculation
+  const totalItems = statusCounts.all;
+  const totalPages = Math.ceil((statusFilter === "all" ? totalItems : statusFilter === "approved" ? statusCounts.approved : statusCounts.rejected) / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = Math.min(startIndex + itemsPerPage, totalItems);
 
   const navigate = useNavigate();
   const { id } = useParams();
@@ -115,7 +116,7 @@ const ProductInput: React.FC = () => {
     }
 
     setFilteredData(filtered);
-    setCurrentPage(1); // Reset to first page when filtering
+    // Don't reset currentPage here if we're just filtering - only reset for status changes
   };
 
   // Generate PDF for printing
@@ -253,6 +254,7 @@ const ProductInput: React.FC = () => {
   // Filter data based on status
   const handleStatusFilter = (status: FilterStatus) => {
     setStatusFilter(status);
+    setCurrentPage(1); // Reset to first page on status change
     applyFilters(status);
   };
 
@@ -260,13 +262,36 @@ const ProductInput: React.FC = () => {
     navigate("details/" + id);
   };
 
-  // Pagination handlers
-  const goToFirstPage = () => setCurrentPage(1);
-  const goToLastPage = () => setCurrentPage(totalPages);
-  const goToPreviousPage = () => setCurrentPage(Math.max(1, currentPage - 1));
-  const goToNextPage = () =>
-    setCurrentPage(Math.min(totalPages, currentPage + 1));
-  const goToPage = (page: number) => setCurrentPage(page);
+  // Pagination handlers - Fixed implementation
+  const goToFirstPage = () => {
+    if (currentPage !== 1) {
+      setCurrentPage(1);
+    }
+  };
+
+  const goToLastPage = () => {
+    if (currentPage !== totalPages) {
+      setCurrentPage(totalPages);
+    }
+  };
+
+  const goToPreviousPage = () => {
+    if (currentPage > 1) {
+      setCurrentPage(currentPage - 1);
+    }
+  };
+
+  const goToNextPage = () => {
+    if (currentPage < totalPages) {
+      setCurrentPage(currentPage + 1);
+    }
+  };
+
+  const goToPage = (page: number) => {
+    if (page >= 1 && page <= totalPages && page !== currentPage) {
+      setCurrentPage(page);
+    }
+  };
 
   // Get row styling based on status - with left border indicator
   const getRowStyling = (status: boolean) => {
@@ -282,7 +307,6 @@ const ProductInput: React.FC = () => {
 
   // Get document number styling and icon based on status
   const getDocumentStyling = (status: boolean) => {
-
     if (status) {
       return {
         color: "text-emerald-600 hover:text-emerald-700",
@@ -317,20 +341,14 @@ const ProductInput: React.FC = () => {
     return pages;
   };
 
-  // If detail view is open, show the full page detail component
-  // if (isDetailOpen && selectedDocument) {
-  //   return (
-  //     <ProductInputDetailPage
-  //       documentNumber={selectedDocument}
-  //       onClose={handleCloseDetail}
-  //     />
-  //   );
-  // }
-
-  // API Requests
+  // API Requests - Fixed offset calculation
   const getInputProducts = useCallback(async () => {
     try {
-      const response = await axiosAPI.get(`receipts/list/?limit=${itemsPerPage}&offset=${currentPage}`);
+      setLoading(true);
+      // Fix: Calculate proper offset
+      const offset = (currentPage - 1) * itemsPerPage;
+      const response = await axiosAPI.get(`receipts/list/?limit=${itemsPerPage}&offset=${offset}&is_approved=${statusFilter === 'approved' ? 'true' : statusFilter === 'rejected' ? 'false' : ''}`);
+
       if (response.status === 200) {
         dispatch(setInputList(response.data.results));
         setStatusCounts(prev => ({
@@ -342,13 +360,15 @@ const ProductInput: React.FC = () => {
         }));
       }
     } catch (error) {
-      console.log(error);
+      console.log('Error fetching products:', error);
+    } finally {
+      setLoading(false);
     }
-  }, [dispatch, currentPage]);
+  }, [currentPage, statusFilter, dispatch]);
 
   useEffect(() => {
     getInputProducts();
-  }, [getInputProducts, currentPage]);
+  }, [getInputProducts]);
 
   useEffect(() => {
     setFilteredData(inputsList);
@@ -356,9 +376,10 @@ const ProductInput: React.FC = () => {
   }, [inputsList]);
 
   useEffect(() => {
-    applyFilters("rejected");
-    setStatusFilter("rejected");
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // Only apply initial filter when mockData changes, not on every render
+    if (mockData.length > 0) {
+      applyFilters(statusFilter);
+    }
   }, [mockData]);
 
   return (
@@ -482,6 +503,7 @@ const ProductInput: React.FC = () => {
                       <Button
                         variant="outline"
                         size="sm"
+                        disabled={loading}
                         className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all disabled:pointer-events-none disabled:opacity-50 border bg-background hover:bg-accent hover:text-accent-foreground h-8 px-3 border-slate-300 text-slate-700 hover:border-slate-400 shadow-sm hover:shadow-md duration-300 transform hover:scale-105 active:scale-[0.9]"
                         onClick={() => {
                           const refreshIcon = document.getElementById('refreshIcon');
@@ -491,11 +513,11 @@ const ProductInput: React.FC = () => {
                               refreshIcon.classList.remove('rotate-animation');
                             }, 1000);
                           }
-                          getInputProducts()
+                          getInputProducts();
                         }}
                       >
-                        <RefreshCw id="refreshIcon" className="w-4 h-4 mr-1 transition-transform duration-1000" />
-                        Yangilash
+                        <RefreshCw id="refreshIcon" className={`w-4 h-4 mr-1 transition-transform duration-1000 ${loading ? 'animate-spin' : ''}`} />
+                        {loading ? 'Yuklanmoqda...' : 'Yangilash'}
                         <style>{`
                       .rotate-animation {
                         animation: rotate 400ms linear;
@@ -593,7 +615,7 @@ const ProductInput: React.FC = () => {
 
                       <Popover
                         open={isToDateOpen}
-                        onOpenChange={setIsToDateOpen}
+                      // onOpenChange={setToDateOpen}
                       >
                         <PopoverTrigger
                           className={`inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all disabled:pointer-events-none disabled:opacity-50 border bg-background hover:bg-accent hover:text-accent-foreground h-8 px-3 border-slate-300 text-slate-700 hover:border-slate-400 shadow-sm hover:shadow-md duration-300 transform hover:scale-105 ${toDate
@@ -689,6 +711,16 @@ const ProductInput: React.FC = () => {
                 </div>
               </div>
 
+              {/* Loading State */}
+              {loading && (
+                <div className="flex items-center justify-center py-8">
+                  <div className="flex items-center gap-2 text-gray-600">
+                    <div className="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
+                    Ma'lumotlar yuklanmoqda...
+                  </div>
+                </div>
+              )}
+
               {/* Table with Status-Based Row Colors */}
               <div className="bg-white rounded-xl border border-slate-100 shadow-sm overflow-hidden transform transition-all hover:shadow-lg animate-in slide-in-from-bottom-4 fade-in duration-700">
                 <div className="overflow-x-auto">
@@ -719,133 +751,142 @@ const ProductInput: React.FC = () => {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {filteredData.map((item, index) => {
-                        const documentStyle = getDocumentStyling(
-                          item.is_approved
-                        );
-                        const StatusIcon = documentStyle.icon;
+                      {!loading && filteredData.length > 0 ? (
+                        filteredData.map((item, index) => {
+                          const documentStyle = getDocumentStyling(
+                            item.is_approved
+                          );
+                          const StatusIcon = documentStyle.icon;
 
-                        return (
-                          <TableRow
-                            key={`${item.id}-${index}`}
-                            className={getRowStyling(item.is_approved)}
-                            onClick={() => handleDocumentClick(item.id)}
-                          >
-                            <TableCell className="py-3 px-4">
-                              <div className="flex items-center gap-2">
-                                <StatusIcon
-                                  className={`w-5 h-5 ${documentStyle.iconColor} transition-all duration-200`}
-                                />
-                                <span
-                                  className={`font-bold hover:underline transition-all duration-300 cursor-pointer ${documentStyle.color}`}
+                          return (
+                            <TableRow
+                              key={`${item.id}-${index}`}
+                              className={getRowStyling(item.is_approved)}
+                              onClick={() => handleDocumentClick(item.id)}
+                            >
+                              <TableCell className="py-3 px-4">
+                                <div className="flex items-center gap-2">
+                                  <StatusIcon
+                                    className={`w-5 h-5 ${documentStyle.iconColor} transition-all duration-200`}
+                                  />
+                                  <span
+                                    className={`font-bold hover:underline transition-all duration-300 cursor-pointer ${documentStyle.color}`}
+                                  >
+                                    {item.number}
+                                  </span>
+                                </div>
+                              </TableCell>
+                              <TableCell className="text-slate-700 py-3 px-4">
+                                {item.date.split("T").join(" | ")}
+                              </TableCell>
+                              <TableCell className="text-slate-700 py-3 px-4">
+                                {item.region}
+                              </TableCell>
+                              <TableCell className="text-slate-700 py-3 px-4">
+                                {item.warehouse}
+                              </TableCell>
+                              <TableCell className="py-3 px-4">
+                                <Badge
+                                  variant="outline"
+                                  className="bg-blue-50 text-blue-700 border-blue-200 px-2 py-0.5 transition-all duration-300 hover:bg-blue-100 hover:scale-105"
                                 >
-                                  {item.number}
-                                </span>
-                              </div>
-                            </TableCell>
-                            <TableCell className="text-slate-700 py-3 px-4">
-                              {item.date.split("T").join(" | ")}
-                            </TableCell>
-                            <TableCell className="text-slate-700 py-3 px-4">
-                              {item.region}
-                            </TableCell>
-                            <TableCell className="text-slate-700 py-3 px-4">
-                              {item.warehouse}
-                            </TableCell>
-                            <TableCell className="py-3 px-4">
-                              <Badge
-                                variant="outline"
-                                className="bg-blue-50 text-blue-700 border-blue-200 px-2 py-0.5 transition-all duration-300 hover:bg-blue-100 hover:scale-105"
-                              >
-                                {item.type_goods}
-                              </Badge>
-                            </TableCell>
-                            <TableCell className="text-slate-700 py-3 px-4">
-                              {item.user}
-                            </TableCell>
-                            <TableCell className="text-slate-700 py-3 px-4">
-                              {item.responsible_person}
-                            </TableCell>
-                          </TableRow>
-                        );
-                      })}
+                                  {item.type_goods}
+                                </Badge>
+                              </TableCell>
+                              <TableCell className="text-slate-700 py-3 px-4">
+                                {item.user}
+                              </TableCell>
+                              <TableCell className="text-slate-700 py-3 px-4">
+                                {item.responsible_person}
+                              </TableCell>
+                            </TableRow>
+                          );
+                        })
+                      ) : !loading ? (
+                        <TableRow>
+                          <TableCell colSpan={7} className="text-center py-8 text-slate-500">
+                            Hech qanday ma'lumot topilmadi
+                          </TableCell>
+                        </TableRow>
+                      ) : null}
                     </TableBody>
                   </Table>
                 </div>
+
                 {/* Professional Creative Pagination */}
-                <div className="border-t border-slate-100 px-6 py-4 bg-slate-50/50">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm text-slate-600">
-                        Jami: <span className="font-medium text-slate-900">{statusCounts.all}</span> ta transfer
-                      </span>
-                      <span className="text-slate-300">|</span>
-                      <span className="text-sm text-slate-600">
-                        Ko'rsatilmoqda: <span className="font-medium text-slate-900">{startIndex + 1}</span>-<span className="font-medium text-slate-900">{Math.min(endIndex, statusCounts.all)}</span>
-                      </span>
-                    </div>
+                {!loading && totalPages >= 1 && (
+                  <div className="border-t border-slate-100 px-6 py-4 bg-slate-50/50">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm text-slate-600">
+                          Jami: <span className="font-medium text-slate-900">{totalItems}</span> ta transfer
+                        </span>
+                        <span className="text-slate-300">|</span>
+                        <span className="text-sm text-slate-600">
+                          Ko'rsatilmoqda: <span className="font-medium text-slate-900">{startIndex + 1}</span>-<span className="font-medium text-slate-900">{endIndex}</span>
+                        </span>
+                      </div>
 
-                    <div className="flex items-center gap-1">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={goToFirstPage}
-                        disabled={currentPage === 1}
-                        className="h-8 w-8 p-0 border-slate-300 text-slate-600 hover:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
-                      >
-                        <ChevronsLeft className="w-4 h-4" />
-                      </Button>
-
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={goToPreviousPage}
-                        disabled={currentPage === 1}
-                        className="h-8 w-8 p-0 border-slate-300 text-slate-600 hover:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
-                      >
-                        <ChevronLeft className="w-4 h-4" />
-                      </Button>
-
-                      {getPageNumbers().map((pageNum) => (
+                      <div className="flex items-center gap-1">
                         <Button
-                          key={pageNum}
-                          variant={currentPage === pageNum ? "default" : "outline"}
+                          variant="outline"
                           size="sm"
-                          onClick={() => goToPage(pageNum)}
-                          className={`h-8 w-8 p-0 transition-all duration-200 ${currentPage === pageNum
-                            ? 'bg-[#1E56A0] text-white hover:bg-[#1E56A0]/90 shadow-sm'
-                            : 'border-slate-300 text-slate-600 hover:bg-slate-100'
-                            }`}
+                          onClick={goToFirstPage}
+                          disabled={currentPage === 1}
+                          className="h-8 w-8 p-0 border-slate-300 text-slate-600 hover:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
                         >
-                          {pageNum}
+                          <ChevronsLeft className="w-4 h-4" />
                         </Button>
-                      ))}
 
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={goToNextPage}
-                        disabled={currentPage === totalPages}
-                        className="h-8 w-8 p-0 border-slate-300 text-slate-600 hover:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
-                      >
-                        <ChevronRight className="w-4 h-4" />
-                      </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={goToPreviousPage}
+                          disabled={currentPage === 1}
+                          className="h-8 w-8 p-0 border-slate-300 text-slate-600 hover:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+                        >
+                          <ChevronLeft className="w-4 h-4" />
+                        </Button>
 
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={goToLastPage}
-                        disabled={currentPage === totalPages}
-                        className="h-8 w-8 p-0 border-slate-300 text-slate-600 hover:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
-                      >
-                        <ChevronsRight className="w-4 h-4" />
-                      </Button>
+                        {getPageNumbers().map((pageNum) => (
+                          <Button
+                            key={pageNum}
+                            variant={currentPage === pageNum ? "default" : "outline"}
+                            size="sm"
+                            onClick={() => goToPage(pageNum)}
+                            className={`h-8 w-8 p-0 transition-all duration-200 ${currentPage === pageNum
+                              ? 'bg-[#1E56A0] text-white hover:bg-[#1E56A0]/90 shadow-sm'
+                              : 'border-slate-300 text-slate-600 hover:bg-slate-100'
+                              }`}
+                          >
+                            {pageNum}
+                          </Button>
+                        ))}
+
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={goToNextPage}
+                          disabled={currentPage === totalPages}
+                          className="h-8 w-8 p-0 border-slate-300 text-slate-600 hover:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+                        >
+                          <ChevronRight className="w-4 h-4" />
+                        </Button>
+
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={goToLastPage}
+                          disabled={currentPage === totalPages}
+                          className="h-8 w-8 p-0 border-slate-300 text-slate-600 hover:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+                        >
+                          <ChevronsRight className="w-4 h-4" />
+                        </Button>
+                      </div>
                     </div>
                   </div>
-                </div>
+                )}
               </div>
-
-
             </div>
           )}
         </>

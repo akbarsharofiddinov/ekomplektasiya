@@ -1321,8 +1321,8 @@ const ProductInputDetailPage: React.FC = () => {
               <Barcode
                 value={openBarCodeModal}
                 format="CODE128"
-                width={2}
-                height={100}
+                width={3}
+                height={150}
                 displayValue={true}
               />
             ) : (

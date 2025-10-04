@@ -262,7 +262,13 @@ body {
 }
 
 .MuiButtonBase-root {
-  max-width: 240px !important;
+  position: relative;
+  width: auto !important;
+}
+
+.MuiAccordionSummary-expandIconWrapper {
+  position: absolute;
+  left: 105%;
 }
 
 .MuiPaper-root {
