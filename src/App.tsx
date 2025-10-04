@@ -5,6 +5,7 @@ import { Layout } from "@/components";
 import { Toaster } from "react-hot-toast";
 import { ToastContainer } from "react-toastify"
 import ProductMaterialsBalance from "./pages/Reports/ProductMaterialsBalance";
+import "antd/dist/reset.css"; // antd v5 uchun
 
 const routes = createBrowserRouter([
   {

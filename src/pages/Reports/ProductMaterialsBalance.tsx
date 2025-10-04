@@ -4,7 +4,7 @@ import AccordionDetails from '@mui/material/AccordionDetails';
 import AccordionSummary from '@mui/material/AccordionSummary';
 import Typography from '@mui/material/Typography';
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
-import React, { useEffect } from 'react'
+import React, { useEffect, useState } from 'react'
 import { Label } from '@/components/UI/label';
 import { Button, DatePicker, Input, Select } from 'antd';
 import { useAppDispatch, useAppSelector } from '@/store/hooks/hooks';
@@ -15,9 +15,11 @@ import { setProducts } from '@/store/productSlice/productSlice';
 import { Table, TableCell, TableHeader, TableRow, TableHead } from '@/components/UI/table';
 import { Download, Printer } from 'lucide-react';
 import ExcelJS from "exceljs";
+import { Modal } from "antd";
 import { saveAs } from "file-saver";
+import { CheckCircleOutlined } from "@ant-design/icons";
 import toast from "react-hot-toast";
-
+import { motion } from "framer-motion";
 interface FilterData {
     date: Dayjs | null; // ✅ endi Dayjs yoki null
     region: string;
@@ -62,12 +64,14 @@ const ProductMaterialsBalance: React.FC = () => {
         size: '',
     });
     const [warehouses, setWarehouses] = React.useState<Array<{ id: string, name: string }>>([]);
+    const [models, setModels] = React.useState<ProductInfo[]>([]);
     const [sizes, setSizes] = React.useState<Array<{ id: string, name: string }>>([]);
     const [productTypes, setProductTypes] = React.useState<Array<{ id: string, name: string, number: number }>>([]);
     const [productsReport, setProductsReport] = React.useState<WarehouseItem[]>([]);
     const [handleDownloadModal, setHandleDownloadModal] = React.useState(false);
+    const [open, setOpen] = useState(false);
 
-    const { regions  } = useAppSelector(state => state.info);
+    const { regions } = useAppSelector(state => state.info);
     const { products } = useAppSelector(state => state.product)
     const dispatch = useAppDispatch();
 
@@ -125,25 +129,161 @@ const ProductMaterialsBalance: React.FC = () => {
         }
     }
 
+    // 2) getModels funksiyasi (API javobi .results bo‘lsa ham ishlaydi)
+    const getModels = async () => {
+        try {
+            const response = await axiosAPI.get(`/models/list/?order_by=2${filterData.product_type ? `&product_type=${filterData.product_type}` : ''}`);
+            if (response.status === 200) {
+                // ba'zi endpointlar response.data.results qaytaradi, ba'zilari response.data
+                const list = response.data.results ?? response.data;
+                setModels(list);
+            }
+        } catch (error) {
+            console.log("getModels error:", error);
+        }
+    };
+
+
     // Get remainders report (API POST)
+    // const getRemaindersReport = async () => {
+    //     try {
+    //         const response = await axiosAPI.post(`/remainders/warehouses/`, {
+    //             warehouse: filterData.warehouse || undefined,
+    //             date: filterData.date ? filterData.date.format('YYYY-MM-DDTHH:mm:ss') : undefined,
+    //             product: filterData.product || undefined,
+    //             product_type: filterData.product_type || undefined,
+    //             model: filterData.model || undefined,
+    //             size: filterData.size || undefined,
+    //             bar_code: filterData.bar_code || undefined,
+    //         });
+    //         if (response.status === 200) {
+    //             setProductsReport(response.data);
+    //         }
+    //     } catch (error) {
+    //         console.log(error);
+    //     }
+    // };
+
     const getRemaindersReport = async () => {
         try {
             const response = await axiosAPI.post(`/remainders/warehouses/`, {
                 warehouse: filterData.warehouse || undefined,
-                date: filterData.date ? filterData.date.format('YYYY-MM-DDTHH:mm:ss') : undefined,
+                date: filterData.date
+                    ? filterData.date.format("YYYY-MM-DDTHH:mm:ss")
+                    : undefined,
                 product: filterData.product || undefined,
                 product_type: filterData.product_type || undefined,
                 model: filterData.model || undefined,
                 size: filterData.size || undefined,
                 bar_code: filterData.bar_code || undefined,
             });
+
             if (response.status === 200) {
                 setProductsReport(response.data);
+                setOpen(true); // ✅ modalni ochamiz
             }
         } catch (error) {
             console.log(error);
         }
     };
+
+
+
+    // Print (faqat hisobotni chiqaradi)
+    // const handlePrint = () => {
+    //     if (!productsReport || productsReport.length === 0) {
+    //         window.alert("Avval hisobotni shakillantiring.");
+    //         return;
+    //     }
+
+    //     const regionName = regions.find(r => r.id === filterData.region)?.name || "";
+    //     const warehouseName = warehouses.find(w => w.id === filterData.warehouse)?.name || "";
+
+    //     // Jadval qatorlari
+    //     const buildTableRowsHTML = () =>
+    //         productsReport.map((item, index) => `
+    //     <tr>
+    //       <td>${index + 1}</td>
+    //       <td>${regionName}</td>
+    //       <td>${warehouseName}</td>
+    //       <td>${item.bar_code || ""}</td>
+    //       <td>${item.product_type?.name || ""}</td>
+    //       <td>${item.model?.name || ""}</td>
+    //       <td>${item.size?.name || ""}</td>
+    //       <td>${item.product?.name || ""}</td>
+    //       <td>${item.product_code || ""}</td>
+    //       <td>${item.unit?.name || ""}</td>
+    //       <td>${item.remaining_quantity ?? 0}</td>
+    //       <td>${item.price?.toLocaleString("uz-UZ") ?? 0}</td>
+    //       <td>${item.remaining_summa?.toLocaleString("uz-UZ") ?? 0}</td>
+    //       <td>${item.last_delivery_date || ""}</td>
+    //       <td>${item.interval_between || ""}</td>
+    //     </tr>
+    //   `).join("");
+
+    //     // Jadval sarlavhasi
+    //     const tableHeadHTML = `
+    //   <tr>
+    //     <th>№</th>
+    //     <th>Viloyat</th>
+    //     <th>Ombor</th>
+    //     <th>Shtrix kod</th>
+    //     <th>Tovar turi</th>
+    //     <th>Model</th>
+    //     <th>O‘lcham</th>
+    //     <th>Tovar</th>
+    //     <th>Kod</th>
+    //     <th>O‘lchov birligi</th>
+    //     <th>Qoldiq miqdori</th>
+    //     <th>Narxi</th>
+    //     <th>Summasi</th>
+    //     <th>Oxirgi kirim sana</th>
+    //     <th>Jami kun</th>
+    //   </tr>
+    // `;
+
+    //     // Hujjat
+    //     const htmlContent = `
+    //   <!DOCTYPE html>
+    //   <html>
+    //   <head>
+    //     <meta charset="utf-8">
+    //     <style>
+    //       body { font-family: Arial, sans-serif; margin: 20px; color: #333; }
+    //       .header { text-align: center; margin-bottom: 20px; }
+    //       h1 { color: #1E56A0; margin: 0; }
+    //       h2 { margin: 5px 0; }
+    //       table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 12px; }
+    //       th, td { border: 1px solid #ddd; padding: 6px; text-align: left; }
+    //       th { background-color: #1E56A0; color: white; }
+    //       tr:nth-child(even) { background-color: #f9f9f9; }
+    //       .footer { margin-top: 20px; font-size: 11px; text-align: center; color: #555; }
+    //     </style>
+    //   </head>
+    //   <body>
+    //     <div class="header">
+    //       <h1>E-KOMPLEKTATSIYA</h1>
+    //       <h2>Tovarlar Qoldiq Hisoboti</h2>
+    //       <p><strong>Sana:</strong> ${filterData.date ? filterData.date.format("YYYY-MM-DD HH:mm") : ""}</p>
+    //     </div>
+    //     <table>
+    //       <thead>${tableHeadHTML}</thead>
+    //       <tbody>${buildTableRowsHTML()}</tbody>
+    //     </table>
+    //     <div class="footer">
+    //       <p>Jami: ${productsReport.length} ta yozuv</p>
+    //       <p>Chop etilgan: ${new Date().toLocaleDateString("uz-UZ")} ${new Date().toLocaleTimeString("uz-UZ")}</p>
+    //     </div>
+    //   </body>
+    //   </html>
+    // `;
+
+    //     const printWindow = window.open("", "_blank");
+    //     if (!printWindow) return;
+    //     printWindow.document.write(htmlContent);
+    //     printWindow.document.close();
+    //     printWindow.print();
+    // };
 
     const handlePrint = () => {
         if (!productsReport || productsReport.length === 0) {
@@ -257,15 +397,12 @@ const ProductMaterialsBalance: React.FC = () => {
         printWindow.close();
     };
 
-
-
-
-
     useEffect(() => {
         getRegions();
         getProducts();
         getProductTypes();
         getSizes();
+        getModels();
     }, [])
 
     useEffect(() => {
@@ -274,10 +411,11 @@ const ProductMaterialsBalance: React.FC = () => {
 
     return (
         <>
+
             <div className="bg-slate-50 flex animate-in fade-in duration-500">
                 <div className="w-full flex flex-col">
                     {/* Filter */}
-                    <div className="bg-white border-b border-slate-200 mb-2">
+                    <div className="bg-white border-b border-slate-200">
                         <Accordion defaultExpanded>
                             <AccordionSummary
                                 expandIcon={<ExpandMoreIcon />}
@@ -287,7 +425,7 @@ const ProductMaterialsBalance: React.FC = () => {
                             </AccordionSummary>
                             <AccordionDetails>
                                 {/* Grid */}
-                                <div className="flex flex-col gap-4 p-4">
+                                <div className="flex flex-col gap-4">
                                     {/* Tepada joylashadiganlar */}
                                     <div className="flex flex-wrap gap-4">
                                         {/* Sana */}
@@ -344,13 +482,36 @@ const ProductMaterialsBalance: React.FC = () => {
                                                     ))}
                                             </Select>
                                         </div>
+
+                                        {/* Model */}
+                                        <div className="flex flex-col gap-2 flex-1 min-w-[200px]">
+                                            <Label htmlFor="model">Model</Label>
+                                            <Select
+                                                placeholder="Modelni tanlang"
+                                                showSearch
+                                                allowClear
+                                                value={filterData.model || null}
+                                                onChange={(value) => setFilterData({ ...filterData, model: value })}
+                                                className="w-full"
+                                                disabled={models.length === 0} // yoki agar model product_type ga bog'liq bo'lsa: disabled={!filterData.product_type}
+                                                filterOption={(input, option) =>
+                                                    (option?.children as unknown as string).toLowerCase().includes(input.toLowerCase())
+                                                }
+                                            >
+                                                {models.map(model => (
+                                                    <Select.Option key={model.id} value={model.id}>
+                                                        {model.name}
+                                                    </Select.Option>
+                                                ))}
+                                            </Select>
+                                        </div>
                                     </div>
 
                                     {/* Pastdagi qismi */}
                                     <div className="flex flex-wrap gap-4">
                                         {/* Mahsulot */}
                                         <div className="flex flex-col gap-2 flex-1 min-w-[200px]">
-                                            <Label htmlFor="product">Mahsulot</Label>
+                                            <Label htmlFor="product">Tovar</Label>
                                             <Select
                                                 placeholder="Mahsulotni tanlang"
                                                 showSearch
@@ -369,7 +530,7 @@ const ProductMaterialsBalance: React.FC = () => {
 
                                         {/* Mahsulot turi */}
                                         <div className="flex flex-col gap-2 flex-1 min-w-[200px]">
-                                            <Label htmlFor="product_type">Mahsulot turi</Label>
+                                            <Label htmlFor="product_type">Tovar turi</Label>
                                             <Select
                                                 placeholder="Mahsulot turini tanlang"
                                                 showSearch
@@ -437,7 +598,8 @@ const ProductMaterialsBalance: React.FC = () => {
                                 Yuklab olish
                             </Button>
                         </div>
-                        <div className="overflow-y-auto border border-gray-300 rounded max-h-[calc(100vh-250px)]" >
+                        <div className="overflow-y-auto border border-gray-300 rounded"
+                            style={{ maxHeight: "calc(100vh - 250px)" }}>
 
                             <Table className="border-collapse w-full">
                                 <TableHeader>
@@ -480,9 +642,9 @@ const ProductMaterialsBalance: React.FC = () => {
                                             <TableCell className="border border-gray-300">{item.product_code}</TableCell>
                                             <TableCell className="border border-gray-300">{item.unit.name}</TableCell>
                                             <TableCell className="border border-gray-300">{item.remaining_quantity}</TableCell>
-                                            <TableCell className="border border-gray-300">{item.price}</TableCell>
-                                            <TableCell className="border border-gray-300">{item.remaining_summa}</TableCell>
-                                            <TableCell className="border border-gray-300">{item.last_delivery_date}</TableCell>
+                                            <TableCell className="border border-gray-300">{item.price.toLocaleString()} UZS</TableCell>
+                                            <TableCell className="border border-gray-300">{item.remaining_summa.toLocaleString()} UZS</TableCell>
+                                            <TableCell className="border border-gray-300">{item.last_delivery_date.split("T").join(" ")}</TableCell>
                                             <TableCell className="border border-gray-300">{item.interval_between}</TableCell>
                                         </TableRow>
                                     ))}
@@ -537,7 +699,9 @@ const ProductMaterialsBalance: React.FC = () => {
                                         return;
                                     }
 
+                                    const nameInput = document.getElementById("download-filename") as HTMLInputElement | null;
                                     const extSelect = document.getElementById("download-extension") as HTMLSelectElement | null;
+                                    const filename = (nameInput?.value || "hisobot").trim();
                                     const ext = (extSelect?.value || "pdf").toLowerCase();
 
                                     const regionName = regions.find(r => r.id === filterData.region)?.name || "";
@@ -549,21 +713,20 @@ const ProductMaterialsBalance: React.FC = () => {
                                         const workbook = new ExcelJS.Workbook();
                                         const worksheet = workbook.addWorksheet("Hisobot");
 
-                                        // 🔹 Title 1-qator
+                                        // 🔹 Title
                                         worksheet.mergeCells(1, 1, 1, 15);
                                         const titleCell = worksheet.getCell("A1");
                                         titleCell.value = "Товар ва материаллар қолдиғи хисоботи";
                                         titleCell.font = { name: "Arial", size: 16, bold: true };
                                         titleCell.alignment = { horizontal: "center", vertical: "middle" };
 
-                                        // 🔹 Title 2-qator (sana alohida qator)
                                         worksheet.mergeCells(2, 1, 2, 15);
                                         const dateCell = worksheet.getCell("A2");
                                         dateCell.value = `Сана: ${dayjs().format("YYYY-MM-DD HH:mm")}`;
-                                        dateCell.font = { name: "Arial", size: 16, bold: true };
+                                        dateCell.font = { name: "Arial", size: 12 };
                                         dateCell.alignment = { horizontal: "center", vertical: "middle" };
 
-                                        // 🔹 Header row (3-qator)
+                                        // 🔹 Headers
                                         const headers = [
                                             "№", "Viloyat", "Ombor", "Shtrix kod", "Tovar turi", "Model", "O‘lcham",
                                             "Tovar", "Kod", "O‘lchov birligi", "Qoldiq miqdori", "Narxi",
@@ -571,7 +734,6 @@ const ProductMaterialsBalance: React.FC = () => {
                                         ];
                                         worksheet.addRow(headers);
 
-                                        // 🔹 Header style
                                         worksheet.getRow(3).font = { bold: true };
                                         worksheet.getRow(3).alignment = { horizontal: "center" };
                                         worksheet.getRow(3).eachCell((cell) => {
@@ -589,8 +751,50 @@ const ProductMaterialsBalance: React.FC = () => {
                                             };
                                         });
 
-                                        // 🔹 Rows (data)
+                                        // 🔹 Format funksiyalari
+                                        const formatPrice = (num?: number | string | null) => {
+                                            if (num == null || num === "") return "";
+                                            const n = Number(num);
+                                            return n.toLocaleString("ru-RU", {
+                                                minimumFractionDigits: 2,
+                                                maximumFractionDigits: 2,
+                                            }); // 26 520.00
+                                        };
+
+                                        const formatQuantity = (num?: number | string | null) => {
+                                            if (num == null || num === "") return "";
+                                            const n = Number(num);
+                                            return n.toLocaleString("ru-RU"); // 12 345
+                                        };
+
+
+                                        const formatSumma = (num?: number | string | null) => {
+                                            if (num == null || num === "") return "";
+                                            const n = Number(num);
+                                            // Agar kasr bo'lsa, o'zini ko'rsatamiz (butun emas)
+                                            if (Number.isInteger(n)) {
+                                                return n.toLocaleString("ru-RU"); // 3 449 850
+                                            } else {
+                                                return n.toLocaleString("ru-RU", {
+                                                    minimumFractionDigits: 0,
+                                                    maximumFractionDigits: 2,
+                                                }); // 3 004.27
+                                            }
+                                        };
+
+
+                                        let totalQuantity = 0;
+                                        let totalSum = 0;
+
+                                        // 🔹 Data rows
                                         productsReport.forEach((item, idx) => {
+                                            const quantity = item.remaining_quantity ?? 0;
+                                            const price = item.price ?? 0;
+                                            const sum = quantity * price;
+
+                                            totalQuantity += quantity;
+                                            totalSum += sum;
+
                                             worksheet.addRow([
                                                 idx + 1,
                                                 regionName,
@@ -602,32 +806,54 @@ const ProductMaterialsBalance: React.FC = () => {
                                                 item.product?.name || "",
                                                 item.product_code || "",
                                                 item.unit?.name || "",
-                                                item.remaining_quantity ?? 0,
-                                                item.price ?? 0,
-                                                item.remaining_summa ?? 0,
-                                                item.last_delivery_date || "",
+                                                formatQuantity(quantity),   // qoldiq
+                                                formatPrice(price),         // narx (.00)
+                                                formatSumma(sum),           // summa (.00 yo‘q)
+                                                (item.last_delivery_date || "").replace("T", " "),
                                                 item.interval_between || ""
                                             ]);
                                         });
 
-                                        // 🔹 Column widths
-                                        worksheet.columns.forEach((col, index) => {
-                                            if (index === 0) col.width = 4;   // № (juda kichkina)
-                                            else if (index === 1) col.width = 20; // Viloyat kengroq
-                                            else if (index === 2) col.width = 25; // Ombor kengroq
-                                            else col.width = 20; // qolganlari standart
+                                        // 🔹 Umumiy satr
+                                        const totalRow = worksheet.addRow([
+                                            "Jami", "", "", "", "", "", "", "", "", "",
+                                            formatQuantity(totalQuantity), // qoldiq umumiy
+                                            "", // narx umumiy emas
+                                            formatSumma(totalSum),         // summa umumiy (.00 qo‘shilmaydi)
+                                            "",
+                                            ""
+                                        ]);
+                                        totalRow.font = { bold: true };
+
+                                        totalRow.eachCell((cell) => {
+                                            cell.border = {
+                                                top: { style: "thin" },
+                                                left: { style: "thin" },
+                                                bottom: { style: "double" },
+                                                right: { style: "thin" },
+                                            };
                                         });
+
+                                        // 🔹 Ustun align
+                                        worksheet.columns.forEach((col, i) => {
+                                            // Sana, Summasi, Narxi, Qoldiq, Kod, O‘lchov, O‘lcham, Jami kun → center
+                                            if ([7, 9, 10, 11, 12, 13, 15].includes(i + 1)) {
+                                                col.alignment = { horizontal: "center", vertical: "middle" };
+                                            } else {
+                                                col.alignment = { horizontal: "left", vertical: "middle" };
+                                            }
+                                            col.width = 20;
+                                        });
+
+                                        worksheet.getColumn(1).width = 4; // №
 
                                         // 🔹 Export
                                         const buffer = await workbook.xlsx.writeBuffer();
                                         const blob = new Blob([buffer], {
                                             type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                                         });
-                                        saveAs(blob, `TovarlarQoldiq_${dayjs().format("YYYY-MM-DD_HH-mm")}.xlsx`);
+                                        saveAs(blob, `${filename}.${ext}`);
                                     };
-
-
-
 
                                     // PDF — print dialog orqali
                                     const buildHTMLDocument = () => `
@@ -724,6 +950,89 @@ const ProductMaterialsBalance: React.FC = () => {
                 </div>
             )}
 
+
+            {/* <Modal
+                open={open}
+                onOk={() => setOpen(false)}
+                cancelButtonProps={{ style: { display: "none" } }}
+                closable={false} // ❌ X tugmasini olib tashlaymiz
+                centered
+                width={450}
+                footer={[
+                    <Button
+                        key="ok"
+                        type="primary"
+                        style={{ borderRadius: "8px", padding: "6px 25px" }}
+                        onClick={() => setOpen(false)}
+                    >
+                        OK
+                    </Button>,
+                ]}
+                bodyStyle={{
+                    display: "flex",
+                    flexDirection: "column",
+                    justifyContent: "center",
+                    alignItems: "center",
+                    minHeight: "180px",
+                }}
+            >
+                <CheckCircleOutlined style={{ fontSize: "60px", color: "#52c41a" }} />
+                <div style={{ marginTop: "20px", fontSize: "20px", fontWeight: "600", textAlign: "center" }}>
+                    Hisobot muvaffaqiyatli shakillantirildi
+                </div>
+            </Modal> */}
+
+            <Modal
+                open={open}
+                onOk={() => setOpen(false)}
+                cancelButtonProps={{ style: { display: "none" } }}
+                closable={false} // ❌ X tugmasi yo‘q
+                centered
+                width={450}
+                footer={[
+                    <Button
+                        key="ok"
+                        type="primary"
+                        style={{ borderRadius: "8px", padding: "6px 25px" }}
+                        onClick={() => setOpen(false)}
+                    >
+                        OK
+                    </Button>,
+                ]}
+                bodyStyle={{
+                    display: "flex",
+                    flexDirection: "column",
+                    justifyContent: "center",
+                    alignItems: "center",
+                    minHeight: "220px",
+                    background: "linear-gradient(135deg, #f0fff4, #e6fffb)", // 💡 fon chiroyli gradient
+                    borderRadius: "12px",
+                }}
+            >
+                {/* 🔹 Icon animatsiya bilan */}
+                <motion.div
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1.1 }}
+                    transition={{
+                        type: "spring",
+                        stiffness: 200,
+                        damping: 15,
+                    }}
+                    style={{ display: "flex", justifyContent: "center", alignItems: "center" }}
+                >
+                    <CheckCircleOutlined style={{ fontSize: "70px", color: "#52c41a" }} />
+                </motion.div>
+
+                {/* 🔹 Matn animatsiya bilan */}
+                <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.3, duration: 0.5 }}
+                    style={{ marginTop: "20px", fontSize: "20px", fontWeight: "600", textAlign: "center" }}
+                >
+                    Hisobot muvaffaqiyatli shakillantirildi
+                </motion.div>
+            </Modal>
 
         </>
     )
