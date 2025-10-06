@@ -100,25 +100,19 @@ const SelectRemainsModal: React.FC<SelectRemainsModalProps> = ({
         {/* Inner */}
         <div className='bg-white rounded-lg shadow-xl max-w-6xl w-full mx-4 max-h-[90vh] flex flex-col'>
           {/* Header */}
-          <div className='p-6 border-b'>
+          <div className='px-4 py-2'>
             <div className='flex items-center justify-between'>
               <h2 className='text-xl font-semibold text-gray-800'>
                 Qoldiq tovarlar ro'yxati
               </h2>
-              <button
-                onClick={onClose}
-                className='text-gray-400 hover:text-gray-600 text-2xl'
-              >
-                ×
-              </button>
             </div>
-            <p className='text-sm text-gray-600 mt-2'>
+            <p className='text-sm text-gray-600 pt-1'>
               Tanlanganlar: {selectedRemaindersList.length} / Filtrlangan: {filteredRemainders.length} / Jami: {remainders.length}
             </p>
           </div>
 
           {/* Search by product name */}
-          <div className='p-4 border-b'>
+          <div className='px-3 py-2'>
             <div className='relative'>
               <input
                 type='search'
@@ -136,7 +130,7 @@ const SelectRemainsModal: React.FC<SelectRemainsModalProps> = ({
           </div>
 
           {/* Table Container */}
-          <div className='flex-1 overflow-auto p-6'>
+          <div className='flex-1 overflow-auto p-4'>
             <div className='overflow-x-auto'>
               <table className='min-w-full border border-gray-200 rounded-lg'>
                 <thead className='bg-gray-50'>
@@ -149,7 +143,7 @@ const SelectRemainsModal: React.FC<SelectRemainsModalProps> = ({
                           if (input) input.indeterminate = isIndeterminate;
                         }}
                         onChange={(e) => handleSelectAll(e.target.checked)}
-                        className='rounded border-gray-300'
+                        className='rounded border-gray-300 size-4'
                       />
                     </th>
                     <th className='px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
@@ -196,7 +190,7 @@ const SelectRemainsModal: React.FC<SelectRemainsModalProps> = ({
                                 );
                               }
                             }}
-                            className='rounded border-gray-300'
+                            className='rounded border-gray-300 size-4'
                           />
                         </td>
                         <td className='px-4 py-3 text-sm font-medium text-gray-900'>
@@ -268,7 +262,7 @@ const SelectRemainsModal: React.FC<SelectRemainsModalProps> = ({
             <div className='flex gap-3'>
               <button
                 onClick={onClose}
-                className='px-4 py-2 text-gray-600 border border-gray-300 rounded-md hover:bg-gray-50 transition-colors'
+                className='px-4 py-2 text-gray-600 border border-gray-300 rounded-md hover:bg-gray-50 transition-colors cursor-pointer'
               >
                 Yopish
               </button>

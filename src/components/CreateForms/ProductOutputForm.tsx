@@ -576,26 +576,28 @@ const ProductOutputForm: React.FC<ProductOutputFormProps> = ({ setIsCreateFormMo
           />
         )}
 
-        {/* Remainders selection button */}
-        <button
-          type="button"
-          className={`${remainders.length === 0 ? "bg-gray-300 cursor-not-allowed" : "bg-blue-500 hover:bg-blue-700"} text-white font-bold py-2 px-4 rounded self-end`}
-          disabled={remainders.length === 0}
-          onClick={() => setOpenSelectRemaindersModal(true)}
-        >
-          Qoldiqlarni tanlash
-        </button>
+        <div className="flex items-center justify-end gap-4">
+          {/* Remainders selection button */}
+          <button
+            type="button"
+            className={`${remainders.length === 0 ? "bg-gray-300 cursor-not-allowed " : "bg-blue-500 hover:bg-blue-700 cursor-pointer"} text-white font-bold py-2 px-4 rounded self-end`}
+            disabled={remainders.length === 0}
+            onClick={() => setOpenSelectRemaindersModal(true)}
+          >
+            Qoldiqlarni tanlash
+          </button>
 
-        {/* Submit button */}
-        <button
-          type="submit"
-          className="bg-gradient-to-br from-blue-500 via-blue-600 to-blue-700 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded self-end"
-          onClick={() => {
-            handleSubmit(formData);
-          }}
-        >
-          Yaratish
-        </button>
+          {/* Submit button */}
+          <button
+            type="submit"
+            className="bg-gradient-to-br from-blue-500 via-blue-600 to-blue-700 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded self-end cursor-pointer"
+            onClick={() => {
+              handleSubmit(formData);
+            }}
+          >
+            Yaratish
+          </button>
+        </div>
       </form>
     </>
   );

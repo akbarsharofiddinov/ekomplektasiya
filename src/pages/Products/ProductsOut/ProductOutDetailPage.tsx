@@ -24,7 +24,7 @@ import {
   TableRow,
 } from "@/components/UI/table";
 import { Badge } from "@/components/UI/badge";
-import { Checkbox } from "@/components/UI/checkbox";
+// import { Checkbox } from "@/components/UI/checkbox";
 import { axiosAPI } from "@/services/axiosAPI";
 import { useNavigate, useParams } from "react-router-dom";
 import { DatePicker, Select } from "antd";
@@ -41,6 +41,7 @@ import { useAppDispatch, useAppSelector } from "@/store/hooks/hooks";
 import { removeFromListByID } from "@/store/productSlice/productSlice";
 import SelectRemainsModal from "@/components/CreateForms/SelectRemainsModal";
 import { setRegions } from "@/store/infoSlice/infoSlice";
+
 
 type ProductProperties = {
   id: string;
@@ -141,13 +142,13 @@ const ProductOutDetailPage: React.FC = () => {
   //   [typesOfGoods]
   // );
 
-  const handleSelectItem = (itemId: string) => {
-    setSelectedItems((prev) =>
-      prev.includes(itemId)
-        ? prev.filter((id) => id !== itemId)
-        : [...prev, itemId]
-    );
-  };
+  // const handleSelectItem = (itemId: string) => {
+  //   setSelectedItems((prev) =>
+  //     prev.includes(itemId)
+  //       ? prev.filter((id) => id !== itemId)
+  //       : [...prev, itemId]
+  //   );
+  // };
 
   // Helpers
   const updateHeaderField = <K extends keyof IDocumentData>(
@@ -157,11 +158,14 @@ const ProductOutDetailPage: React.FC = () => {
     setDocumentData((prev) => (prev ? { ...prev, [key]: value } : prev));
   };
 
-  const handleSelectAll = () => {
-    // setSelectedItems(prev => prev.length === (documentData?.products.length || 0) ? [] : documentData?.products.map(item => item));
-  };
+  // const handleSelectAll = () => {
+  //   // setSelectedItems(prev => prev.length === (documentData?.products.length || 0) ? [] : documentData?.products.map(item => item));
+  // };
+
 
   // API: Options
+
+
   const getWarehousesList = useCallback(async () => {
     try {
       const res = await axiosAPI.get("warehouses/list/");
@@ -437,6 +441,9 @@ const ProductOutDetailPage: React.FC = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedRemaindersList.length]);
 
+  console.log(documentData);
+
+
   return (
     <>
       <div className="min-h-screen bg-slate-50 flex animate-in fade-in duration-500">
@@ -458,7 +465,7 @@ const ProductOutDetailPage: React.FC = () => {
                 </Button>
                 <div>
                   <h1 className="text-xl font-semibold text-slate-900">
-                    Tovarlar chiqim {documentData?.number} dan
+                    Tovarlar chiqim {documentData?.number} dan {""}
                     {documentData?.date
                       ? dayjs(documentData.date).format(DATE_FORMAT)
                       : ""}
@@ -470,6 +477,15 @@ const ProductOutDetailPage: React.FC = () => {
               </div>
 
               <div className="flex items-center gap-3">
+                <Badge
+                  className={`px-3 py-1 border ${documentData?.is_approved
+                    ? "bg-emerald-100 text-emerald-700 border-emerald-200"
+                    : "bg-amber-100 text-amber-700 border-amber-200"
+                    }`}
+                >
+                  {documentData?.is_approved ? "Tasdiqlangan" : "Tasdiqlanmagan"}
+                </Badge>
+
                 <Button
                   variant="outline"
                   size="sm"
@@ -663,7 +679,7 @@ const ProductOutDetailPage: React.FC = () => {
                     {/* Add product */}
                     <Button
                       size="sm"
-                      className="gap-2 bg-[#1E56A0] hover:bg-[#1E56A0]/90 text-white"
+                      className="gap-2 bg-[#1E56A0] hover:bg-[#1E56A0]/90 text-white cursor-pointer"
                       onClick={() => {
                         if (documentData?.warehouse && documentData?.date) { setOpenSelectRemaindersModal(true) }
                         else {
@@ -679,7 +695,7 @@ const ProductOutDetailPage: React.FC = () => {
                 <Button
                   variant="outline"
                   size="sm"
-                  className="gap-2 border-slate-200 hover:bg-slate-50 transition-all duration-200"
+                  className="gap-2 border-slate-200 cursor-pointer"
                 >
                   <Printer className="w-4 h-4" />
                   Chop etish
@@ -701,39 +717,16 @@ const ProductOutDetailPage: React.FC = () => {
           {/* Table Section */}
           <div className="flex-1 bg-white">
             <div className="p-6">
-              {/* Table Header Controls */}
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-4">
-                  <Checkbox
-                    checked={selectedItems.length === mockData?.products.length}
-                    onCheckedChange={handleSelectAll}
-                    className="data-[state=checked]:bg-[#1E56A0] data-[state=checked]:border-[#1E56A0]"
-                  />
-                  <span className="text-sm font-medium text-slate-700">
-                    {selectedItems.length > 0
-                      ? `${selectedItems.length} ta tanlangan`
-                      : "Barchasini tanlash"}
-                  </span>
-                </div>
-                <Badge
-                  variant="secondary"
-                  className="bg-blue-100 text-blue-800 px-3 py-1"
-                >
-                  Jami: {mockData?.products.length} ta tovar
-                </Badge>
-              </div>
-
               {/* Products Table */}
               <div className="border border-slate-200 rounded-lg overflow-x-auto shadow-sm">
                 <Table>
                   <TableHeader>
                     <TableRow className="bg-slate-50">
-                      <TableHead className="w-12 p-3"></TableHead>
                       <TableHead className="text-slate-700 font-semibold p-3">
                         №
                       </TableHead>
                       <TableHead className="text-slate-700 font-semibold p-3">
-                        Chop
+                        Shtrix kod raqam
                       </TableHead>
                       <TableHead className="text-slate-700 font-semibold p-3">
                         Shtrix kod
@@ -748,7 +741,7 @@ const ProductOutDetailPage: React.FC = () => {
                         Partiya sanasi
                       </TableHead>
                       <TableHead className="text-slate-700 font-semibold p-3">
-                        O'lch.Birlik
+                        O'lcham
                       </TableHead>
                       <TableHead className="text-slate-700 font-semibold p-3">
                         Soni
@@ -770,24 +763,17 @@ const ProductOutDetailPage: React.FC = () => {
                           : ""
                           }`}
                       >
-                        <TableCell className="p-3">
-                          <Checkbox
-                            checked={selectedItems.includes(item.bar_code)}
-                            onCheckedChange={() => handleSelectItem(item.bar_code)}
-                            className="data-[state=checked]:bg-[#1E56A0] data-[state=checked]:border-[#1E56A0]"
-                          />
-                        </TableCell>
                         <TableCell className="text-slate-800 font-medium p-3">
                           {index + 1}
                         </TableCell>
-                        <TableCell className="p-3">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="w-8 h-8 p-0 hover:text-slate-500 transition-opacity hover:bg-slate-100"
-                          >
-                            <Printer className="w-4 h-4" />
-                          </Button>
+
+                        {/* Shtrix kod raqami */}
+                        <TableCell className="p-3 text-center">
+                          {item.bar_code && (
+                            <p className="text-xs text-slate-600 mt-1 select-none">
+                              {item.bar_code}
+                            </p>
+                          )}
                         </TableCell>
                         <TableCell className="p-3">
                           <div className="w-12 h-6 bg-slate-100 border border-slate-300 rounded flex items-center justify-center">
@@ -829,10 +815,10 @@ const ProductOutDetailPage: React.FC = () => {
                         </TableCell>
                         <TableCell className="p-3">
                           <div className="flex items-center gap-1">
-                            <span className="text-slate-800 font-medium text-sm">
+                            <span className="text-slate-500 text-sm">
                               {item.quantity.toLocaleString()}
                             </span>
-                            <span className="text-xs text-slate-500">
+                            <span className="text-sm text-slate-500">
                               {item.unit.name}
                             </span>
                           </div>
@@ -847,24 +833,22 @@ const ProductOutDetailPage: React.FC = () => {
                             </div>
                           </div>
                         </TableCell>
-                        <TableCell className="p-3">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="w-8 h-8 p-0 text-red-500 hover:text-red-600 transition-opacity hover:bg-red-50"
-
-                            onClick={() => {
-                              // Remove product from list
-                              if (!documentData) return;
-                              const filtered = documentData.products.filter(
-                                (_, i) => i !== index
-                              );
-                              setDocumentData({ ...documentData, products: filtered });
-                            }}
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
-                        </TableCell>
+                        {!documentData?.is_approved && (
+                          <TableCell className="p-3">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="w-8 h-8 p-0 text-red-500 hover:text-red-600 transition-opacity hover:bg-red-50"
+                              onClick={() => {
+                                if (!documentData) return;
+                                const filtered = documentData.products.filter((_, i) => i !== index);
+                                setDocumentData({ ...documentData, products: filtered });
+                              }}
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </TableCell>
+                        )}
                       </TableRow>
                     ))}
                   </TableBody>
@@ -894,51 +878,55 @@ const ProductOutDetailPage: React.FC = () => {
               </div>
             </div>
           </div>
-
           {/* Footer Actions */}
           <div className="bg-white border-t border-slate-200 px-6 py-4 shadow-sm">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <Badge
-                  className={`px-3 py-1 border ${documentData?.is_approved
+                  className={`px-3 py-1 border  ${documentData?.is_approved
                     ? "bg-emerald-100 text-emerald-700 border-emerald-200"
                     : "bg-amber-100 text-amber-700 border-amber-200"
                     }`}
                 >
                   {documentData?.is_approved ? "Tasdiqlangan" : "Tasdiqlanmagan"}
                 </Badge>
-                <span className="text-sm text-slate-500">
-                  Oxirgi saqlanish: {new Date().toLocaleString("uz-UZ")}
-                </span>
               </div>
-              <div className="flex items-center gap-3">
-                <>
+
+              {/* Faqat Tasdiqlanmagan bo‘lsa tugmalar ko‘rinadi */}
+              {!documentData?.is_approved && (
+                <div className="flex items-center gap-3 ">
                   <Button
-                    className="bg-emerald-400 hover:bg-emerald-400/70 text-white gap-2"
+                    className="bg-emerald-400 hover:bg-emerald-400/70 text-white gap-2 cursor-pointer"
                     onClick={handleApproveInput}
                   >
                     <CircleCheckBig className="w-4 h-4" />
                     Tasdiqlash
                   </Button>
+
                   <Button
-                    className="bg-red-400 hover:bg-red-400/70 text-white gap-2"
-                    onClick={() => setAlertDialog(true)}
-                  >
-                    <Trash2 className="w-4 h-4" />
-                    O'chirish
-                  </Button>
-                  <Button
-                    className={`${dataChanged ? "bg-[#1E56A0] hover:bg-[#1E56A0]/90" : "bg-gray-400"} text-white gap-2 transition-all duration-200 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed`}
+                    className={`${dataChanged
+                      ? "bg-[#1E56A0] hover:bg-[#1E56A0]/90"
+                      : "bg-gray-400"
+                      } text-white gap-2 transition-all duration-200 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer`}
                     disabled={!dataChanged || saving}
                     onClick={handleUpdateWriteOff}
                   >
                     <Save className="w-4 h-4" />
                     {saving ? "Saqlanmoqda..." : "Saqlash"}
                   </Button>
-                </>
-              </div>
+
+                  <Button
+                    className="bg-red-400 hover:bg-red-400/70 text-white gap-2 cursor-pointer"
+                    onClick={() => setAlertDialog(true)}
+                  >
+                    <Trash2 className="w-4 h-4" />
+                    O‘chirish
+                  </Button>
+                </div>
+              )}
             </div>
           </div>
+
         </div>
 
         {/* Chat Panel */}

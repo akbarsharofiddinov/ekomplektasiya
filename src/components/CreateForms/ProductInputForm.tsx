@@ -31,6 +31,7 @@ import {
 } from "../UI/table";
 import { toast } from "react-toastify";
 
+
 const DATE_FORMAT = "YYYY-MM-DD HH:mm:ss";
 
 const defaultProduct: Product = {
@@ -522,20 +523,6 @@ const ProductInputForm: React.FC<IProductInputFormProps> = ({
 
         {/* Products section */}
         <div className="border-t pt-4 flex flex-col items-start gap-4 relative">
-          <button
-            className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
-            onClick={() => {
-              setFormData((prev) => ({
-                ...prev,
-                products: [
-                  ...prev.products,
-                  { ...defaultProduct, row_number: prev.products.length + 1 },
-                ],
-              }));
-            }}
-          >
-            Tovar qo'shish
-          </button>
           {formData.products.length ? (
             <div className="border w-full border-slate-200 rounded-lg shadow-sm">
               <Table>
@@ -627,6 +614,7 @@ const ProductInputForm: React.FC<IProductInputFormProps> = ({
                           ))}
                         </Select>
                       </TableCell>
+
                       {/* Product size */}
                       <TableCell className="text-slate-700 font-medium p-3">
                         <Select
@@ -684,7 +672,7 @@ const ProductInputForm: React.FC<IProductInputFormProps> = ({
                       </TableCell>
 
                       {/* Quantity */}
-                      <TableCell className="text-slate-700 font-medium p-3 max-w-[7%] w-[7%]">
+                      <TableCell className="text-slate-700 font-medium p-3 max-w-[10%] w-[10%]">
                         <Input
                           type="number"
                           placeholder="Soni"
@@ -702,7 +690,7 @@ const ProductInputForm: React.FC<IProductInputFormProps> = ({
                       </TableCell>
 
                       {/* Price */}
-                      <TableCell className="text-slate-700 font-medium p-3 w-[10%] max-w-[10%]">
+                      <TableCell className="text-slate-700 font-medium p-3 w-[10%] max-w-[18%]">
                         <Input
                           type="number"
                           placeholder="Narxi"
@@ -744,34 +732,54 @@ const ProductInputForm: React.FC<IProductInputFormProps> = ({
               </Table>
             </div>
           ) : (
-            <div>Hech qanday tovar tanlanmadi</div>
+            <div className="w-full text-center text-xl font-bold ">Hech qanday tovar tanlanmadi</div>
           )}
         </div>
 
         {/* Submit button */}
 
-        <button
-          type="submit"
-          className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded self-end"
-          onClick={() => {
-            const updatedProducts = formData.products.map((product) => ({
-              ...product,
-              summa: product.price * product.quantity,
-            }));
+        <div className="flex items-center justify-end gap-4">
+          <button
+            className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+            onClick={() => {
+              setFormData((prev) => ({
+                ...prev,
+                products: [
+                  ...prev.products,
+                  { ...defaultProduct, row_number: prev.products.length + 1 },
+                ],
+              }));
+            }}
+          >
+            Tovar qo'shish
+          </button>
 
-            const updatedFormData = {
-              ...formData,
-              products: updatedProducts,
-              is_approved:
-                formData.type_goods === "НаОсновнойСклад" ? true : false,
-            };
+          <button
+            type="submit"
+            className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded self-end"
+            onClick={() => {
+              const updatedProducts = formData.products.map((product) => ({
+                ...product,
+                summa: product.price * product.quantity,
+              }));
 
-            setFormData(updatedFormData);
-            handleSubmit(updatedFormData);
-          }}
-        >
-          Saqlash
-        </button>
+              const updatedFormData = {
+                ...formData,
+                products: updatedProducts,
+                is_approved:
+                  formData.type_goods === "НаОсновнойСклад" ? true : false,
+              };
+
+              setFormData(updatedFormData);
+              handleSubmit(updatedFormData);
+            }}
+          >
+            Saqlash
+          </button>
+
+        </div>
+
+
       </form>
 
       {createCounterPartyModal && (
@@ -779,7 +787,7 @@ const ProductInputForm: React.FC<IProductInputFormProps> = ({
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
           {/* Inner */}
           <div
-            className="bg-white rounded-lg min-w=[600px] shadow-2xl p-6 overflow-auto"
+            className="bg-white rounded-lg min-w=[600px] p-6 overflow-auto"
             onClick={(e) => e.stopPropagation()}
           >
             <Typography id="modal-modal-title" variant="h6" component="h2">

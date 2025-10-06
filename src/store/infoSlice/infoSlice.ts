@@ -9,6 +9,7 @@ interface InfoState {
   currentCreatedCounterParty?: ICounterparty;
   responsible_person: IReponsiblePerson[];
   currentUserInfo: CurrentUserInfo | null;
+  htmlContent?: string;
 }
 
 const initialState: InfoState = {
@@ -20,7 +21,9 @@ const initialState: InfoState = {
   currentCreatedCounterParty: undefined,
   responsible_person: [],
   currentUserInfo: null,
+  htmlContent: "",
 };
+
 
 const infoSlice = createSlice({
   name: "infoSlice",
@@ -57,6 +60,10 @@ const infoSlice = createSlice({
     setCurrentUserInfo(state, action) {
       state.currentUserInfo = action.payload;
     },
+
+    setHtmlContent(state, action) {
+      state.htmlContent = action.payload;
+    }
   },
 });
 
@@ -69,5 +76,6 @@ export const {
   setCurrentCreatedCounterParty,
   setResponsiblePersons,
   setCurrentUserInfo,
+  setHtmlContent
 } = infoSlice.actions;
 export default infoSlice.reducer;

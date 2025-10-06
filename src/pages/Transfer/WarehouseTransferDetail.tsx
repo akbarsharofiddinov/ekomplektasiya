@@ -33,17 +33,6 @@ interface TransferState {
   products: TransferProduct[];
 }
 
-interface WarehouseProduct {
-  id: string;
-  product: NamedEntity;
-  product_type: NamedEntity;
-  size: NamedEntity;
-  unit: NamedEntity;
-  quantity: number;
-  price: number;
-  bar_code: string;
-}
-
 const WarehouseTransferDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -53,7 +42,7 @@ const WarehouseTransferDetail: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
-  const [saving, setSaving] = useState(false);
+  // const [saving, setSaving] = useState(false);
 
   // Accordion states
   const [isFromSectionOpen, setIsFromSectionOpen] = useState(true);
@@ -62,10 +51,10 @@ const WarehouseTransferDetail: React.FC = () => {
   const [isProductsOpen, setIsProductsOpen] = useState(true);
 
   // Product selection modal
-  const [showProductModal, setShowProductModal] = useState(false);
-  const [warehouseProducts, setWarehouseProducts] = useState<WarehouseProduct[]>([]);
-  const [selectedProducts, setSelectedProducts] = useState<string[]>([]);
-  const [productLoading, setProductLoading] = useState(false);
+  // const [showProductModal, setShowProductModal] = useState(false);
+  // const [warehouseProducts, setWarehouseProducts] = useState<WarehouseProduct[]>([]);
+  // const [selectedProducts, setSelectedProducts] = useState<string[]>([]);
+  // const [productLoading, setProductLoading] = useState(false);
 
   // Edit form data
   const [editData, setEditData] = useState<TransferState | null>(null);
@@ -88,7 +77,7 @@ const WarehouseTransferDetail: React.FC = () => {
       const data = response.data[0];
       setTransferDetail(data);
       setEditData(data);
-      setSelectedProducts(data.products?.map((p: TransferProduct) => p.bar_code) || []);
+      // setSelectedProducts(data.products?.map((p: TransferProduct) => p.bar_code) || []);
     } catch (error) {
       console.error('Transfer ma\'lumotlarini olishda xatolik:', error);
       toast.error('Transfer ma\'lumotlarini yuklashda xatolik yuz berdi');
@@ -114,14 +103,15 @@ const WarehouseTransferDetail: React.FC = () => {
     if (!transferDetail?.from_warehouse?.id) return;
 
     try {
-      setProductLoading(true);
+      // setProductLoading(true);
       const response = await axiosAPI.get(`warehouse-products/${transferDetail.from_warehouse.id}/`);
-      setWarehouseProducts(response.data);
+      console.log(response)
+      // setWarehouseProducts(response.data);
     } catch (error) {
       console.error('Ombor mahsulotlarini olishda xatolik:', error);
       toast.error('Ombor mahsulotlarini yuklashda xatolik yuz berdi');
     } finally {
-      setProductLoading(false);
+      // setProductLoading(false);
     }
   };
 
@@ -138,40 +128,6 @@ const WarehouseTransferDetail: React.FC = () => {
     } catch (error) {
       console.error('Options yuklashda xatolik:', error);
     }
-  };
-
-  // Add products to transfer
-  const handleAddProducts = () => {
-    const baseCount = editData?.products?.length || 0;
-    const newProducts: TransferProduct[] = warehouseProducts
-      .filter(wp => selectedProducts.includes(wp.id))
-      .map((wp, index) => ({
-        id: wp.id,
-        product: wp.product,
-        product_type: wp.product_type,
-        size: wp.size,
-        unit: wp.unit,
-        quantity: 1,
-        price: wp.price,
-        summa: wp.price,
-        bar_code: wp.bar_code,
-        description: '',
-        row_number: baseCount + index + 1,
-        remaining_quantity: 1
-      }));
-
-    if (editData) {
-      const existingIds = editData.products?.map(p => p.bar_code) || [];
-      const uniqueNewProducts: TransferProduct[] = newProducts.filter(np => !existingIds.includes(np.bar_code));
-
-      setEditData({
-        ...editData,
-        products: [...(editData.products || []), ...uniqueNewProducts]
-      });
-    }
-
-    setShowProductModal(false);
-    toast.success(`${newProducts.length} ta mahsulot qo'shildi`);
   };
 
   // Remove product from transfer
@@ -202,98 +158,6 @@ const WarehouseTransferDetail: React.FC = () => {
         ...editData,
         products: updatedProducts
       });
-    }
-  };
-
-  // Save transfer changes
-  const handleSave = async () => {
-    if (!editData) return;
-
-    try {
-      setSaving(true);
-      const response = await axiosAPI.post(`transfers/update/${editData.id}/`,
-        {
-          ...editData,
-          from_district: editData.from_district.id,
-          from_region: editData.from_region.id,
-          from_warehouse: editData.from_warehouse.id,
-          from_responsible_person: editData.from_responsible_person.id,
-          to_district: editData.to_district.id,
-          to_region: editData.to_region.id,
-          to_warehouse: editData.to_warehouse.id,
-          to_responsible_person: editData.to_responsible_person.id,
-          transfer_type: transferTypes.find(t => t.name === editData.transfer_type)?.id,
-          products: editData.products?.map(p => ({
-            product: p.product.id,
-            product_type: p.product_type.id,
-            size: p.size.id,
-            unit: p.unit.id,
-            quantity: p.quantity,
-            price: p.price,
-            summa: p.summa,
-            bar_code: p.bar_code,
-            description: p.description,
-            row_number: p.row_number,
-            remaining_quantity: p.remaining_quantity
-          }))
-        }
-      );
-
-      if (response.status === 200) {
-        setTransferDetail(editData);
-        setIsEditing(false);
-        toast('Transfer muvaffaqiyatli yangilandi!', { type: 'success', autoClose: 2000 });
-      }
-    } catch (error) {
-      console.error('Transfer yangilashda xatolik:', error);
-      toast.error('Transfer yangilashda xatolik yuz berdi');
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  // Confirmation Transfer
-  const handleConfirmTransfer = async () => {
-    if (!transferDetail) return;
-
-    try {
-      setActionLoading(true);
-      const response = await axiosAPI.post(`/transfers/confirmation/${transferDetail.id}/`, {
-        ...transferDetail,
-        from_district: transferDetail.from_district.id,
-        from_region: transferDetail.from_region.id,
-        from_warehouse: transferDetail.from_warehouse.id,
-        from_responsible_person: transferDetail.from_responsible_person.id,
-        to_district: transferDetail.to_district.id,
-        to_region: transferDetail.to_region.id,
-        to_warehouse: transferDetail.to_warehouse.id,
-        to_responsible_person: transferDetail.to_responsible_person.id,
-        transfer_type: transferTypes.find(t => t.name === transferDetail.transfer_type)?.id,
-        products: transferDetail.products?.map(p => ({
-          product: p.product.id,
-          product_type: p.product_type.id,
-          size: p.size.id,
-          unit: p.unit.id,
-          quantity: p.quantity,
-          price: p.price,
-          summa: p.summa,
-          bar_code: p.bar_code,
-          description: p.description,
-          row_number: p.row_number,
-          remaining_quantity: p.remaining_quantity
-        })),
-        user: transferDetail.user.id,
-      });
-
-      if (response.status === 200) {
-        toast.success('Transfer tasdiqlandi!');
-        setTransferDetail(prev => prev ? { ...prev, is_confirmed: true } : null);
-      }
-    } catch (error) {
-      console.error('Transfer tasdiqlashda xatolik:', error);
-      toast.error('Transfer tasdiqlashda xatolik yuz berdi');
-    } finally {
-      setActionLoading(false);
     }
   };
 
@@ -681,10 +545,10 @@ const WarehouseTransferDetail: React.FC = () => {
   }, [id]);
 
   useEffect(() => {
-    if (showProductModal && transferDetail?.from_warehouse?.id) {
+    if (transferDetail?.from_warehouse?.id) {
       getWarehouseProducts();
     }
-  }, [showProductModal, transferDetail?.from_warehouse?.id]);
+  }, [transferDetail?.from_warehouse?.id]);
 
   useEffect(() => {
     getTransferTypes()
@@ -766,12 +630,10 @@ const WarehouseTransferDetail: React.FC = () => {
               {isEditing ? (
                 <>
                   <Button
-                    onClick={handleSave}
-                    disabled={saving}
                     className="bg-green-600 hover:bg-green-700 text-white flex items-center gap-2"
                   >
                     <Save className="w-4 h-4" />
-                    {saving ? 'Saqlanmoqda...' : 'Saqlash'}
+                    Saqlash
                   </Button>
                   <Button
                     variant="outline"
@@ -1152,7 +1014,7 @@ const WarehouseTransferDetail: React.FC = () => {
             {isEditing && (
               <div className="p-4 border-b border-gray-100">
                 <Button
-                  onClick={() => setShowProductModal(true)}
+                  // onClick={() => setShowProductModal(true)}
                   className="bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-2"
                 >
                   <Plus className="w-4 h-4" />
@@ -1206,8 +1068,8 @@ const WarehouseTransferDetail: React.FC = () => {
                           </p>
                         </div>
                       </TableCell>
-                      <TableCell>{product.product_type?.name || 'N/A'}</TableCell>
-                      <TableCell>{product.size?.name || 'N/A'}</TableCell>
+                      <TableCell>{product.product_type || 'N/A'}</TableCell>
+                      <TableCell>{product.size || 'N/A'}</TableCell>
                       <TableCell>
                         {isEditing ? (
                           <Input
@@ -1221,7 +1083,7 @@ const WarehouseTransferDetail: React.FC = () => {
                           <span className="font-medium">{product.quantity || 0}</span>
                         )}
                       </TableCell>
-                      <TableCell>{product.unit?.name || 'N/A'}</TableCell>
+                      <TableCell>{product.unit || 'N/A'}</TableCell>
                       <TableCell>
                         <span>{(product.price || 0).toLocaleString()} UZS</span>
                       </TableCell>
@@ -1272,7 +1134,7 @@ const WarehouseTransferDetail: React.FC = () => {
                 <span className="text-gray-600">Jami tovarlar: {currentData?.products?.length || 0} ta</span>
 
                 <div className="text-right flex items-center gap-4">
-                  <Button variant="outline" onClick={handleConfirmTransfer}>
+                  <Button variant="outline">
                     Tasdiqlash
                   </Button>
                   <Button variant={"outline"} className="bg-green-600 hover:bg-green-700 text-white cursor-pointer">
@@ -1288,106 +1150,6 @@ const WarehouseTransferDetail: React.FC = () => {
         </div>
       </div>
 
-      {/* Product Selection Modal */}
-      {showProductModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-4xl max-h-[80vh] overflow-hidden">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold">Tovar tanlash</h3>
-              <Button
-                variant="outline"
-                onClick={() => setShowProductModal(false)}
-                className="p-2"
-              >
-                <X className="w-4 h-4" />
-              </Button>
-            </div>
-
-            {productLoading ? (
-              <div className="flex items-center justify-center py-8">
-                <div className="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
-                <span className="ml-2">Tovarlar yuklanmoqda...</span>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                <div className="max-h-[700px] overflow-y-auto">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>
-                          <input
-                            type="checkbox"
-                            onChange={(e) => {
-                              if (e.target.checked) {
-                                setSelectedProducts(warehouseProducts.map(p => p.id));
-                              } else {
-                                setSelectedProducts([]);
-                              }
-                            }}
-                            checked={selectedProducts.length === warehouseProducts.length}
-                          />
-                        </TableHead>
-                        <TableHead>Tovar nomi</TableHead>
-                        <TableHead>Shtrix kod</TableHead>
-                        <TableHead>Turi</TableHead>
-                        <TableHead>O'lcham</TableHead>
-                        <TableHead>Qoldiq</TableHead>
-                        <TableHead>Narx</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {warehouseProducts.map((product) => (
-                        <TableRow key={product.id}>
-                          <TableCell>
-                            <input
-                              type="checkbox"
-                              checked={selectedProducts.includes(product.id)}
-                              onChange={(e) => {
-                                if (e.target.checked) {
-                                  setSelectedProducts([...selectedProducts, product.id]);
-                                } else {
-                                  setSelectedProducts(selectedProducts.filter(id => id !== product.id));
-                                }
-                              }}
-                            />
-                          </TableCell>
-                          <TableCell className="font-medium">{product.product?.name}</TableCell>
-                          <TableCell>{product.bar_code}</TableCell>
-                          <TableCell>{product.product_type?.name}</TableCell>
-                          <TableCell>{product.size?.name}</TableCell>
-                          <TableCell>{product.quantity}</TableCell>
-                          <TableCell>{product.price.toLocaleString()} UZS</TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
-
-                <div className="flex items-center justify-between pt-4 border-t">
-                  <span className="text-sm text-gray-600">
-                    {selectedProducts.length} ta tovar tanlandi
-                  </span>
-                  <div className="flex gap-2">
-                    <Button
-                      variant="outline"
-                      onClick={() => setShowProductModal(false)}
-                    >
-                      Bekor qilish
-                    </Button>
-                    <Button
-                      onClick={handleAddProducts}
-                      disabled={selectedProducts.length === 0}
-                      className="bg-blue-600 hover:bg-blue-700 text-white"
-                    >
-                      Tanlangan tovarlarni qo'shish
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
 
       {openBarCodeModal && (
         <div className="fixed inset-0 bg-black/10 bg-opacity-50 flex items-center justify-center z-50" onClick={() => setOpenBarCodeModal("")}>

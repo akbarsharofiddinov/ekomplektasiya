@@ -1,13 +1,14 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import axios, { AxiosError } from "axios";
+import { AxiosError } from "axios";
 import { Input, Button, Form, Alert } from "antd";
 import {
   LucideBuilding2,
   Lock,
   User as UserIcon,
 } from "lucide-react";
+import { axiosAPI } from "@/services/axiosAPI";
 
 // UTF-8 safe Base64 encoding
 function btoaUTF8(str: string) {
@@ -24,7 +25,7 @@ const Login: React.FC = () => {
     setErrorMsg(null);
     try {
       const basicAuth = btoaUTF8(`${values.username}:${values.password}`);
-      const response = await axios.get("/api/hs/jwt_auth/", {
+      const response = await axiosAPI.get("jwt_auth/", {
         headers: { Authorization: `Basic ${basicAuth}` },
       });
 

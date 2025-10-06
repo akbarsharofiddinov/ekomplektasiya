@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState, useRef } from "react";
 import {
   Table,
   TableBody,
@@ -9,18 +9,14 @@ import {
 } from "@/components/UI/table";
 import { Badge } from "@/components/UI/badge";
 import { Button } from "@/components/UI/button";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/UI/popover";
 import { Input } from "@/components/UI/input";
+
 import {
   Plus,
   RefreshCw,
-  Calendar as CalendarIcon,
   Printer,
   X,
+  Search,
   ChevronLeft,
   ChevronRight,
   ChevronsLeft,
@@ -34,18 +30,77 @@ import { ProductInputForm } from "@/components";
 import { useAppDispatch, useAppSelector } from "@/store/hooks/hooks";
 import { setInputList } from "@/store/productSlice/productSlice";
 
+
 type FilterStatus = "all" | "approved" | "rejected" | "pending";
 
 const ProductInput: React.FC = () => {
   // const [searchValue, setSearchValue] = useState("");
   const [mockData, setMockData] = useState<ProductInputData[]>([]);
   const [filteredData, setFilteredData] = useState<ProductInputData[]>([]);
-  const [statusFilter, setStatusFilter] = useState<FilterStatus>("all");
-  const [fromDate, setFromDate] = useState<Date | undefined>(undefined);
-  const [toDate, setToDate] = useState<Date | undefined>(undefined);
-  const [isFromDateOpen, setIsFromDateOpen] = useState(false);
-  const [isToDateOpen, setIsToDateOpen] = useState(false);
+  const [statusFilter, setStatusFilter] = useState<FilterStatus>("rejected");
+  // const [fromDate, setFromDate] = useState<Date | undefined>(undefined);
+  // const [toDate, setToDate] = useState<Date | undefined>(undefined);
+  // const [isFromDateOpen, setIsFromDateOpen] = useState(false);
+  // const [isToDateOpen, setIsToDateOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+
+  const [searchValue, setSearchValue] = useState("");
+  const searchInputRef = useRef<HTMLInputElement | null>(null);
+
+  // CTRL+F yoki ⌘+F ishlashi uchun useEffect
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Ctrl + F (Windows/Linux) yoki Meta(Command) + F (Mac)
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "f") {
+        e.preventDefault();
+        // agar ref mavjud bo'lsa, fokuslaymiz; agar yo'q bo'lsa, DOM orqali ham topamiz
+        const inputEl = searchInputRef.current ?? document.getElementById("global-search") as HTMLInputElement | null;
+        inputEl?.focus();
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
+
+  // Qidiruv funksiyasi (diqqat: nomni bir xil ishlating)
+  const handleSearch = (value: string) => {
+    setSearchValue(value);
+
+    const search = value.trim().toLowerCase();
+    if (search === "") {
+      // bo'sh qidiruv — faqat status bo'yicha apply qilish yoki barcha ma'lumotni qayta tiklash
+      applyFilters(statusFilter);
+      return;
+    }
+
+    const filtered = mockData.filter((item) => {
+      return [
+        item.number,
+        item.date,
+        item.region,
+        item.warehouse,
+        item.type_goods,
+        item.user,
+        item.responsible_person,
+      ].some((field) =>
+        String(field ?? "").toLowerCase().includes(search)
+      );
+    });
+
+    const finalFiltered =
+      statusFilter === "all"
+        ? filtered
+        : filtered.filter(
+          (item) =>
+            item.is_approved === (statusFilter === "approved") ||
+            (statusFilter === "rejected" && item.is_approved === false)
+        );
+
+    setFilteredData(finalFiltered);
+  };
+
+
 
   // Get counts for each status
   const [statusCounts, setStatusCounts] = useState({
@@ -97,23 +152,27 @@ const ProductInput: React.FC = () => {
       );
     }
 
+
+
+
+
     // Apply date range filter
-    if (fromDate && toDate) {
-      filtered = filtered.filter((item) => {
-        const itemDate = new Date(item.date);
-        return itemDate >= fromDate && itemDate <= toDate;
-      });
-    } else if (fromDate) {
-      filtered = filtered.filter((item) => {
-        const itemDate = new Date(item.date);
-        return itemDate >= fromDate;
-      });
-    } else if (toDate) {
-      filtered = filtered.filter((item) => {
-        const itemDate = new Date(item.date);
-        return itemDate <= toDate;
-      });
-    }
+    // if (fromDate && toDate) {
+    //   filtered = filtered.filter((item) => {
+    //     const itemDate = new Date(item.date);
+    //     return itemDate >= fromDate && itemDate <= toDate;
+    //   });
+    // } else if (fromDate) {
+    //   filtered = filtered.filter((item) => {
+    //     const itemDate = new Date(item.date);
+    //     return itemDate >= fromDate;
+    //   });
+    // } else if (toDate) {
+    //   filtered = filtered.filter((item) => {
+    //     const itemDate = new Date(item.date);
+    //     return itemDate <= toDate;
+    //   });
+    // }
 
     setFilteredData(filtered);
     // Don't reset currentPage here if we're just filtering - only reset for status changes
@@ -184,17 +243,6 @@ const ProductInput: React.FC = () => {
           <div class="header">
             <h1>E-KOMPLEKTATSIYA</h1>
             <h2>Tovarlar Kirimi Hisoboti</h2>
-            ${fromDate || toDate
-        ? `
-              <div class="date-range">
-                <strong>Sana oralig'i:</strong> 
-                ${fromDate ? fromDate.toLocaleDateString("uz-UZ") : "Sanadan"
-        } - 
-                ${toDate ? toDate.toLocaleDateString("uz-UZ") : "Sanagacha"}
-              </div>
-            `
-        : ""
-      }
           </div>
           
           <table>
@@ -382,6 +430,10 @@ const ProductInput: React.FC = () => {
     }
   }, [mockData]);
 
+  useEffect(() => {
+    handleStatusFilter("rejected");
+  }, []);
+
   return (
     <>
       {id ? (
@@ -394,7 +446,7 @@ const ProductInput: React.FC = () => {
             <div>
               {/* Inner */}
               <div
-                className="bg-white rounded-lg shadow-2xl p-6 overflow-auto"
+                className="bg-white rounded-lg shadow-md p-6 overflow-auto"
                 onClick={(e) => e.stopPropagation()}
               >
                 <div className="flex items-center gap-4">
@@ -528,175 +580,6 @@ const ProductInput: React.FC = () => {
                       }
                       `}</style>
                       </Button>
-
-                      <Popover
-                        open={isFromDateOpen}
-                        onOpenChange={setIsFromDateOpen}
-                      >
-                        <PopoverTrigger
-                          className={`inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all disabled:pointer-events-none disabled:opacity-50 border bg-background hover:bg-accent hover:text-accent-foreground h-8 px-3 border-slate-300 text-slate-700 hover:border-slate-400 shadow-sm hover:shadow-md duration-300 transform hover:scale-105 ${fromDate
-                            ? "bg-blue-50 border-blue-300 text-blue-700"
-                            : ""
-                            }`}
-                        >
-                          <CalendarIcon className="w-4 h-4 mr-1" />
-                          {fromDate
-                            ? `${fromDate.toLocaleDateString("uz-UZ")}`
-                            : "Sanadan"}
-                        </PopoverTrigger>
-                        <PopoverContent className="w-80 p-0" align="end">
-                          <div className="p-4">
-                            <div className="space-y-4">
-                              <div className="flex items-center justify-between">
-                                <h4 className="font-medium text-sm text-slate-900">
-                                  Sanadan
-                                </h4>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => setIsFromDateOpen(false)}
-                                  className="h-6 w-6 p-0"
-                                >
-                                  <X className="h-4 w-4" />
-                                </Button>
-                              </div>
-
-                              <div className="space-y-3">
-                                <div>
-                                  <label className="text-xs text-slate-600 mb-1 block">
-                                    Sanadan
-                                  </label>
-                                  <Input
-                                    type="date"
-                                    value={
-                                      fromDate
-                                        ? fromDate.toISOString().split("T")[0]
-                                        : ""
-                                    }
-                                    onChange={(e) => {
-                                      const date = e.target.value
-                                        ? new Date(e.target.value)
-                                        : undefined;
-                                      setFromDate(date);
-                                    }}
-                                    className="w-full"
-                                  />
-                                </div>
-                              </div>
-
-                              <div className="flex gap-2 pt-2">
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => {
-                                    setFromDate(undefined);
-                                    applyFilters(statusFilter);
-                                    setIsFromDateOpen(false);
-                                  }}
-                                  className="flex-1"
-                                >
-                                  Tozalash
-                                </Button>
-                                <Button
-                                  size="sm"
-                                  onClick={() => {
-                                    applyFilters(statusFilter);
-                                    setIsFromDateOpen(false);
-                                  }}
-                                  className="bg-[#1E56A0] hover:bg-[#1E56A0]/90 flex-1"
-                                >
-                                  Qo'llash
-                                </Button>
-                              </div>
-                            </div>
-                          </div>
-                        </PopoverContent>
-                      </Popover>
-
-                      <Popover
-                        open={isToDateOpen}
-                      // onOpenChange={setToDateOpen}
-                      >
-                        <PopoverTrigger
-                          className={`inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all disabled:pointer-events-none disabled:opacity-50 border bg-background hover:bg-accent hover:text-accent-foreground h-8 px-3 border-slate-300 text-slate-700 hover:border-slate-400 shadow-sm hover:shadow-md duration-300 transform hover:scale-105 ${toDate
-                            ? "bg-blue-50 border-blue-300 text-blue-700"
-                            : ""
-                            }`}
-                        >
-                          <CalendarIcon className="w-4 h-4 mr-1" />
-                          {toDate
-                            ? `${toDate.toLocaleDateString("uz-UZ")}`
-                            : "Sanagacha"}
-                        </PopoverTrigger>
-                        <PopoverContent className="w-80 p-0" align="end">
-                          <div className="p-4">
-                            <div className="space-y-4">
-                              <div className="flex items-center justify-between">
-                                <h4 className="font-medium text-sm text-slate-900">
-                                  Sanagacha
-                                </h4>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => setIsToDateOpen(false)}
-                                  className="h-6 w-6 p-0"
-                                >
-                                  <X className="h-4 w-4" />
-                                </Button>
-                              </div>
-
-                              <div className="space-y-3">
-                                <div>
-                                  <label className="text-xs text-slate-600 mb-1 block">
-                                    Sanagacha
-                                  </label>
-                                  <Input
-                                    type="date"
-                                    value={
-                                      toDate
-                                        ? toDate.toISOString().split("T")[0]
-                                        : ""
-                                    }
-                                    onChange={(e) => {
-                                      const date = e.target.value
-                                        ? new Date(e.target.value)
-                                        : undefined;
-                                      setToDate(date);
-                                    }}
-                                    className="w-full"
-                                  />
-                                </div>
-                              </div>
-
-                              <div className="flex gap-2 pt-2">
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => {
-                                    setToDate(undefined);
-                                    applyFilters(statusFilter);
-                                    setIsToDateOpen(false);
-                                  }}
-                                  className="flex-1"
-                                >
-                                  Tozalash
-                                </Button>
-                                <Button
-                                  size="sm"
-                                  onClick={() => {
-                                    applyFilters(statusFilter);
-                                    setIsToDateOpen(false);
-                                  }}
-                                  className="bg-[#1E56A0] hover:bg-[#1E56A0]/90 flex-1"
-                                >
-                                  Qo'llash
-                                </Button>
-                              </div>
-                            </div>
-                          </div>
-                        </PopoverContent>
-                      </Popover>
-
                       <Button
                         variant="outline"
                         size="sm"
@@ -706,6 +589,18 @@ const ProductInput: React.FC = () => {
                         <Printer className="w-4 h-4 mr-1" />
                         Chop etish
                       </Button>
+
+                      <div className="relative">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4" />
+                        <Input
+                          type="text"
+                          placeholder="Qidirish (Ctrl+F)"
+                          ref={searchInputRef} // 🟢 muhim joy
+                          value={searchValue}
+                          onChange={(e) => handleSearch(e.target.value)}
+                          className="w-64 h-8 pl-9 text-sm border-slate-200"
+                        />
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -786,12 +681,14 @@ const ProductInput: React.FC = () => {
                                 {item.warehouse}
                               </TableCell>
                               <TableCell className="py-3 px-4">
-                                <Badge
-                                  variant="outline"
-                                  className="bg-blue-50 text-blue-700 border-blue-200 px-2 py-0.5 transition-all duration-300 hover:bg-blue-100 hover:scale-105"
-                                >
-                                  {item.type_goods}
-                                </Badge>
+                                {item.type_goods ? (
+                                  <Badge
+                                    variant="outline"
+                                    className="bg-blue-50 text-blue-700 border-blue-200 px-2 py-0.5 transition-all duration-300 hover:bg-blue-100 hover:scale-105"
+                                  >
+                                    {item.type_goods}
+                                  </Badge>
+                                ) : null}
                               </TableCell>
                               <TableCell className="text-slate-700 py-3 px-4">
                                 {item.user}

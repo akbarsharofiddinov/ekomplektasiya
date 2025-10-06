@@ -26,7 +26,6 @@ import {
   TableRow,
 } from "@/components/UI/table";
 import { Badge } from "@/components/UI/badge";
-import { Checkbox } from "@/components/UI/checkbox";
 import { axiosAPI } from "@/services/axiosAPI";
 import { useNavigate, useParams } from "react-router-dom";
 import Accordion from "@mui/material/Accordion";
@@ -55,6 +54,11 @@ import {
   setWarehouses,
 } from "@/store/infoSlice/infoSlice";
 import { useAppSelector } from "@/store/hooks/hooks";
+// import PrintPage from "../ProductIn/PrintPage";
+// import PrintPage from "./pages/Products/ProductIn/PrintPage";
+// import PrintPage from "../PrintPage";
+import PrintPage from "./PrintPage";
+
 
 const DATE_FORMAT = "YYYY-MM-DD HH:mm:ss";
 
@@ -119,6 +123,10 @@ const defaultProduct: ProductItem = {
 };
 
 const ProductInputDetailPage: React.FC = () => {
+
+  const [showPrint, setShowPrint] = useState(false);
+  const [localProducts, setLocalProducts] = useState<any[]>([]);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [selectedItems, setSelectedItems] = useState<string[]>([]);
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [documentData, setDocumentData] = useState<IDocumentData | null>({
@@ -155,26 +163,11 @@ const ProductInputDetailPage: React.FC = () => {
     responsible_person: responsiblePersons,
   } = useAppSelector((state) => state.info);
 
-  const handleSelectItem = (product__code: string) => {
-    setSelectedItems((prev) =>
-      prev.includes(product__code)
-        ? prev.filter((id) => id !== product__code)
-        : [...prev, product__code]
-    );
-  };
-
-  const handleSelectAll = () => {
-    setSelectedItems((prev) =>
-      prev.length === (documentData?.products.length || 0)
-        ? []
-        : documentData?.products.map((item) => item.product_code) || []
-    );
-  };
-
   const totalAmount = documentData?.products.reduce(
     (sum, item) => sum + item.summa,
     0
   );
+
 
   // API: Header lists
   const getRegionsList = useCallback(async () => {
@@ -271,18 +264,39 @@ const ProductInputDetailPage: React.FC = () => {
   }, [dispatch, documentData?.warehouse.id]);
 
   // API: Detail
+  // const getInputProductsDetail = useCallback(async () => {
+  //   try {
+  //     const response = await axiosAPI.get(`/receipts/detail/${id}`);
+  //     if (response.status === 200) {
+  //       const doc: IDocumentData = response.data[0];
+  //       setDocumentData(doc);
+  //       setMockData(doc);
+  //       setSelectedItems([]);
+  //       setDataChanged(false);
+  //     }
+  //   } catch (error) {
+  //     console.log(error);
+  //   }
+  // }, [id]);
+
   const getInputProductsDetail = useCallback(async () => {
     try {
+      setIsRefreshing(true); // animatsiyani yoqamiz
       const response = await axiosAPI.get(`/receipts/detail/${id}`);
+
       if (response.status === 200) {
-        const doc: IDocumentData = response.data[0];
+        const doc = response.data[0];
         setDocumentData(doc);
         setMockData(doc);
         setSelectedItems([]);
         setDataChanged(false);
+        console.log("✅ Ma'lumot yangilandi:", doc);
       }
     } catch (error) {
-      console.log(error);
+      console.error("❌ API error:", error);
+    } finally {
+      // 0.8 sekunddan so‘ng animatsiyani o‘chir
+      setTimeout(() => setIsRefreshing(false), 800);
     }
   }, [id]);
 
@@ -452,7 +466,7 @@ const ProductInputDetailPage: React.FC = () => {
         }
       );
       if (response.status === 200) {
-        toast("Kirim muvaffaqiyatli tasdiqlandi", { type: "success" });
+        toast("Kirim hujjati muvaffaqiyatli tasdiqlandi", { type: "success" });
         setMockData(documentData);
         setDataChanged(false);
       }
@@ -463,6 +477,16 @@ const ProductInputDetailPage: React.FC = () => {
       setSaving(false);
     }
   };
+
+  useEffect(() => {
+    if (documentData && documentData.products) {
+      setLocalProducts(documentData.products);
+    }
+  }, [documentData]);
+
+  useEffect(() => {
+    console.log("localProducts:", localProducts);
+  }, [localProducts]);
 
   // Effects
   useEffect(() => {
@@ -602,25 +626,58 @@ const ProductInputDetailPage: React.FC = () => {
               </div>
 
               <div className="flex items-center gap-3">
-                <Button
+                {/* Yonida Tasdiqlandi yozuvi */}
+                {documentData?.is_approved ? (
+                  <Badge className="bg-emerald-100 text-emerald-700 px-3 py-1 border border-emerald-200">
+                    Tasdiqlangan
+                  </Badge>
+                ) : dataChanged ? (
+                  <Badge className="bg-amber-100 text-amber-700 px-3 py-1 border border-amber-200">
+                    O'zgartirishlar kiritildi
+                  </Badge>
+                ) : (
+                  <Badge className="bg-red-100 text-red-700 px-3 py-1 border border-slate-200">
+                    Tasdiqlanmagan
+                  </Badge>
+                )}
+                {/* <Button
                   variant="outline"
                   size="sm"
                   onClick={getInputProductsDetail}
                   className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all disabled:pointer-events-none disabled:opacity-50 border bg-background hover:bg-accent hover:text-accent-foreground h-8 px-3 border-slate-300 text-slate-700 hover:border-slate-400 shadow-sm hover:shadow-md duration-300 transform hover:scale-105 active:scale-95"
                 >
-                  <RefreshCcw id="refreshIcon" className="w-4 h-4 mr-1 transition-transform duration-1000" />
+                  <RefreshCcw
+                    id="refreshIcon"
+                    className="w-4 h-4 mr-1 transition-transform duration-1000"
+                  />
                   Yangilash
                   <style>{`
-                      .rotate-animation {
-                        animation: rotate 400ms linear;
-                      }
-                      @keyframes rotate {
-                        from { transform: rotate(0deg); }
-                        to { transform: rotate(180deg); }
-                      }
-                      `}</style>
+      .rotate-animation {
+        animation: rotate 400ms linear;
+      }
+      @keyframes rotate {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(180deg); }
+      }
+    `}</style>
+                </Button> */}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={getInputProductsDetail}
+                  disabled={isRefreshing} // bosib turganda disable qilamiz
+                  className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all border bg-background hover:bg-accent hover:text-accent-foreground h-8 px-3 border-slate-300 text-slate-700 hover:border-slate-400 shadow-sm hover:shadow-md duration-300 transform hover:scale-105 active:scale-95"
+                >
+                  <RefreshCcw
+                    id="refreshIcon"
+                    className={`w-4 h-4 mr-1 transition-transform duration-700 ${isRefreshing ? "rotate-180" : ""
+                      }`}
+                  />
+                  {isRefreshing ? "Yangilanmoqda..." : "Yangilash"}
                 </Button>
+
               </div>
+
             </div>
           </div>
 
@@ -812,7 +869,7 @@ const ProductInputDetailPage: React.FC = () => {
                     </Label>
                     <Select
                       disabled={documentData?.is_approved}
-                      value={documentData?.type_goods.name || undefined}
+                      value={documentData?.type_goods?.name || undefined}
                       onChange={(value: string) => {
                         const t = typesOfGoods.find((tg) => tg.id === value);
                         updateHeaderField("type_goods", {
@@ -832,6 +889,7 @@ const ProductInputDetailPage: React.FC = () => {
                       }))}
                       placeholder="Kirim turini tanlang"
                     />
+
                   </div>
                 </div>
               </AccordionDetails>
@@ -872,21 +930,27 @@ const ProductInputDetailPage: React.FC = () => {
                 <Button
                   variant="outline"
                   size="sm"
-                  className="gap-2 border-slate-200"
+                  disabled={documentData?.is_approved}
+                  className="gap-2 border-slate-200 
+             disabled:bg-slate-200 disabled:text-slate-500 
+             disabled:cursor-not-allowed disabled:hover:bg-slate-200"
                   onClick={() => {
                     handleGenerateBarcode({
                       region: documentData?.region?.id || "",
-                      products: documentData?.products?.map((p) => ({
-                        product_code: p.product_code,
-                        row_number: p.row_number,
-                      })) || [],
+                      products:
+                        documentData?.products?.map((p) => ({
+                          product_code: p.product_code,
+                          row_number: p.row_number,
+                        })) || [],
                     });
                   }}
                 >
                   <Barco className="w-4 h-4" />
                   Shtrix kod
                 </Button>
+
                 <Button
+                  onClick={() => setShowPrint(true)}
                   variant="outline"
                   size="sm"
                   className="gap-2 border-slate-200"
@@ -894,7 +958,15 @@ const ProductInputDetailPage: React.FC = () => {
                   <Printer className="w-4 h-4" />
                   Chop etish
                 </Button>
+
               </div>
+
+              {showPrint && (
+                <PrintPage
+                  products={localProducts}
+                  onClose={() => setShowPrint(false)}
+                />
+              )}
 
               <div className="flex items-center gap-2">
                 <div className="relative">
@@ -911,41 +983,16 @@ const ProductInputDetailPage: React.FC = () => {
           {/* Table Section */}
           <div className="min-h-[40vh] bg-white">
             <div className="p-6">
-              {/* Table Header Controls */}
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-4">
-                  <Checkbox
-                    checked={
-                      (selectedItems.length || 0) ===
-                      (documentData?.products.length || 0)
-                    }
-                    onCheckedChange={handleSelectAll}
-                    className="data-[state=checked]:bg-[#1E56A0] data-[state=checked]:border-[#1E56A0]"
-                  />
-                  <span className="text-sm font-medium text-slate-700">
-                    {selectedItems.length > 0
-                      ? `${selectedItems.length} ta tanlangan`
-                      : "Barchasini tanlash"}
-                  </span>
-
-
-                </div>
-                <Badge
-                  variant="secondary"
-                  className="bg-blue-100 text-blue-800 px-3 py-1"
-                >
-                  Jami: {documentData?.products.length || 0} ta tovar
-                </Badge>
-              </div>
 
               {/* Products Table (Editable) */}
               <div className="border border-slate-200 rounded-lg shadow-sm overflow-x-auto overflow-y-hidden">
                 <Table>
                   <TableHeader>
                     <TableRow className="bg-slate-50">
-                      <TableHead className="w-12 p-3"></TableHead>
                       <TableHead className="p-3 text-center">№</TableHead>
-                      <TableHead className="p-3 text-center">Chop etish</TableHead>
+                      <TableHead className="p-3 text-center">
+                        Shtrix kod raqam
+                      </TableHead>
                       <TableHead className="p-3 text-center">
                         Shtrix kod
                       </TableHead>
@@ -955,10 +1002,11 @@ const ProductInputDetailPage: React.FC = () => {
                       <TableHead className="p-3 text-center">
                         Tovar nomi
                       </TableHead>
-                      <TableHead className="p-3 text-center">Model</TableHead>
                       <TableHead className="p-3 text-center">
                         Tovar turi
                       </TableHead>
+                      <TableHead className="p-3 text-center">Model</TableHead>
+                      <TableHead className="p-3 text-center">O‘lcham</TableHead>
                       <TableHead className="p-3 text-center">
                         Partiya sanasi
                       </TableHead>
@@ -968,7 +1016,7 @@ const ProductInputDetailPage: React.FC = () => {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {documentData?.products.map((item, index) => (
+                    {Array.isArray(documentData?.products) && documentData.products.map((item, index) => (
                       <TableRow
                         key={index}
                         className={`hover:bg-slate-50 transition-colors group ${selectedItems.includes(item.product_code)
@@ -976,39 +1024,25 @@ const ProductInputDetailPage: React.FC = () => {
                           : ""
                           }`}
                       >
-                        <TableCell className="p-3 text-start">
-                          <Checkbox
-                            checked={selectedItems.includes(item.product_code)}
-                            onCheckedChange={() =>
-                              handleSelectItem(item.product_code)
-                            }
-                            className="data-[state=checked]:bg-[#1E56A0] data-[state=checked]:border-[#1E56A0]"
-                          />
-                        </TableCell>
 
                         <TableCell className="p-3 text-center">
                           {index + 1}
                         </TableCell>
 
                         <TableCell className="p-3 text-center">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="w-8 h-8 p-0 hover:bg-slate-100 hover:text-slate-600"
-                          >
-                            <Printer className="w-4 h-4" />
-                          </Button>
+                          {/* Shtrix kod raqami */}
+                          {item.bar_code && (
+                            <p className="text-xs text-slate-600 mt-1 select-none">
+                              {item.bar_code}
+                            </p>
+                          )}
                         </TableCell>
+
 
                         {/* Barcode */}
                         <TableCell className="p-3 text-center">
                           <div className="flex items-center justify-center gap-2">
-                            {/* <Input
-                              disabled={documentData?.is_approved}
-                              value={item.bar_code}
-                              className="h-8 text-sm w-40"
-                              placeholder="Shtrix kod"
-                            /> */}
+
                             <div
                               className="w-12 h-6 bg-slate-100 border border-slate-300 rounded flex items-center justify-center"
                               onClick={() => setOpenBarCodeModal(item.bar_code || "")}
@@ -1024,6 +1058,7 @@ const ProductInputDetailPage: React.FC = () => {
                             </div>
                           </div>
                         </TableCell>
+
                         {/* Product code */}
                         <TableCell className="p-3 text-center">
                           <Input
@@ -1036,26 +1071,46 @@ const ProductInputDetailPage: React.FC = () => {
 
                         {/* Product name */}
                         <TableCell className="p-3 text-center">
-                          {/* Select item */}
                           <Select
                             disabled={documentData?.is_approved}
-                            value={item.product.id || undefined}
+                            value={item.product?.name || ""}
                             placeholder="Tovar tanlang"
-                            showSearch
-                            className="min-w-[100px] max-w-[200px]"
+                            className="min-w-[150px] max-w-[250px]"
+                            onChange={(value) => {
+                              const selected = products.find(p => p.id === value);
+                              updateProductField(index, (p) => {
+                                p.product = { id: value, name: selected?.name || "" };
+                                return p;
+                              });
+                            }}
+                          >
+                            {products?.map((product) => (
+                              <Select.Option key={product.id} value={product.id}>
+                                {product.name}
+                              </Select.Option>
+                            ))}
+                          </Select>
+                        </TableCell>
+
+
+                        {/* Product type */}
+                        <TableCell className="p-3 text-center">
+                          {/* Select item product_type */}
+                          <Select
+                            disabled={documentData?.is_approved}
+                            value={item.product_type?.name || ""}
+                            placeholder="Tovar turini tanlang"
+                            className="min-w-[150px]"
                             onChange={(value: string) =>
                               updateProductField(index, (p) => {
-                                p.product = { id: value, name: "" };
+                                p.product_type = { id: value, name: "" };
                                 return p;
                               })
                             }
                           >
-                            {products?.map((product) => (
-                              <Select.Option
-                                key={product.id}
-                                value={product.id}
-                              >
-                                {product.name}
+                            {product_types.map((type) => (
+                              <Select.Option key={type.id} value={type.id}>
+                                {type.name}
                               </Select.Option>
                             ))}
                           </Select>
@@ -1063,10 +1118,9 @@ const ProductInputDetailPage: React.FC = () => {
 
                         {/* Model */}
                         <TableCell className="p-3 text-center">
-                          {/* Select item */}
                           <Select
                             disabled={documentData?.is_approved}
-                            value={item.model.id || undefined}
+                            value={item.model?.name || ""}
                             placeholder="Model tanlang"
                             className="min-w-[150px]"
                             onChange={(value: string) =>
@@ -1084,24 +1138,24 @@ const ProductInputDetailPage: React.FC = () => {
                           </Select>
                         </TableCell>
 
-                        {/* Product type */}
+
+                        {/* O‘lcham */}
                         <TableCell className="p-3 text-center">
-                          {/* Select item product_type */}
                           <Select
                             disabled={documentData?.is_approved}
-                            value={item.product_type.id || undefined}
-                            placeholder="Tovar turini tanlang"
-                            className="min-w-[150px]"
+                            value={item.size?.name || ""}
+                            placeholder="O‘lcham"
+                            className="min-w-[120px]"
                             onChange={(value: string) =>
                               updateProductField(index, (p) => {
-                                p.product_type = { id: value, name: "" };
+                                p.size = { id: value, name: "" };
                                 return p;
                               })
                             }
                           >
-                            {product_types.map((type) => (
-                              <Select.Option key={type.id} value={type.id}>
-                                {type.name}
+                            {product_sizes.map((size) => (
+                              <Select.Option key={size.id} value={size.id}>
+                                {size.name}
                               </Select.Option>
                             ))}
                           </Select>
@@ -1220,7 +1274,7 @@ const ProductInputDetailPage: React.FC = () => {
               <div className="flex items-center gap-3">
                 {documentData?.is_approved ? (
                   <Badge className="bg-emerald-100 text-emerald-700 px-3 py-1 border border-emerald-200">
-                    Saqlandi
+                    Tasdiqlangan
                   </Badge>
                 ) : dataChanged ? (
                   <Badge className="bg-amber-100 text-amber-700 px-3 py-1 border border-amber-200">
@@ -1231,9 +1285,6 @@ const ProductInputDetailPage: React.FC = () => {
                     Tasdiqlanmagan
                   </Badge>
                 )}
-                <span className="text-sm text-slate-500">
-                  Oxirgi saqlanish: {new Date().toLocaleString("uz-UZ")}
-                </span>
               </div>
               <div className="flex items-center gap-3">
                 {!documentData?.is_approved && (
@@ -1246,13 +1297,6 @@ const ProductInputDetailPage: React.FC = () => {
                       Tasdiqlash
                     </Button>
                     <Button
-                      className="bg-red-400 hover:bg-red-400/70 text-white gap-2"
-                      onClick={() => setAlertDialog(true)}
-                    >
-                      <Trash className="w-4 h-4" />
-                      O'chirish
-                    </Button>
-                    <Button
                       className="bg-[#1E56A0] hover:bg-[#1E56A0]/90 text-white gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                       onClick={handleUpdateReceipt}
                       disabled={!dataChanged || saving}
@@ -1260,6 +1304,14 @@ const ProductInputDetailPage: React.FC = () => {
                       <Save className="w-4 h-4" />
                       {saving ? "Saqlanmoqda..." : "Saqlash"}
                     </Button>
+                    <Button
+                      className="bg-red-400 hover:bg-red-400/70 text-white gap-2"
+                      onClick={() => setAlertDialog(true)}
+                    >
+                      <Trash className="w-4 h-4" />
+                      O'chirish
+                    </Button>
+
                   </>
                 )}
               </div>

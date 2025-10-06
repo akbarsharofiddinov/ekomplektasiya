@@ -36,6 +36,7 @@ interface SidebarProps {
 
 const Sidebar: React.FC<SidebarProps> = ({ collapsed }: SidebarProps) => {
   const [expandedMenus, setExpandedMenus] = useState<string[]>([]);
+  const navigate = useNavigate();
 
   const toggleMenu = (menuId: string) => {
     setExpandedMenus((prev) =>
@@ -45,7 +46,7 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed }: SidebarProps) => {
     );
   };
 
-  const navigate = useNavigate();
+
 
   const menuItems = [
     {
@@ -187,7 +188,9 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed }: SidebarProps) => {
             }`}
         >
           {/* Logo */}
-          <div className="w-14 h-14 bg-white rounded-xl flex items-center justify-center shadow-xl border border-slate-200 transform transition-all duration-300 hover:scale-105 hover:shadow-2xl mx-auto overflow-hidden">
+          <div
+            onClick={() => navigate("/")}
+            className="w-14 h-14 bg-white rounded-xl flex items-center justify-center shadow-xl border border-slate-200 transform transition-all duration-300 hover:scale-105 hover:shadow-2xl mx-auto overflow-hidden cursor-pointer">
             <img
               src={logo}
               alt="HGT Logo"
@@ -198,10 +201,10 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed }: SidebarProps) => {
           {/* Text Content */}
           {!collapsed && (
             <button
-              // onClick={() => onSectionChange("dashboard")}
+              onClick={() => navigate("/")}
               className="text-center transition-all duration-300 hover:opacity-80 transform hover:scale-105"
             >
-              <h1 className="font-semibold leading-tight transition-colors duration-300 text-slate-900">
+              <h1 className="font-semibold leading-tight transition-colors duration-300 text-slate-900 cursor-pointer">
                 E-KOMPLEKTASIYA
               </h1>
               <p className="text-xs text-slate-600 mt-1 transition-colors duration-300">

@@ -5,7 +5,9 @@ import { Layout } from "@/components";
 import { Toaster } from "react-hot-toast";
 import { ToastContainer } from "react-toastify"
 import ProductMaterialsBalance from "./pages/Reports/ProductMaterialsBalance";
-import "antd/dist/reset.css"; // antd v5 uchun
+import PrintPage from "./pages/Products/ProductIn/PrintPage";
+// import CKEditorComponent from "./components/DocEditor/CKEditorComponent";
+// import TinyMCEComponent from "./components/DocEditor/TinyMCEComponent";
 
 const routes = createBrowserRouter([
   {
@@ -56,7 +58,11 @@ const routes = createBrowserRouter([
       },
       {
         path: 'product-materials-balance',
-        element: <ProductMaterialsBalance/>
+        element: <ProductMaterialsBalance />
+      },
+      {
+        path: "/print",
+        element: <PrintPage />,
       },
     ],
   },
@@ -64,6 +70,7 @@ const routes = createBrowserRouter([
     path: "/login",
     element: <Login />,
   },
+  
 ]);
 
 const App: React.FC = () => {
@@ -71,7 +78,9 @@ const App: React.FC = () => {
     <>
       <RouterProvider router={routes} />
       <ToastContainer />
-      <Toaster position="top-right" reverseOrder={false} /> {/* Bu yerda hot-toast */}
+      <Toaster position="top-right" reverseOrder={false} />
+      {/* <TinyMCEComponent /> */}
+      {/* <CKEditorComponent/> */}
     </>
   );
 };

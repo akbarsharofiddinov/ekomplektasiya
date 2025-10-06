@@ -1,11 +1,11 @@
 /* eslint-disable react-hooks/exhaustive-deps */
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/UI/table';
 import { Badge } from '@/components/UI/badge';
 import { Button } from '@/components/UI/button';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/UI/popover';
+// import { Popover, PopoverContent, PopoverTrigger } from '@/components/UI/popover';
 import { Input } from '@/components/UI/input';
-import { Plus, RefreshCw, Calendar as CalendarIcon, Printer, X, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, CheckCircle, XCircle, Clock } from 'lucide-react';
+import { Plus, RefreshCw, Calendar as CalendarIcon, Printer, X, Search, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, CheckCircle, XCircle, Clock } from 'lucide-react';
 import { axiosAPI } from '@/services/axiosAPI';
 import { useAppDispatch, useAppSelector } from '@/store/hooks/hooks';
 import { setWarehouseTransfers } from '@/store/transferSlice/transferSlice';
@@ -13,20 +13,72 @@ import { WarehouseTransferForm } from '@/components';
 import { Outlet, useNavigate, useParams } from 'react-router-dom';
 import { setRegions } from '@/store/infoSlice/infoSlice';
 
+
 type FilterStatus = 'all' | 'approved_accepted' | 'approved_not_accepted' | 'not_approved';
 
 const WarehouseTransfer: React.FC = () => {
   const [filteredData, setFilteredData] = useState<Transfer[]>([]);
   const [mockData, setMockData] = useState<Transfer[]>([]);
-  const [statusFilter, setStatusFilter] = useState<FilterStatus>('all');
-  const [fromDate, setFromDate] = useState<Date | undefined>(undefined);
-  const [toDate, setToDate] = useState<Date | undefined>(undefined);
-  const [isFromDateOpen, setIsFromDateOpen] = useState(false);
-  const [isToDateOpen, setIsToDateOpen] = useState(false);
+  const searchInputRef = useRef<HTMLInputElement>(null);
+  const [statusFilter, setStatusFilter] = useState<FilterStatus>('not_approved');
+  // const [fromDate, setFromDate] = useState<Date | undefined>(undefined);
+  // const [toDate, setToDate] = useState<Date | undefined>(undefined);
+  // const [isFromDateOpen, setIsFromDateOpen] = useState(false);
+  // const [isToDateOpen, setIsToDateOpen] = useState(false);
 
   // Create Transfer modal state
   const [isCreateFormModalOpen, setIsCreateFormModalOpen] = useState(false);
   const [totalItems, setTotalItems] = useState(0);
+
+  const [searchValue, setSearchValue] = useState("");
+
+  // Ctrl + F bosilganda inputga fokus berish
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "f") {
+        e.preventDefault();
+        searchInputRef.current?.focus();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
+
+  const handleSearch = (value: string) => {
+    setSearchValue(value);
+    const search = value.toLowerCase().trim();
+
+    let filtered = warehouse_transfers.filter((item) => {
+      return (
+        item.number?.toLowerCase().includes(search) ||
+        item.date?.toLowerCase().includes(search) ||
+        item.from_warehouse?.toLowerCase().includes(search) ||
+        item.to_warehouse?.toLowerCase().includes(search) ||
+        item.transfer_type?.toLowerCase().includes(search) ||
+        item.user?.toLowerCase().includes(search) ||
+        item.to_responsible_person?.toLowerCase().includes(search)
+      );
+    });
+
+    // statusFilterni ham inobatga olamiz
+    if (statusFilter !== "all") {
+      filtered = filtered.filter((item) => {
+        switch (statusFilter) {
+          case "approved_accepted":
+            return item.is_approved && item.is_accepted;
+          case "approved_not_accepted":
+            return item.is_approved && !item.is_accepted;
+          case "not_approved":
+            return !item.is_approved;
+          default:
+            return true;
+        }
+      });
+    }
+
+    setFilteredData(filtered);
+  };
+
 
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
@@ -61,23 +113,23 @@ const WarehouseTransfer: React.FC = () => {
       });
     }
 
-    // Apply date range filter
-    if (fromDate && toDate) {
-      filtered = filtered.filter(item => {
-        const itemDate = new Date(item.date);
-        return itemDate >= fromDate && itemDate <= toDate;
-      });
-    } else if (fromDate) {
-      filtered = filtered.filter(item => {
-        const itemDate = new Date(item.date);
-        return itemDate >= fromDate;
-      });
-    } else if (toDate) {
-      filtered = filtered.filter(item => {
-        const itemDate = new Date(item.date);
-        return itemDate <= toDate;
-      });
-    }
+    // // Apply date range filter
+    // if (fromDate && toDate) {
+    //   filtered = filtered.filter(item => {
+    //     const itemDate = new Date(item.date);
+    //     return itemDate >= fromDate && itemDate <= toDate;
+    //   });
+    // } else if (fromDate) {
+    //   filtered = filtered.filter(item => {
+    //     const itemDate = new Date(item.date);
+    //     return itemDate >= fromDate;
+    //   });
+    // } else if (toDate) {
+    //   filtered = filtered.filter(item => {
+    //     const itemDate = new Date(item.date);
+    //     return itemDate <= toDate;
+    //   });
+    // }
 
     setFilteredData(filtered);
     setCurrentPage(1); // Reset to first page when filtering
@@ -151,13 +203,6 @@ const WarehouseTransfer: React.FC = () => {
           <div class="header">
             <h1>E-KOMPLEKTATSIYA</h1>
             <h2>Ombordan Omborga Transfer Hisoboti</h2>
-            ${fromDate || toDate ? `
-              <div class="date-range">
-                <strong>Sana oralig'i:</strong> 
-                ${fromDate ? fromDate.toLocaleDateString('uz-UZ') : 'Boshlanish sanasi'} - 
-                ${toDate ? toDate.toLocaleDateString('uz-UZ') : 'Tugash sanasi'}
-              </div>
-            ` : ''}
           </div>
           
           <table>
@@ -234,6 +279,7 @@ const WarehouseTransfer: React.FC = () => {
   // Filter data based on status
   const handleStatusFilter = (status: FilterStatus) => {
     setStatusFilter(status);
+    setCurrentPage(1); // Reset to first page on status change
     applyFilters(status);
   };
 
@@ -448,148 +494,6 @@ const WarehouseTransfer: React.FC = () => {
                     Yangilash
                   </Button>
 
-                  <Popover open={isFromDateOpen} onOpenChange={setIsFromDateOpen}>
-                    <PopoverTrigger
-                      className={`inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all disabled:pointer-events-none disabled:opacity-50 border bg-background h-8 px-3 border-slate-300 text-slate-700 hover:bg-slate-50 hover:text-slate-600 hover:border-slate-400 shadow-sm hover:shadow-md duration-300 transform hover:scale-105 ${fromDate ? 'bg-blue-50 border-blue-300 text-blue-700' : ''
-                        }`}
-                    >
-                      <CalendarIcon className="w-4 h-4 mr-1" />
-                      {fromDate ? (
-                        `${fromDate.toLocaleDateString('uz-UZ')}`
-                      ) : (
-                        'Boshlanish sanasi'
-                      )}
-                    </PopoverTrigger>
-                    <PopoverContent className="w-80 p-0" align="end">
-                      <div className="p-4">
-                        <div className="space-y-4">
-                          <div className="flex items-center justify-between">
-                            <h4 className="font-medium text-sm text-slate-900">Boshlanish sanasi</h4>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => setIsFromDateOpen(false)}
-                              className="h-6 w-6 p-0"
-                            >
-                              <X className="h-4 w-4" />
-                            </Button>
-                          </div>
-
-                          <div className="space-y-3">
-                            <div>
-                              <label className="text-xs text-slate-600 mb-1 block">Boshlanish sanasi</label>
-                              <Input
-                                type="date"
-                                value={fromDate ? fromDate.toISOString().split('T')[0] : ''}
-                                onChange={(e) => {
-                                  const date = e.target.value ? new Date(e.target.value) : undefined;
-                                  setFromDate(date);
-                                }}
-                                className="w-full"
-                              />
-                            </div>
-                          </div>
-
-                          <div className="flex gap-2 pt-2">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => {
-                                setFromDate(undefined);
-                                applyFilters(statusFilter);
-                                setIsFromDateOpen(false);
-                              }}
-                              className="flex-1"
-                            >
-                              Tozalash
-                            </Button>
-                            <Button
-                              size="sm"
-                              onClick={() => {
-                                applyFilters(statusFilter);
-                                setIsFromDateOpen(false);
-                              }}
-                              className="bg-[#1E56A0] hover:bg-[#1E56A0]/90 flex-1"
-                            >
-                              Qo'llash
-                            </Button>
-                          </div>
-                        </div>
-                      </div>
-                    </PopoverContent>
-                  </Popover>
-
-                  <Popover open={isToDateOpen} onOpenChange={setIsToDateOpen}>
-                    <PopoverTrigger
-                      className={`inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all disabled:pointer-events-none disabled:opacity-50 border bg-background hover:text-accent-foreground h-8 px-3 border-slate-300 text-slate-700 hover:bg-slate-50 hover:border-slate-400 shadow-sm hover:shadow-md duration-300 transform hover:scale-105 ${toDate ? 'bg-blue-50 border-blue-300 text-blue-700' : ''
-                        }`}
-                    >
-                      <CalendarIcon className="w-4 h-4 mr-1" />
-                      {toDate ? (
-                        `${toDate.toLocaleDateString('uz-UZ')}`
-                      ) : (
-                        'Tugash sanasi'
-                      )}
-                    </PopoverTrigger>
-                    <PopoverContent className="w-80 p-0" align="end">
-                      <div className="p-4">
-                        <div className="space-y-4">
-                          <div className="flex items-center justify-between">
-                            <h4 className="font-medium text-sm text-slate-900">Tugash sanasi</h4>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => setIsToDateOpen(false)}
-                              className="h-6 w-6 p-0"
-                            >
-                              <X className="h-4 w-4" />
-                            </Button>
-                          </div>
-
-                          <div className="space-y-3">
-                            <div>
-                              <label className="text-xs text-slate-600 mb-1 block">Tugash sanasi</label>
-                              <Input
-                                type="date"
-                                value={toDate ? toDate.toISOString().split('T')[0] : ''}
-                                onChange={(e) => {
-                                  const date = e.target.value ? new Date(e.target.value) : undefined;
-                                  setToDate(date);
-                                }}
-                                className="w-full"
-                              />
-                            </div>
-                          </div>
-
-                          <div className="flex gap-2 pt-2">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => {
-                                setToDate(undefined);
-                                applyFilters(statusFilter);
-                                setIsToDateOpen(false);
-                              }}
-                              className="flex-1"
-                            >
-                              Tozalash
-                            </Button>
-                            <Button
-                              size="sm"
-                              onClick={() => {
-                                applyFilters(statusFilter);
-                                setIsToDateOpen(false);
-                              }}
-                              className="bg-[#1E56A0] hover:bg-[#1E56A0]/90 flex-1"
-                            >
-                              Qo'llash
-                            </Button>
-                          </div>
-                        </div>
-                      </div>
-                    </PopoverContent>
-                  </Popover>
-
                   <Button
                     variant="outline"
                     size="sm"
@@ -599,6 +503,18 @@ const WarehouseTransfer: React.FC = () => {
                     <Printer className="w-4 h-4 mr-1" />
                     Chop etish
                   </Button>
+
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4" />
+                    <Input
+                      ref={searchInputRef}
+                      type="text"
+                      placeholder="Qidirish (Ctrl+F)"
+                      value={searchValue}
+                      onChange={(e) => handleSearch(e.target.value)}
+                      className="w-64 h-8 pl-9 text-sm border-slate-200"
+                    />
+                  </div>
                 </div>
               </div>
             </div>
@@ -615,7 +531,6 @@ const WarehouseTransfer: React.FC = () => {
                     <TableHead className="text-slate-700 font-semibold py-3 px-4">Yuboruvchi ombor</TableHead>
                     <TableHead className="text-slate-700 font-semibold py-3 px-4">Qabul qiluvchi ombor</TableHead>
                     <TableHead className="text-slate-700 font-semibold py-3 px-4">Transfer turi</TableHead>
-
                     <TableHead className="text-slate-700 font-semibold py-3 px-4">Foydalanuvchi</TableHead>
                     <TableHead className="text-slate-700 font-semibold py-3 px-4">M.J.Sh</TableHead>
                   </TableRow>
@@ -644,9 +559,11 @@ const WarehouseTransfer: React.FC = () => {
                         <TableCell className="text-slate-700 py-3 px-4">{item.to_warehouse}</TableCell>
 
                         <TableCell className="py-3 px-4">
-                          <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-200 px-2 py-0.5 transition-all duration-300 hover:bg-purple-100 hover:scale-105">
-                            {item.transfer_type}
-                          </Badge>
+                          {item.transfer_type ? (
+                            <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-200 px-2 py-0.5 transition-all duration-300 hover:bg-purple-100 hover:scale-105">
+                              {item.transfer_type}
+                            </Badge>
+                          ) : null}
                         </TableCell>
                         <TableCell className="text-slate-700 py-3 px-4">{item.user}</TableCell>
                         <TableCell className="text-slate-700 py-3 px-4">{item.to_responsible_person}</TableCell>

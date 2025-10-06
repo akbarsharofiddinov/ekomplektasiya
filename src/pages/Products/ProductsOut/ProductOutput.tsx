@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 // import { FilterPanel } from "./FilterPanel";
 import {
   Table,
@@ -8,19 +8,23 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/UI/table";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/UI/popover";
+import { Search } from "lucide-react";
+// import {
+//   Popover,
+//   PopoverContent,
+//   PopoverTrigger,
+// } from "@/components/UI/popover";
 import { Badge } from "@/components/UI/badge";
 import { Button } from "@/components/UI/button";
 import { axiosAPI } from "@/services/axiosAPI";
 import { Outlet, useNavigate, useParams } from "react-router-dom";
-import { CalendarIcon, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Plus, Printer, RefreshCw, X } from "lucide-react";
-import { Input } from "antd";
+import { CheckCircle, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Plus, Printer, RefreshCw, X, XCircle } from "lucide-react";
+// import { Input } from "antd";
 
 import { ProductOutputForm } from "@/components";
+import { Input } from "@/components/UI/input";
+
+
 
 interface ProductOutputData {
   id: string;
@@ -40,11 +44,11 @@ const ProductOutput: React.FC = () => {
   // const [searchValue, setSearchValue] = useState("");
   const [filteredData, setFilteredData] = useState<ProductOutputData[]>([]);
   const [mockData, setMockData] = useState<ProductOutputData[]>([]);
-  const [fromDate, setFromDate] = useState<Date | undefined>(undefined);
+  // const [fromDate, setFromDate] = useState<Date | undefined>(undefined);
   const [toDate, setToDate] = useState<Date | undefined>(undefined);
-  const [isFromDateOpen, setIsFromDateOpen] = useState(false);
-  const [statusFilter, setStatusFilter] = useState<FilterStatus>("all");
-  const [isToDateOpen, setIsToDateOpen] = useState(false);
+  // const [isFromDateOpen, setIsFromDateOpen] = useState(false);
+  const [statusFilter, setStatusFilter] = useState<FilterStatus>("rejected");
+  // const [isToDateOpen, setIsToDateOpen] = useState(false);
 
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
@@ -60,9 +64,55 @@ const ProductOutput: React.FC = () => {
   const endIndex = startIndex + itemsPerPage;
   const currentPageData = filteredData.slice(startIndex, endIndex);
 
+  const [searchValue, setSearchValue] = useState("");
+  const searchInputRef = useRef<HTMLInputElement | null>(null);
+
 
   const navigate = useNavigate();
   const { id } = useParams()
+
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "f") {
+        e.preventDefault();
+        const inputEl =
+          searchInputRef.current ||
+          (document.getElementById("product-search-input") as HTMLInputElement);
+        inputEl?.focus();
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
+
+  const handleSearch = (value: string) => {
+    setSearchValue(value);
+    const search = value.toLowerCase().trim();
+
+    let filtered = mockData.filter((item) => {
+      return (
+        item.number?.toLowerCase().includes(search) ||
+        item.date?.toLowerCase().includes(search) ||
+        item.region?.toLowerCase().includes(search) ||
+        item.warehouse?.toLowerCase().includes(search) ||
+        item.responsible_person?.toLowerCase().includes(search) ||
+        item.user?.toLowerCase().includes(search)
+      );
+    });
+
+    // Status filter ham qo‘llanadi
+    if (statusFilter !== "all") {
+      filtered = filtered.filter(
+        (item) =>
+          item.is_approved === (statusFilter === "approved") ||
+          (statusFilter === "rejected" && item.is_approved === false)
+      );
+    }
+
+    setFilteredData(filtered);
+  };
 
   // Apply filters (search + status + date range)
   const applyFilters = (statusVal: FilterStatus) => {
@@ -76,23 +126,25 @@ const ProductOutput: React.FC = () => {
       );
     }
 
-    // Apply date range filter
-    if (fromDate && toDate) {
-      filtered = filtered.filter((item) => {
-        const itemDate = new Date(item.date);
-        return itemDate >= fromDate && itemDate <= toDate;
-      });
-    } else if (fromDate) {
-      filtered = filtered.filter((item) => {
-        const itemDate = new Date(item.date);
-        return itemDate >= fromDate;
-      });
-    } else if (toDate) {
-      filtered = filtered.filter((item) => {
-        const itemDate = new Date(item.date);
-        return itemDate <= toDate;
-      });
-    }
+
+
+    // // Apply date range filter
+    // if (fromDate && toDate) {
+    //   filtered = filtered.filter((item) => {
+    //     const itemDate = new Date(item.date);
+    //     return itemDate >= fromDate && itemDate <= toDate;
+    //   });
+    // } else if (fromDate) {
+    //   filtered = filtered.filter((item) => {
+    //     const itemDate = new Date(item.date);
+    //     return itemDate >= fromDate;
+    //   });
+    // } else if (toDate) {
+    //   filtered = filtered.filter((item) => {
+    //     const itemDate = new Date(item.date);
+    //     return itemDate <= toDate;
+    //   });
+    // }
 
     setFilteredData(filtered);
     setCurrentPage(1); // Reset to first page when filtering
@@ -163,17 +215,6 @@ const ProductOutput: React.FC = () => {
           <div class="header">
             <h1>E-KOMPLEKTATSIYA</h1>
             <h2>Tovarlar Kirimi Hisoboti</h2>
-            ${fromDate || toDate
-        ? `
-              <div class="date-range">
-                <strong>Sana oralig'i:</strong> 
-                ${fromDate ? fromDate.toLocaleDateString("uz-UZ") : "Sanadan"
-        } - 
-                ${toDate ? toDate.toLocaleDateString("uz-UZ") : "Sanagacha"}
-              </div>
-            `
-        : ""
-      }
           </div>
           
           <table>
@@ -239,6 +280,24 @@ const ProductOutput: React.FC = () => {
     setCurrentPage(Math.min(totalPages, currentPage + 1));
   const goToPage = (page: number) => setCurrentPage(page);
 
+  // Get document number styling and icon based on status
+  const getDocumentStyling = (status: boolean) => {
+    if (status) {
+      return {
+        color: "text-emerald-600 hover:text-emerald-700",
+        icon: CheckCircle,
+        iconColor: "text-emerald-500",
+      };
+    } else {
+      return {
+        color: "text-red-600 hover:text-red-700",
+        icon: XCircle,
+        iconColor: "text-red-500",
+      };
+    }
+  };
+
+
   // Generate page numbers for pagination
   const getPageNumbers = () => {
     const pages = [];
@@ -287,7 +346,11 @@ const ProductOutput: React.FC = () => {
   useEffect(() => {
     applyFilters(statusFilter);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [fromDate, toDate]);
+  }, [toDate]);
+
+  useEffect(() => {
+    handleStatusFilter("rejected");
+  }, []);
 
   return (
     <>
@@ -301,7 +364,7 @@ const ProductOutput: React.FC = () => {
             <div>
               {/* Inner */}
               <div
-                className="bg-white rounded-lg shadow-2xl p-6 overflow-auto"
+                className="bg-white rounded-lg shadow-md p-6 overflow-auto"
                 onClick={(e) => e.stopPropagation()}
               >
                 <div className="flex items-center gap-4">
@@ -432,170 +495,6 @@ const ProductOutput: React.FC = () => {
                       }
                       `}</style>
                     </Button>
-                    <Popover
-                      open={isFromDateOpen}
-                      onOpenChange={setIsFromDateOpen}
-                    >
-                      <PopoverTrigger
-                        className={`inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all disabled:pointer-events-none disabled:opacity-50 border bg-background hover:bg-accent hover:text-accent-foreground h-8 px-3 border-slate-300 text-slate-700 hover:border-slate-400 shadow-sm hover:shadow-md duration-300 transform hover:scale-105 ${fromDate
-                          ? "bg-blue-50 border-blue-300 text-blue-700"
-                          : ""
-                          }`}
-                      >
-                        <CalendarIcon className="w-4 h-4 mr-1" />
-                        {fromDate
-                          ? `${fromDate.toLocaleDateString("uz-UZ")}`
-                          : "Sanadan"}
-                      </PopoverTrigger>
-                      <PopoverContent className="w-80 p-0" align="end">
-                        <div className="p-4">
-                          <div className="space-y-4">
-                            <div className="flex items-center justify-between">
-                              <h4 className="font-medium text-sm text-slate-900">
-                                Sanadan
-                              </h4>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => setIsFromDateOpen(false)}
-                                className="h-6 w-6 p-0"
-                              >
-                                &times;
-                              </Button>
-                            </div>
-
-                            <div className="space-y-3">
-                              <div>
-                                <label className="text-xs text-slate-600 mb-1 block">
-                                  Sanadan
-                                </label>
-                                <Input
-                                  type="date"
-                                  value={
-                                    fromDate
-                                      ? fromDate.toISOString().split("T")[0]
-                                      : ""
-                                  }
-                                  onChange={(e) => {
-                                    const date = e.target.value
-                                      ? new Date(e.target.value)
-                                      : undefined;
-                                    setFromDate(date);
-                                  }}
-                                  className="w-full"
-                                />
-                              </div>
-                            </div>
-
-                            <div className="flex gap-2 pt-2">
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => {
-                                  setFromDate(undefined);
-                                  // applyFilters(statusFilter);
-                                  setIsFromDateOpen(false);
-                                }}
-                                className="flex-1"
-                              >
-                                Tozalash
-                              </Button>
-                              <Button
-                                size="sm"
-                                onClick={() => {
-                                  // applyFilters(statusFilter);
-                                  setIsFromDateOpen(false);
-                                }}
-                                className="bg-[#1E56A0] hover:bg-[#1E56A0]/90 flex-1"
-                              >
-                                Qo'llash
-                              </Button>
-                            </div>
-                          </div>
-                        </div>
-                      </PopoverContent>
-                    </Popover>
-
-                    <Popover open={isToDateOpen} onOpenChange={setIsToDateOpen}>
-                      <PopoverTrigger
-                        className={`inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all disabled:pointer-events-none disabled:opacity-50 border bg-background hover:bg-accent hover:text-accent-foreground h-8 px-3 border-slate-300 text-slate-700 hover:border-slate-400 shadow-sm hover:shadow-md duration-300 transform hover:scale-105 ${toDate
-                          ? "bg-blue-50 border-blue-300 text-blue-700"
-                          : ""
-                          }`}
-                      >
-                        <CalendarIcon className="w-4 h-4 mr-1" />
-                        {toDate
-                          ? `${toDate.toLocaleDateString("uz-UZ")}`
-                          : "Sanagacha"}
-                      </PopoverTrigger>
-                      <PopoverContent className="w-80 p-0" align="end">
-                        <div className="p-4">
-                          <div className="space-y-4">
-                            <div className="flex items-center justify-between">
-                              <h4 className="font-medium text-sm text-slate-900">
-                                Sanagacha
-                              </h4>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => setIsToDateOpen(false)}
-                                className="h-6 w-6 p-0"
-                              >
-                                &times;
-                              </Button>
-                            </div>
-
-                            <div className="space-y-3">
-                              <div>
-                                <label className="text-xs text-slate-600 mb-1 block">
-                                  Sanagacha
-                                </label>
-                                <Input
-                                  type="date"
-                                  value={
-                                    toDate
-                                      ? toDate.toISOString().split("T")[0]
-                                      : ""
-                                  }
-                                  onChange={(e) => {
-                                    const date = e.target.value
-                                      ? new Date(e.target.value)
-                                      : undefined;
-                                    setToDate(date);
-                                  }}
-                                  className="w-full"
-                                />
-                              </div>
-                            </div>
-
-                            <div className="flex gap-2 pt-2">
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => {
-                                  setToDate(undefined);
-                                  // applyFilters(statusFilter);
-                                  setIsToDateOpen(false);
-                                }}
-                                className="flex-1"
-                              >
-                                Tozalash
-                              </Button>
-                              <Button
-                                size="sm"
-                                onClick={() => {
-                                  // applyFilters(statusFilter);
-                                  setIsToDateOpen(false);
-                                }}
-                                className="bg-[#1E56A0] hover:bg-[#1E56A0]/90 flex-1"
-                              >
-                                Qo'llash
-                              </Button>
-                            </div>
-                          </div>
-                        </div>
-                      </PopoverContent>
-                    </Popover>
 
                     <Button
                       variant="outline"
@@ -606,6 +505,19 @@ const ProductOutput: React.FC = () => {
                       <Printer className="w-4 h-4 mr-1" />
                       Chop etish
                     </Button>
+
+                    <div className="relative">
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4" />
+                      <Input
+                        id="product-search-input"
+                        ref={searchInputRef}
+                        type="text"
+                        placeholder="Qidirish (Ctrl+F)"
+                        value={searchValue}
+                        onChange={(e) => handleSearch(e.target.value)}
+                        className="w-64 h-8 pl-9 text-sm border-slate-200"
+                      />
+                    </div>
                   </div>
                 </div>
               </div>
@@ -661,65 +573,77 @@ const ProductOutput: React.FC = () => {
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {currentPageData.map((item, index) => (
-                          <TableRow
-                            key={`${item.number}-${index}`}
-                            className={`border-b border-gray-50 hover:bg-slate-50/50 transition-all duration-300 hover:shadow-sm transform animate-in fade-in ${index % 2 === 0 ? "bg-white" : "bg-slate-50/30"
-                              }`}
-                            style={{ animationDelay: `${index * 50}ms` }}
-                            onClick={() => {
-                              navigate(`details/${item.id}`);
-                            }}
-                          >
-                            <TableCell className="py-2 px-3">
-                              <div className="flex items-center gap-2">
-                                <div className="w-2 h-2 bg-blue-500 rounded-full transition-all duration-300 hover:scale-125"></div>
-                                <span className="text-blue-600 font-semibold hover:text-blue-700 cursor-pointer transition-all duration-300 hover:underline">
-                                  {item.number}
-                                </span>
-                              </div>
-                            </TableCell>
-                            <TableCell className="text-slate-700 font-medium py-2 px-3 transition-colors duration-300">
-                              {item.date.split("T").join(" | ")}
-                            </TableCell>
-                            <TableCell className="py-2 px-3">
-                              <Badge
-                                variant="outline"
-                                className="bg-purple-50 text-purple-700 border-purple-200 px-2 py-0.5 transition-all duration-300 hover:bg-purple-100 hover:scale-105"
-                              >
-                                {item.region}
-                              </Badge>
-                            </TableCell>
-                            <TableCell className="text-slate-700 py-2 px-3 transition-colors duration-300">
-                              {item.warehouse}
-                            </TableCell>
-                            {/* <TableCell className="text-slate-700 py-2 px-3 transition-colors duration-300">
+                        {currentPageData.map((item, index) => {
+                          const documentStyle = getDocumentStyling(
+                            item.is_approved
+                          );
+                          const StatusIcon = documentStyle.icon;
+
+                          return (
+                            <TableRow
+                              key={`${item.number}-${index}`}
+                              className={`border-b border-gray-50 hover:bg-slate-50/50 transition-all duration-300 hover:shadow-sm transform animate-in fade-in ${index % 2 === 0 ? "bg-white" : "bg-slate-50/30"
+                                }`}
+                              style={{ animationDelay: `${index * 50}ms` }}
+                              onClick={() => {
+                                navigate(`details/${item.id}`);
+                              }}
+                            >
+                              <TableCell className="py-3 px-3">
+                                <div className="flex items-center gap-2">
+                                  <StatusIcon
+                                    className={`w-5 h-5 ${documentStyle.iconColor} transition-all duration-200`}
+                                  />
+                                  <span
+                                    className={`font-bold hover:underline transition-all duration-300 cursor-pointer ${documentStyle.color}`}
+                                  >
+                                    {item.number}
+                                  </span>
+                                </div>
+                              </TableCell>
+                              <TableCell className="text-slate-700 font-medium py-2 px-3 transition-colors duration-300">
+                                {item.date.split("T").join(" | ")}
+                              </TableCell>
+                              <TableCell className="py-2 px-3">
+                                <Badge
+                                  variant="outline"
+                                  className="bg-purple-50 text-purple-700 border-purple-200 px-2 py-0.5 transition-all duration-300 hover:bg-purple-100 hover:scale-105"
+                                >
+                                  {item.region}
+                                </Badge>
+                              </TableCell>
+                              <TableCell className="text-slate-700 py-2 px-3 transition-colors duration-300">
+                                {item.warehouse}
+                              </TableCell>
+                              {/* <TableCell className="text-slate-700 py-2 px-3 transition-colors duration-300">
                     {item.district}
                   </TableCell> */}
-                            <TableCell className="py-2 px-3">
-                              <Badge
-                                className={`border-0 shadow-sm px-2 py-0.5 transition-all duration-300 hover:shadow-md hover:scale-105 ${item.is_approved
-                                  ? "bg-green-50 text-green-700"
-                                  : "bg-yellow-50 text-yellow-700"
-                                  }`}
-                              >
-                                {item.is_approved
-                                  ? "Tasdiqlangan"
-                                  : "Tasdiqlanmagan"}
-                              </Badge>
-                            </TableCell>
-                            <TableCell className="text-slate-700 py-2 px-3 transition-colors duration-300">
-                              {item.user}
-                            </TableCell>
-                            <TableCell className="text-slate-700 max-w-48 truncate py-2 px-3 transition-colors duration-300">
-                              {item.responsible_person}
-                            </TableCell>
-                          </TableRow>
-                        ))}
+                              <TableCell className="py-2 px-3">
+                                <Badge
+                                  className={`border-0 shadow-sm px-2 py-0.5 transition-all duration-300 hover:shadow-md hover:scale-105 ${item.is_approved
+                                    ? "bg-green-50 text-green-700"
+                                    : "bg-yellow-50 text-yellow-700"
+                                    }`}
+                                >
+                                  {item.is_approved
+                                    ? "Tasdiqlangan"
+                                    : "Tasdiqlanmagan"}
+                                </Badge>
+                              </TableCell>
+                              <TableCell className="text-slate-700 py-2 px-3 transition-colors duration-300">
+                                {item.user}
+                              </TableCell>
+                              <TableCell className="text-slate-700 max-w-48 truncate py-2 px-3 transition-colors duration-300">
+                                {item.responsible_person}
+                              </TableCell>
+                            </TableRow>
+                          )
+                        })}
                       </TableBody>
                     </Table>
                   </div>
                 </div>
+
                 {/* Professional Creative Pagination */}
                 <div className="border-t border-slate-100 px-6 py-4 bg-slate-50/50">
                   <div className="flex items-center justify-between">
