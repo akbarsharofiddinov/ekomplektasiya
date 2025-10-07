@@ -96,6 +96,7 @@ const ProductOutDetailPage: React.FC = () => {
 
   const [selectedItems, setSelectedItems] = useState<string[]>([]);
   const [isChatOpen, setIsChatOpen] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   const [documentData, setDocumentData] = useState<IDocumentData | null>(null);
   const [mockData, setMockData] = useState<IDocumentData | null>(null);
@@ -157,13 +158,6 @@ const ProductOutDetailPage: React.FC = () => {
   ) => {
     setDocumentData((prev) => (prev ? { ...prev, [key]: value } : prev));
   };
-
-  // const handleSelectAll = () => {
-  //   // setSelectedItems(prev => prev.length === (documentData?.products.length || 0) ? [] : documentData?.products.map(item => item));
-  // };
-
-
-  // API: Options
 
 
   const getWarehousesList = useCallback(async () => {
@@ -246,6 +240,18 @@ const ProductOutDetailPage: React.FC = () => {
     }
   };
 
+  const handleRefresh = async () => {
+    try {
+      setIsRefreshing(true); // 🔄 Icon aylanadi
+      await getWriteOffDetail(); // 🔁 Ma’lumotni qayta chaqiramiz
+    } catch (err) {
+      console.error("Yangilashda xatolik:", err);
+    } finally {
+      // ⏳ Kichik kechikish bilan spinnerni to‘xtatamiz
+      setTimeout(() => setIsRefreshing(false), 500);
+    }
+  };
+
   async function getRemainders() {
     try {
       const response = await axiosAPI.post("remainders/warehouses/", {
@@ -258,6 +264,7 @@ const ProductOutDetailPage: React.FC = () => {
       console.error("Xatolik:", error);
     }
   }
+
 
   const getRegionsList = useCallback(async () => {
     if (regions.length > 0) return;
@@ -486,7 +493,7 @@ const ProductOutDetailPage: React.FC = () => {
                   {documentData?.is_approved ? "Tasdiqlangan" : "Tasdiqlanmagan"}
                 </Badge>
 
-                <Button
+                {/* <Button
                   variant="outline"
                   size="sm"
                   onClick={getWriteOffDetail}
@@ -503,6 +510,21 @@ const ProductOutDetailPage: React.FC = () => {
                         to { transform: rotate(180deg); }
                       }
                       `}</style>
+                </Button> */}
+
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleRefresh}
+                  disabled={isRefreshing}
+                  className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all disabled:pointer-events-none disabled:opacity-50 border bg-background hover:bg-accent hover:text-accent-foreground h-8 px-3 border-slate-300 text-slate-700 hover:border-slate-400 shadow-sm hover:shadow-md duration-300 transform hover:scale-105 active:scale-95"
+                >
+                  <RefreshCcw
+                    id="refreshIcon"
+                    className={`w-4 h-4 mr-1 transition-transform duration-700 ${isRefreshing ? "animate-spin" : ""
+                      }`}
+                  />
+                  Yangilash
                 </Button>
 
               </div>
@@ -808,7 +830,7 @@ const ProductOutDetailPage: React.FC = () => {
                           </div>
                         </TableCell>
                         <TableCell className="text-slate-500 text-sm p-3">
-                          {documentData.date}
+                          {documentData.date?.split("T")[0]}
                         </TableCell>
                         <TableCell className="text-slate-700 text-sm p-3">
                           {item.size.name}

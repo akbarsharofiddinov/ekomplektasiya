@@ -455,15 +455,7 @@ const ProductInputDetailPage: React.FC = () => {
     setSaving(true);
     try {
       const response = await axiosAPI.post(
-        `/receipts/confirmation/${documentData.id}`,
-        {
-          ...documentData,
-          counterparty: documentData.counterparty.id,
-          warehouse: documentData.warehouse.id,
-          region: documentData.region.id,
-          responsible_person: documentData.responsible_person.id,
-          type_goods: documentData.type_goods.id,
-        }
+        `/receipts/confirmation/${documentData.id}`
       );
       if (response.status === 200) {
         toast("Kirim hujjati muvaffaqiyatli tasdiqlandi", { type: "success" });
@@ -1095,7 +1087,30 @@ const ProductInputDetailPage: React.FC = () => {
 
                         {/* Product type */}
                         <TableCell className="p-3 text-center">
-                          {/* Select item product_type */}
+                          <Select
+                            disabled={documentData?.is_approved}
+                            value={item.product_type?.name || ""}  // ✅ id ishlatamiz
+                            placeholder="Tovar turini tanlang"
+                            className="min-w-[150px]"
+                            onChange={(value: string) => {
+                              const selected = product_types.find((t) => t.id === value);
+                              updateProductField(index, (p) => {
+                                p.product_type = selected
+                                  ? { id: selected.id, name: selected.name }
+                                  : { id: value, name: "" };
+                                return p;
+                              });
+                            }}
+                          >
+                            {product_types.map((type) => (
+                              <Select.Option key={type.id} value={type.id}>
+                                {type.name}
+                              </Select.Option>
+                            ))}
+                          </Select>
+                        </TableCell>
+
+                        {/* <TableCell className="p-3 text-center">
                           <Select
                             disabled={documentData?.is_approved}
                             value={item.product_type?.name || ""}
@@ -1114,10 +1129,60 @@ const ProductInputDetailPage: React.FC = () => {
                               </Select.Option>
                             ))}
                           </Select>
-                        </TableCell>
+                        </TableCell> */}
 
                         {/* Model */}
                         <TableCell className="p-3 text-center">
+                          <Select
+                            disabled={documentData?.is_approved}
+                            value={item.model?.id || ""} // ✅ id ishlatyapmiz
+                            placeholder="Model tanlang"
+                            className="min-w-[150px]"
+                            onChange={(value: string) => {
+                              const selected = product_models.find((m) => m.id === value);
+                              updateProductField(index, (p) => {
+                                p.model = selected
+                                  ? { id: selected.id, name: selected.name }
+                                  : { id: value, name: "" };
+                                return p;
+                              });
+                            }}
+                          >
+                            {product_models.map((model) => (
+                              <Select.Option key={model.id} value={model.id}>
+                                {model.name}
+                              </Select.Option>
+                            ))}
+                          </Select>
+                        </TableCell>
+
+                        {/* O‘lcham */}
+                        <TableCell className="p-3 text-center">
+                          <Select
+                            disabled={documentData?.is_approved}
+                            value={item.size?.id || ""} // ✅ id ishlatyapmiz
+                            placeholder="O‘lcham"
+                            className="min-w-[120px]"
+                            onChange={(value: string) => {
+                              const selected = product_sizes.find((s) => s.id === value);
+                              updateProductField(index, (p) => {
+                                p.size = selected
+                                  ? { id: selected.id, name: selected.name }
+                                  : { id: value, name: "" };
+                                return p;
+                              });
+                            }}
+                          >
+                            {product_sizes.map((size) => (
+                              <Select.Option key={size.id} value={size.id}>
+                                {size.name}
+                              </Select.Option>
+                            ))}
+                          </Select>
+                        </TableCell>
+
+
+                        {/* <TableCell className="p-3 text-center">
                           <Select
                             disabled={documentData?.is_approved}
                             value={item.model?.name || ""}
@@ -1139,7 +1204,6 @@ const ProductInputDetailPage: React.FC = () => {
                         </TableCell>
 
 
-                        {/* O‘lcham */}
                         <TableCell className="p-3 text-center">
                           <Select
                             disabled={documentData?.is_approved}
@@ -1159,7 +1223,7 @@ const ProductInputDetailPage: React.FC = () => {
                               </Select.Option>
                             ))}
                           </Select>
-                        </TableCell>
+                        </TableCell> */}
 
                         {/* Date party */}
                         <TableCell className="p-3 text-center">

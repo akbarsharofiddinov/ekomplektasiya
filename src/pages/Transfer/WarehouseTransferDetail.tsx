@@ -1024,7 +1024,7 @@ const WarehouseTransferDetail: React.FC = () => {
             )}
 
             <div className="max-h-[500px] overflow-auto">
-              <Table>
+              {/* <Table>
                 <TableHeader>
                   <TableRow className="bg-gray-50">
                     <TableHead className="text-left font-semibold">№</TableHead>
@@ -1125,7 +1125,153 @@ const WarehouseTransferDetail: React.FC = () => {
                       </TableRow>
                     )}
                 </TableBody>
+              </Table> */}
+              <Table>
+                <TableHeader>
+                  <TableRow className="bg-gray-50">
+                    <TableHead className="text-left font-semibold">№</TableHead>
+                    <TableHead className="text-left font-semibold">Shtrix kod</TableHead>
+                    <TableHead className="text-left font-semibold">Tovar nomi</TableHead>
+                    <TableHead className="text-left font-semibold">Tovar turi</TableHead>
+                    <TableHead className="text-left font-semibold">O'lcham</TableHead>
+                    <TableHead className="text-left font-semibold">Miqdor</TableHead>
+                    <TableHead className="text-left font-semibold">O'lchov birligi</TableHead>
+                    <TableHead className="text-left font-semibold">Narx</TableHead>
+                    <TableHead className="text-left font-semibold">Summa</TableHead>
+                    <TableHead className="text-left font-semibold">Izoh</TableHead>
+                    {isEditing && <TableHead className="text-left font-semibold">Amallar</TableHead>}
+                  </TableRow>
+                </TableHeader>
+
+                <TableBody>
+                  {currentData?.[0]?.products?.length > 0 ? (
+                    currentData[0].products.map((product, index) => (
+                      <TableRow key={index} className="hover:bg-gray-50">
+                        <TableCell className="font-medium">{index + 1}</TableCell>
+
+                        {/* 🔹 Shtrix kod */}
+                        <TableCell>
+                          <div className="flex items-center justify-center gap-2">
+                            <div
+                              className="w-12 h-6 bg-slate-100 border border-slate-300 rounded flex items-center justify-center"
+                              onClick={() => setOpenBarCodeModal(product.bar_code || "")}
+                            >
+                              <div className="w-8 h-3 bg-slate-300 rounded-sm flex products-center justify-center cursor-pointer">
+                                {product.bar_code ? (
+                                  <Barcode value={product.bar_code} className="w-8 h-8" />
+                                ) : null}
+                              </div>
+                            </div>
+                          </div>
+                        </TableCell>
+
+                        {/* 🔹 Tovar nomi */}
+                        <TableCell>
+                          <div className="max-w-xs">
+                            <p
+                              className="font-medium text-gray-900 truncate"
+                              title={product.product?.name}
+                            >
+                              {product.product?.name
+                                ? product.product.name.slice(0, 25) + "..."
+                                : "Belgilanmagan"}
+                            </p>
+                          </div>
+                        </TableCell>
+
+                        {/* 🔹 Tovar turi */}
+                        <TableCell>{product.product_type?.name || "N/A"}</TableCell>
+
+                        {/* 🔹 O'lcham */}
+                        <TableCell>{product.size?.name || "N/A"}</TableCell>
+
+                        {/* 🔹 Miqdor */}
+                        <TableCell>
+                          {isEditing ? (
+                            <Input
+                              type="number"
+                              value={product.quantity || 0}
+                              onChange={(e) =>
+                                handleUpdateProduct(
+                                  product.bar_code,
+                                  "quantity",
+                                  parseInt(e.target.value) || 0
+                                )
+                              }
+                              className="w-20"
+                              min="1"
+                            />
+                          ) : (
+                            <span className="font-medium">{product.quantity || 0}</span>
+                          )}
+                        </TableCell>
+
+                        {/* 🔹 O'lchov birligi */}
+                        <TableCell>{product.unit?.name || "N/A"}</TableCell>
+
+                        {/* 🔹 Narx */}
+                        <TableCell>
+                          <span>{(product.price || 0).toLocaleString()} UZS</span>
+                        </TableCell>
+
+                        {/* 🔹 Summa */}
+                        <TableCell className="font-medium text-green-600">
+                          {(product.summa || 0).toLocaleString()} UZS
+                        </TableCell>
+
+                        {/* 🔹 Izoh */}
+                        <TableCell>
+                          {isEditing ? (
+                            <Input
+                              value={product.description || ""}
+                              onChange={(e) =>
+                                handleUpdateProduct(
+                                  product.bar_code,
+                                  "description",
+                                  e.target.value
+                                )
+                              }
+                              placeholder="Izoh kiriting"
+                              className="w-32"
+                            />
+                          ) : (
+                            <span
+                              className={`${product.description ? "text-gray-900" : "text-gray-400"
+                                }`}
+                            >
+                              {product.description || "—"}
+                            </span>
+                          )}
+                        </TableCell>
+
+                        {/* 🔹 Amallar */}
+                        {isEditing && (
+                          <TableCell>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleRemoveProduct(product.bar_code)}
+                              className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </TableCell>
+                        )}
+                      </TableRow>
+                    ))
+                  ) : (
+                    <TableRow>
+                      <TableCell
+                        colSpan={isEditing ? 11 : 10}
+                        className="text-center py-8 text-gray-500"
+                      >
+                        Hech qanday tovar topilmadi
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
               </Table>
+
             </div>
 
             {/* Total Footer */}

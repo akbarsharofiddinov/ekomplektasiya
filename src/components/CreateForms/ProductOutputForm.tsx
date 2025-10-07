@@ -75,21 +75,23 @@ const ProductOutputForm: React.FC<ProductOutputFormProps> = ({ setIsCreateFormMo
 
   // Handle create product output form submit
   const handleCreateProductOutput = async (data: WarehouseOutput) => {
+    console.log(data)
+    const filteredProducts = data.products.map(({ product_type, ...rest }) => rest)
     try {
-      const response = await axiosAPI.post("write-offs/create/", data);
+      const response = await axiosAPI.post("write-offs/create/", {...data, products: filteredProducts});
       if (response.status === 200) {
         toast("Yangi tovar chiqimi yaratildi!", { type: "success" });
         setIsCreateFormModalOpen(false)
       }
-    } catch (error) {
+    } catch (error: any) {
       console.log(error);
+      toast(error.response.data.error, { type: "error" });
     }
   };
 
   const handleSubmit = (dataToSubmit?: WarehouseOutput) => {
     // Use the passed data or current formData
     const submitData = dataToSubmit || formData;
-
     handleCreateProductOutput(submitData);
   };
 
@@ -409,7 +411,7 @@ const ProductOutputForm: React.FC<ProductOutputFormProps> = ({ setIsCreateFormMo
           </div>
 
           {/* Product types */}
-          <div className="flex flex-col">
+          {/* <div className="flex flex-col">
             <label className="mb-1">Tovar turi</label>
             <Select
               placeholder="Tovar turini tanlang"
@@ -426,7 +428,7 @@ const ProductOutputForm: React.FC<ProductOutputFormProps> = ({ setIsCreateFormMo
                 </Select.Option>
               ))}
             </Select>
-          </div>
+          </div> */}
 
           {/* Type output */}
           <div className="flex flex-col">
@@ -500,9 +502,9 @@ const ProductOutputForm: React.FC<ProductOutputFormProps> = ({ setIsCreateFormMo
                       <TableHead className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tovar nomi</TableHead>
                       <TableHead className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Shtrix kod</TableHead>
                       <TableHead className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">O'lcham</TableHead>
+                      <TableHead className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Qoldiq soni</TableHead>
                       <TableHead className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Miqdori</TableHead>
                       <TableHead className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Narxi</TableHead>
-                      <TableHead className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"></TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody className="bg-white divide-y divide-gray-200">
@@ -513,6 +515,9 @@ const ProductOutputForm: React.FC<ProductOutputFormProps> = ({ setIsCreateFormMo
                           <Barcode value={remainder.bar_code} width={1} height={30} fontSize={12} />
                         </TableCell>
                         <TableCell className="px-4 py-2 whitespace-nowrap">{remainder.size?.name || '-'}</TableCell>
+                        <TableCell className="px-4 py-2 whitespace-nowrap text-center">
+                          {remainder.remaining_quantity}
+                        </TableCell>
                         <TableCell className="px-4 py-2 max-w-[60px] whitespace-nowrap">
                           <div className="relative">
                             <Input

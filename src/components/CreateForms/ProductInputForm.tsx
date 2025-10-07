@@ -34,18 +34,16 @@ import { toast } from "react-toastify";
 
 const DATE_FORMAT = "YYYY-MM-DD HH:mm:ss";
 
-const defaultProduct: Product = {
+const defaultProduct: any = {
   row_number: 0,
-  bar_code: "",
-  product_code: "",
   product: "",
   model: "",
   product_type: "",
   size: "",
-  date_party: "",
+  date_party: dayjs().format("YYYY-MM-DDTHH:mm:ss"),
   price: 0,
   quantity: 0,
-  unit: "",
+  unit: "3e3a4111-8e21-4154-80cd-9c835c271a57",
   summa: 0,
 };
 
@@ -70,14 +68,13 @@ const ProductInputForm: React.FC<IProductInputFormProps> = ({
   >([]);
   const [selectedResponsiblePerson, setSelectedResponsiblePerson] =
     useState<string>("");
-  const [formData, setFormData] = useState<OrderPayload>({
-    date: dateValue?.format(DATE_FORMAT) + "",
+  const [formData, setFormData] = useState<any>({
+    date: dateValue?.format("YYYY-MM-DDTHH:mm:ss") || "",
     region,
     warehouse,
     counterparty: "",
     type_goods: "",
     responsible_person: "",
-    is_approved: false,
     products: [],
   });
   // const [selectedProducts, setSelectedProducts] = React.useState<Product[]>([]);
@@ -85,7 +82,6 @@ const ProductInputForm: React.FC<IProductInputFormProps> = ({
   // Redux
   const {
     regions,
-    districts,
     warehouses,
     counterparties,
     typesOfGoods,
@@ -96,32 +92,47 @@ const ProductInputForm: React.FC<IProductInputFormProps> = ({
   const dispatch = useAppDispatch();
 
   // Datepicker onChange
-  const onChange: DatePickerProps["onChange"] = (value, dateString) => {
-    setDateValue(value);
-    setFormData((prev) => ({
-      ...prev,
-      date_party: value ? value.format(DATE_FORMAT) : "",
-    }));
-    console.log(dateString);
-  };
-
-  // Handle create product input form submit
-  const handleCreateProductInput = async (data: OrderPayload) => {
-    try {
-      const response = await axiosAPI.post("receipts/create/", data);
-      if (response.status === 200) {
-        toast("Yangi tovar kirim yaratildi!", { type: "success" });
-        setIsCreateFormModalOpen(false);
-      }
-    } catch (error) {
-      console.log(error);
+  const datePickerOnChange: DatePickerProps["onChange"] = (value, dateString) => {
+    if (typeof dateString === "string") {
+      setDateValue(value);
+      console.log(dateString.split(" ").join("T"))
+      setFormData((prev) => ({
+        ...prev,
+        // date: dateString.split(" ").join("T"),
+        date_party: dateString.split(" ").join("T"),
+      }));
     }
   };
 
-  const handleSubmit = (dataToSubmit?: OrderPayload) => {
-    const submitData = dataToSubmit || formData;
-    handleCreateProductInput(submitData);
+  // Handle create product input form submit
+  const handleCreateProductInput = async (data: any) => {
+    console.log(data)
+    if (data.region && data.warehouse && data.counterparty && data.type_goods && data.responsible_person) {
+      if (data.products.length === 0) {
+        toast.error("Iltimos kamida bitta tovar qo'shing");
+        return;
+      } else {
+        try {
+          const response = await axiosAPI.post("receipts/create", data);
+          if (response.status === 200) {
+            toast.success("Tovar kirim qilindi");
+            setIsCreateFormModalOpen(false);
+          }
+        } catch (error: any) {
+          console.log(error);
+          toast.error(error.response.data.error || "");
+        }
+      }
+    } else {
+      toast.error("Iltimos barcha maydonlarni to'ldiring");
+    }
   };
+
+  const handleSubmit = () => {
+    handleCreateProductInput(formData);
+  };
+
+  console.log(formData)
 
   // API Requests
   // Get regions
@@ -137,20 +148,10 @@ const ProductInputForm: React.FC<IProductInputFormProps> = ({
     }
   }, [dispatch]);
 
-  // get districts
-  const getDistrictsList = React.useCallback(async () => {
-    try {
-      const response = await axiosAPI.get(`districts/list/?region=${region}&order_by=2`);
-      if (response.status === 200) dispatch(setDistricts(response.data));
-    } catch (error) {
-      console.log(error);
-    }
-  }, [dispatch, region]);
-
   // get warehouses list with region and district name
   const getWarehousesList = React.useCallback(async () => {
-    if ((region && district) || (region === "Худудгаз Комплектатция" || region === "Худудгазтаъминот")) {
-      const url = `warehouses/list/?region=${region}&district=${district}&order_by=2`;
+    if ((region) || (region === "Худудгаз Комплектатция" || region === "Худудгазтаъминот")) {
+      const url = `warehouses/list/?region=${region}&&order_by=2`;
       try {
         const response = await axiosAPI.get(url);
         if (response.status === 200) {
@@ -211,9 +212,11 @@ const ProductInputForm: React.FC<IProductInputFormProps> = ({
               ...prev,
               responsible_person: list[0].id,
             }));
-          } else {
+          } else if(list.length > 1) {
             setSelectedResponsiblePerson("");
             setFormData((prev) => ({ ...prev, responsible_person: "" }));
+          } else {
+            toast("Ushbu ombor uchun moddiy javobgar shaxs topilmadi  . Iltimos, Administratorga murojat qiling!", { type: "error" });
           }
         }
       } catch (error) {
@@ -277,15 +280,11 @@ const ProductInputForm: React.FC<IProductInputFormProps> = ({
   // Effects
   useEffect(() => {
     if (regions.length === 0) getRegionsList();
-  }, [regions, getRegionsList, districts, getDistrictsList]);
+  }, [regions, getRegionsList]);
 
   useEffect(() => {
-    if (region) getDistrictsList();
-  }, [region, getDistrictsList]);
-
-  useEffect(() => {
-    if ((region && district) || region === "Худудгазтаъминот" || region === "Худудгаз Комплектатция") getWarehousesList();
-  }, [district, getWarehousesList, region]);
+    if ((region) || region === "Худудгазтаъминот" || region === "Худудгаз Комплектатция") getWarehousesList();
+  }, [region]);
 
   useEffect(() => {
     getCounterPartiesList();
@@ -338,7 +337,7 @@ const ProductInputForm: React.FC<IProductInputFormProps> = ({
             <DatePicker
               showTime={{ format: "HH:mm:ss" }}
               value={dateValue}
-              onChange={onChange}
+              onChange={datePickerOnChange}
               format={DATE_FORMAT}
               className="z-10"
             />
@@ -353,14 +352,12 @@ const ProductInputForm: React.FC<IProductInputFormProps> = ({
               value={region || undefined}
               onChange={(value) => {
                 setRegion(value);
-                setDistrict("");
                 setWarehouse("");
                 setResponsiblePerson([]);
                 setSelectedResponsiblePerson("");
                 setFormData((prev) => ({
                   ...prev,
                   region: regions.find((r) => r.name === value)?.id || "",
-                  district: "",
                   warehouse: "",
                   responsible_person: "",
                 }));
@@ -369,35 +366,6 @@ const ProductInputForm: React.FC<IProductInputFormProps> = ({
               {regions.map((region) => (
                 <Select.Option key={region.id} value={region.name}>
                   {region.name}
-                </Select.Option>
-              ))}
-            </Select>
-          </div>
-
-          {/* District */}
-          <div className="flex flex-col">
-            <label className="mb-1">Tuman</label>
-            <Select
-              placeholder="Tumanni tanlang"
-              showSearch
-              disabled={!region || region === "Худудгаз Комплектатция" || region === "Худудгазтаъминот"}
-              value={district || undefined}
-              onChange={(value) => {
-                setDistrict(value);
-                setWarehouse("");
-                setResponsiblePerson([]);
-                setSelectedResponsiblePerson("");
-                setFormData((prev) => ({
-                  ...prev,
-                  district: districts.find((d) => d.name === value)?.id || "",
-                  warehouse: "",
-                  responsible_person: "",
-                }));
-              }}
-            >
-              {districts.map((district) => (
-                <Select.Option key={district.id} value={district.name}>
-                  {district.name}
                 </Select.Option>
               ))}
             </Select>
@@ -435,6 +403,7 @@ const ProductInputForm: React.FC<IProductInputFormProps> = ({
             <Select
               placeholder="Kontragent tanlang"
               showSearch
+              allowClear
               value={
                 selectedCounterParty
                   ? selectedCounterParty
@@ -446,6 +415,62 @@ const ProductInputForm: React.FC<IProductInputFormProps> = ({
                 const findCounterParty = counterparties.find(
                   (c) => c.name === value
                 );
+                if (findCounterParty) {
+                  setSelectedCounterParty(value);
+                  setFormData((prev) => ({
+                    ...prev,
+                    counterparty: findCounterParty.id,
+                  }));
+                }
+              }}
+            >
+              <Select.Option
+                className="bg-gray-200"
+                value="create_new_counterparty"
+              >
+                <div className="flex items-center justify-center gap-2">
+                  <span>
+                    <Plus size={17} />
+                  </span>
+                  <span>Kontragent yaratish</span>
+                </div>
+              </Select.Option>
+              {counterparties.map((counterparty, index) => (
+                <Select.Option key={index} value={counterparty.name}>
+                  {counterparty.name}
+                </Select.Option>
+              ))}
+            </Select>
+          </div>
+
+          {/* <div className="flex flex-col relative">
+            <label className="mb-1">Kontragent</label>
+            <Select
+              placeholder="Kontragent tanlang"
+              showSearch
+              allowClear // 🔹 Shu joy — 'x' ni chiqaradi
+              value={
+                selectedCounterParty
+                  ? selectedCounterParty
+                  : currentCreatedCounterParty
+                    ? currentCreatedCounterParty.name
+                    : undefined
+              }
+              onChange={(value) => {
+                if (!value) {
+                  // 🔹 'x' bosilganda qiymatni tozalash
+                  setSelectedCounterParty(null);
+                  setFormData((prev) => ({
+                    ...prev,
+                    counterparty: null,
+                  }));
+                  return;
+                }
+
+                const findCounterParty = counterparties.find(
+                  (c) => c.name === value
+                );
+
                 if (findCounterParty) {
                   setSelectedCounterParty(value);
                   setFormData((prev) => ({
@@ -468,13 +493,16 @@ const ProductInputForm: React.FC<IProductInputFormProps> = ({
                   <span>Kontragent yaratish</span>
                 </div>
               </Button>
+
               {counterparties.map((counterparty, index) => (
                 <Select.Option key={index} value={counterparty.name}>
                   {counterparty.name}
                 </Select.Option>
               ))}
             </Select>
-          </div>
+          </div> */}
+
+
 
           {/* Type of Goods */}
           <div className="flex flex-col">
@@ -532,10 +560,13 @@ const ProductInputForm: React.FC<IProductInputFormProps> = ({
                       №
                     </TableHead>
                     <TableHead className="text-slate-700 font-semibold p-3 text-center">
-                      Modeli
+                      Sana
                     </TableHead>
                     <TableHead className="text-slate-700 font-semibold p-3 text-center">
-                      Turi
+                      Tovar turi
+                    </TableHead>
+                    <TableHead className="text-slate-700 font-semibold p-3 text-center">
+                      Modeli
                     </TableHead>
                     <TableHead className="text-slate-700 font-semibold p-3 text-center">
                       O'lchami
@@ -557,36 +588,39 @@ const ProductInputForm: React.FC<IProductInputFormProps> = ({
                 <TableBody>
                   {formData.products.map((product, index) => (
                     <TableRow key={index} className="even:bg-slate-50">
-                      <TableCell className="text-slate-700 font-medium p-3 text-center">
+                      <TableCell className="text-slate-700 font-medium text-center p-3">
                         {index + 1}
                       </TableCell>
+
+                      {/* Date party */}
                       <TableCell className="text-slate-700 font-medium p-3">
-                        {/* Product models */}
-                        <Select
-                          showSearch
-                          className="w-full"
-                          placeholder="Modelni tanlang"
-                          onChange={(value) => {
-                            const selectedModel = product_models.find(
-                              (m) => m.name === value
-                            );
-                            setFormData((prev) => ({
-                              ...prev,
-                              products: prev.products.map((p, i) =>
-                                i === index
-                                  ? { ...p, model: selectedModel?.id! }
-                                  : p
-                              ),
-                            }));
+                        <DatePicker
+                          showTime={{ format: "HH:mm:ss" }}
+                          value={
+                            product.date_party
+                              ? dayjs(product.date_party, DATE_FORMAT)
+                              : null
+                          }
+                          onChange={(_, dateString) => {
+                            if (typeof dateString === "string") {
+                              setFormData((prev) => ({
+                                ...prev,
+                                products: prev.products.map((p, i) =>
+                                  i === index
+                                    ? {
+                                      ...p,
+                                      date_party: dateString.split(" ").join("T"),
+                                    }
+                                    : p
+                                ),
+                              }));
+                            }
                           }}
-                        >
-                          {product_models.map((model) => (
-                            <Select.Option key={model.id} value={model.name}>
-                              {model.name}
-                            </Select.Option>
-                          ))}
-                        </Select>
+                          format={DATE_FORMAT}
+                          className="w-full"
+                        />
                       </TableCell>
+
                       {/* Product Type */}
                       <TableCell className="text-slate-700 font-medium p-3">
                         <Select
@@ -610,6 +644,34 @@ const ProductInputForm: React.FC<IProductInputFormProps> = ({
                           {product_types.map((type) => (
                             <Select.Option key={type.id} value={type.name}>
                               {type.name}
+                            </Select.Option>
+                          ))}
+                        </Select>
+                      </TableCell>
+
+                      <TableCell className="text-slate-700 font-medium p-3">
+                        {/* Product models */}
+                        <Select
+                          showSearch
+                          className="w-full"
+                          placeholder="Modelni tanlang"
+                          onChange={(value) => {
+                            const selectedModel = product_models.find(
+                              (m) => m.name === value
+                            );
+                            setFormData((prev) => ({
+                              ...prev,
+                              products: prev.products.map((p, i) =>
+                                i === index
+                                  ? { ...p, model: selectedModel?.id! }
+                                  : p
+                              ),
+                            }));
+                          }}
+                        >
+                          {product_models.map((model) => (
+                            <Select.Option key={model.id} value={model.name}>
+                              {model.name}
                             </Select.Option>
                           ))}
                         </Select>
@@ -644,7 +706,7 @@ const ProductInputForm: React.FC<IProductInputFormProps> = ({
                       </TableCell>
 
                       {/* Product */}
-                      <TableCell className="text-slate-700 font-medium p-3 w-[30%] max-w-[30%]">
+                      <TableCell className="text-slate-700 font-medium p-3 max-w-[120px]">
                         <Select
                           showSearch
                           className="w-full"
@@ -657,7 +719,7 @@ const ProductInputForm: React.FC<IProductInputFormProps> = ({
                               ...prev,
                               products: prev.products.map((p, i) =>
                                 i === index
-                                  ? { ...p, product: selectedProduct?.id! }
+                                  ? { ...p, product: selectedProduct?.id!, product_code: selectedProduct?.product_code! }
                                   : p
                               ),
                             }));
@@ -672,7 +734,7 @@ const ProductInputForm: React.FC<IProductInputFormProps> = ({
                       </TableCell>
 
                       {/* Quantity */}
-                      <TableCell className="text-slate-700 font-medium p-3 max-w-[10%] w-[10%]">
+                      <TableCell className="text-slate-700 font-medium p-3">
                         <Input
                           type="number"
                           placeholder="Soni"
@@ -690,7 +752,7 @@ const ProductInputForm: React.FC<IProductInputFormProps> = ({
                       </TableCell>
 
                       {/* Price */}
-                      <TableCell className="text-slate-700 font-medium p-3 w-[10%] max-w-[18%]">
+                      <TableCell className="text-slate-700 font-medium p-3 w-[10%] max-w-[18-3">
                         <Input
                           type="number"
                           placeholder="Narxi"
@@ -711,7 +773,7 @@ const ProductInputForm: React.FC<IProductInputFormProps> = ({
                       <TableCell className="text-slate-700 font-medium p-3">
                         {product.price * product.quantity + " UZS"}
                       </TableCell>
-                      <TableCell className="text-slate-700 font-medium p-3 w-[5%]">
+                      <TableCell className="text-slate-700 font-medium p-3 w-[5-3">
                         <button
                           className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded"
                           onClick={() => {
@@ -742,7 +804,7 @@ const ProductInputForm: React.FC<IProductInputFormProps> = ({
           <button
             className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
             onClick={() => {
-              setFormData((prev) => ({
+              setFormData((prev: any) => ({
                 ...prev,
                 products: [
                   ...prev.products,
@@ -758,7 +820,7 @@ const ProductInputForm: React.FC<IProductInputFormProps> = ({
             type="submit"
             className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded self-end"
             onClick={() => {
-              const updatedProducts = formData.products.map((product) => ({
+              const updatedProducts = formData.products.map((product: any) => ({
                 ...product,
                 summa: product.price * product.quantity,
               }));
@@ -766,12 +828,10 @@ const ProductInputForm: React.FC<IProductInputFormProps> = ({
               const updatedFormData = {
                 ...formData,
                 products: updatedProducts,
-                is_approved:
-                  formData.type_goods === "НаОсновнойСклад" ? true : false,
               };
 
               setFormData(updatedFormData);
-              handleSubmit(updatedFormData);
+              handleSubmit();
             }}
           >
             Saqlash
@@ -787,11 +847,11 @@ const ProductInputForm: React.FC<IProductInputFormProps> = ({
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
           {/* Inner */}
           <div
-            className="bg-white rounded-lg min-w=[600px] p-6 overflow-auto"
+            className="bg-white rounded-lg min-w-[600px] p-6 overflow-auto"
             onClick={(e) => e.stopPropagation()}
           >
             <Typography id="modal-modal-title" variant="h6" component="h2">
-              Tovar kirim yaratish
+              Kontragent yaratish
             </Typography>
 
             <CounterPartyForm

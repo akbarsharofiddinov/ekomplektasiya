@@ -587,7 +587,7 @@ const ProductMaterialsBalance: React.FC = () => {
                     <div className="p-4">
                         <div className='flex items-center gap-4 mb-4'>
                             <Button type="primary" onClick={getRemaindersReport}>
-                                Shakillantirish
+                                Shakllantirish
                             </Button>
                             <Button type='default' onClick={handlePrint}>
                                 <Printer size={16} />
@@ -679,11 +679,11 @@ const ProductMaterialsBalance: React.FC = () => {
                                 <Label>Fayl turi</Label>
                                 <select
                                     id="download-extension"
-                                    defaultValue="pdf"
+                                    defaultValue="excel"
                                     className="w-full border border-slate-300 rounded-md px-3 py-2 outline-none focus:ring-2 focus:ring-blue-500"
                                 >
-                                    <option value="pdf">PDF</option>
                                     <option value="xlsx">Excel (.xlsx)</option>
+                                    <option value="pdf">PDF</option>
                                 </select>
                             </div>
                         </div>
@@ -950,39 +950,78 @@ const ProductMaterialsBalance: React.FC = () => {
                 </div>
             )}
 
-
-            {/* <Modal
+            <Modal
                 open={open}
                 onOk={() => setOpen(false)}
                 cancelButtonProps={{ style: { display: "none" } }}
-                closable={false} // ❌ X tugmasini olib tashlaymiz
+                closable={false}
                 centered
                 width={450}
                 footer={[
                     <Button
                         key="ok"
                         type="primary"
-                        style={{ borderRadius: "8px", padding: "6px 25px" }}
+                        style={{
+                            borderRadius: "8px",
+                            padding: "6px 25px",
+                            backgroundColor: "blue",
+                            color: "#fff",
+                            border: "none",
+                        }}
                         onClick={() => setOpen(false)}
                     >
                         OK
                     </Button>,
                 ]}
+                maskStyle={{
+                    backgroundColor: "rgba(0, 0, 0, 0.45)", // 🔹 yarim shaffof qora fon
+                }}
                 bodyStyle={{
                     display: "flex",
                     flexDirection: "column",
                     justifyContent: "center",
                     alignItems: "center",
-                    minHeight: "180px",
+                    minHeight: "220px",
+                    backgroundColor: "#52c41a", // 💚 butun modal yashil
+                    borderRadius: "12px",
+                    color: "white", // matn va ikon oq
                 }}
             >
-                <CheckCircleOutlined style={{ fontSize: "60px", color: "#52c41a" }} />
-                <div style={{ marginTop: "20px", fontSize: "20px", fontWeight: "600", textAlign: "center" }}>
-                    Hisobot muvaffaqiyatli shakillantirildi
-                </div>
-            </Modal> */}
+                {/* 🔹 Icon animatsiya bilan */}
+                <motion.div
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1.1 }}
+                    transition={{
+                        type: "spring",
+                        stiffness: 200,
+                        damping: 15,
+                    }}
+                    style={{
+                        display: "flex",
+                        justifyContent: "center",
+                        alignItems: "center",
+                    }}
+                >
+                    <CheckCircleOutlined style={{ fontSize: "70px", color: "white" }} />
+                </motion.div>
 
-            <Modal
+                {/* 🔹 Matn animatsiya bilan */}
+                <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.3, duration: 0.5 }}
+                    style={{
+                        marginTop: "20px",
+                        fontSize: "20px",
+                        fontWeight: "600",
+                        textAlign: "center",
+                    }}
+                >
+                    Hisobot muvaffaqiyatli shakillantirildi
+                </motion.div>
+            </Modal>
+
+            {/* <Modal
                 open={open}
                 onOk={() => setOpen(false)}
                 cancelButtonProps={{ style: { display: "none" } }}
@@ -1009,7 +1048,6 @@ const ProductMaterialsBalance: React.FC = () => {
                     borderRadius: "12px",
                 }}
             >
-                {/* 🔹 Icon animatsiya bilan */}
                 <motion.div
                     initial={{ scale: 0 }}
                     animate={{ scale: 1.1 }}
@@ -1023,7 +1061,6 @@ const ProductMaterialsBalance: React.FC = () => {
                     <CheckCircleOutlined style={{ fontSize: "70px", color: "#52c41a" }} />
                 </motion.div>
 
-                {/* 🔹 Matn animatsiya bilan */}
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -1032,7 +1069,7 @@ const ProductMaterialsBalance: React.FC = () => {
                 >
                     Hisobot muvaffaqiyatli shakillantirildi
                 </motion.div>
-            </Modal>
+            </Modal> */}
 
         </>
     )

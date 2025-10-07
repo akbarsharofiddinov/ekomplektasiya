@@ -4,7 +4,7 @@ import AccordionDetails from '@mui/material/AccordionDetails';
 import AccordionSummary from '@mui/material/AccordionSummary';
 import Typography from '@mui/material/Typography';
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
-import React, { useEffect } from 'react'
+import React, { useEffect, useState } from 'react'
 import { Label } from '@/components/UI/label';
 import { Button, DatePicker, Input, Select } from 'antd';
 import { useAppDispatch, useAppSelector } from '@/store/hooks/hooks';
@@ -13,10 +13,14 @@ import { setRegions } from '@/store/infoSlice/infoSlice';
 import dayjs from 'dayjs';
 import { setProducts } from '@/store/productSlice/productSlice';
 import { Table, TableBody, TableCell, TableHeader, TableRow } from '@/components/UI/table';
+import { CheckCircleOutlined } from "@ant-design/icons";
 import { Download, Printer } from 'lucide-react';
 import ExcelJS from "exceljs";
 import { saveAs } from "file-saver";
 import toast from 'react-hot-toast';
+import { motion } from "framer-motion";
+import { Modal } from "antd";
+
 
 interface FilterData {
   start_date: string;
@@ -72,6 +76,7 @@ const ProductTurnOverReport: React.FC = () => {
   const [productTypes, setProductTypes] = React.useState<Array<{ id: string, name: string, number: number }>>([]);
   const [productsReport, setProductsReport] = React.useState<WarehouseItem[]>([]);
   const [handleDownloadModal, setHandleDownloadModal] = React.useState<boolean>(false);
+  const [open, setOpen] = useState(false);
 
   const { regions } = useAppSelector(state => state.info);
   const { products } = useAppSelector(state => state.product)
@@ -289,6 +294,7 @@ const ProductTurnOverReport: React.FC = () => {
       });
       if (response.status === 200) {
         setProductsReport(response.data);
+        setOpen(true); // ✅ modalni ochamiz
       }
     } catch (error) {
       console.log(error)
@@ -363,7 +369,7 @@ const ProductTurnOverReport: React.FC = () => {
                   </div>
                   {/* Product */}
                   <div className="flex flex-col gap-2">
-                    <Label htmlFor="product">Mahsulot</Label>
+                    <Label htmlFor="product">Tovar</Label>
                     <Select
                       placeholder="Mahsulotni tanglang"
                       showSearch
@@ -374,18 +380,9 @@ const ProductTurnOverReport: React.FC = () => {
                       ))}
                     </Select>
                   </div>
-                  {/* Bar code */}
-                  <div className="flex flex-col gap-2">
-                    <Label htmlFor="bar_code">Shtrix kod</Label>
-                    <Input
-                      placeholder="Shtrix kodni kiriting"
-                      value={filterData.bar_code || ''}
-                      onChange={(e) => setFilterData({ ...filterData, bar_code: e.target.value })}
-                    />
-                  </div>
                   {/* Product type */}
                   <div className="flex flex-col gap-2">
-                    <Label htmlFor="product_type">Mahsulot turi</Label>
+                    <Label htmlFor="product_type">Tovar turi</Label>
                     <Select
                       placeholder="Mahsulot turini tanglang"
                       showSearch
@@ -409,6 +406,15 @@ const ProductTurnOverReport: React.FC = () => {
                       ))}
                     </Select>
                   </div>
+                  {/* Bar code */}
+                  <div className="flex flex-col gap-2">
+                    <Label htmlFor="bar_code">Shtrix kod</Label>
+                    <Input
+                      placeholder="Shtrix kodni kiriting"
+                      value={filterData.bar_code || ''}
+                      onChange={(e) => setFilterData({ ...filterData, bar_code: e.target.value })}
+                    />
+                  </div>
                 </div>
               </AccordionDetails>
             </Accordion>
@@ -418,7 +424,7 @@ const ProductTurnOverReport: React.FC = () => {
           <div className="p-4">
             <div className='flex items-center gap-4 mb-4'>
               <Button type="primary" onClick={() => { getProductTurnoverReport() }}>
-                Shakillantirish
+                Shakllantirish
               </Button>
               <Button type='default' onClick={handlePrintPDF}>
                 <Printer size={16} />
@@ -549,11 +555,11 @@ const ProductTurnOverReport: React.FC = () => {
                   <Label>Fayl turi</Label>
                   <select
                     id="download-extension"
-                    defaultValue="pdf"
+                    defaultValue="excel"
                     className="w-full border border-slate-300 rounded-md px-3 py-2 outline-none focus:ring-2 focus:ring-blue-500"
                   >
-                    <option value="pdf">PDF</option>
                     <option value="xlsx">Excel (.xlsx)</option>
+                    <option value="pdf">PDF</option>
                   </select>
                 </div>
               </div>
@@ -584,16 +590,31 @@ const ProductTurnOverReport: React.FC = () => {
                       // 🔹 Title 1-qator
                       worksheet.mergeCells(1, 1, 1, 15);
                       const titleCell = worksheet.getCell("A1");
-                      titleCell.value = "Товар ва материаллар қолдиғи хисоботи";
+                      titleCell.value = "Товар айланма хисоботи";
                       titleCell.font = { name: "Arial", size: 16, bold: true };
                       titleCell.alignment = { horizontal: "center", vertical: "middle" };
 
                       // 🔹 Title 2-qator (sana alohida qator)
+                      // 🔹 Title 2-qator (sana alohida qator)
                       worksheet.mergeCells(2, 1, 2, 15);
                       const dateCell = worksheet.getCell("A2");
-                      dateCell.value = `Сана: ${dayjs().format("YYYY-MM-DD HH:mm")}`;
-                      dateCell.font = { name: "Arial", size: 16, bold: true };
+
+                      // Ikkala sanani formatlab chiqarish
+                      const start = filterData.start_date
+                        ? dayjs(filterData.start_date).format("YYYY-MM-DD HH:mm")
+                        : "-";
+                      const end = filterData.end_date
+                        ? dayjs(filterData.end_date).format("YYYY-MM-DD HH:mm")
+                        : "-";
+
+                      dateCell.value = `Сана оралиғи: ${start} — ${end}`;
+                      dateCell.font = { name: "Arial", size: 14, bold: true };
                       dateCell.alignment = { horizontal: "center", vertical: "middle" };
+                      // worksheet.mergeCells(2, 1, 2, 15);
+                      // const dateCell = worksheet.getCell("A2");
+                      // dateCell.value = `Сана: ${dayjs().format("YYYY-MM-DD HH:mm")}`;
+                      // dateCell.font = { name: "Arial", size: 16, bold: true };
+                      // dateCell.alignment = { horizontal: "center", vertical: "middle" };
 
                       // 🔹 Header row (3-qator)
                       const headers = [
@@ -821,6 +842,78 @@ const ProductTurnOverReport: React.FC = () => {
           </div>
         )
       }
+
+      <Modal
+        open={open}
+        onOk={() => setOpen(false)}
+        cancelButtonProps={{ style: { display: "none" } }}
+        closable={false}
+        centered
+        width={450}
+        footer={[
+          <Button
+            key="ok"
+            type="primary"
+            style={{
+              borderRadius: "8px",
+              padding: "6px 25px",
+              backgroundColor: "blue",
+              color: "#fff",
+              border: "none",
+            }}
+            onClick={() => setOpen(false)}
+          >
+            OK
+          </Button>,
+        ]}
+        maskStyle={{
+          backgroundColor: "rgba(0, 0, 0, 0.45)", // 🔹 yarim shaffof qora fon
+        }}
+        bodyStyle={{
+          display: "flex",
+          flexDirection: "column",
+          justifyContent: "center",
+          alignItems: "center",
+          minHeight: "220px",
+          backgroundColor: "#52c41a", // 💚 butun modal yashil
+          borderRadius: "12px",
+          color: "white", // matn va ikon oq
+        }}
+      >
+        {/* 🔹 Icon animatsiya bilan */}
+        <motion.div
+          initial={{ scale: 0 }}
+          animate={{ scale: 1.1 }}
+          transition={{
+            type: "spring",
+            stiffness: 200,
+            damping: 15,
+          }}
+          style={{
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+          }}
+        >
+          <CheckCircleOutlined style={{ fontSize: "70px", color: "white" }} />
+        </motion.div>
+
+        {/* 🔹 Matn animatsiya bilan */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3, duration: 0.5 }}
+          style={{
+            marginTop: "20px",
+            fontSize: "20px",
+            fontWeight: "600",
+            textAlign: "center",
+          }}
+        >
+          Hisobot muvaffaqiyatli shakillantirildi
+        </motion.div>
+      </Modal>
+
     </>
   )
 }

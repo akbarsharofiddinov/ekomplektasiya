@@ -141,123 +141,118 @@ const WarehouseTransfer: React.FC = () => {
     if (!printWindow) return;
 
     const htmlContent = `
-      <!DOCTYPE html>
-      <html>
-        <head>
-          <title>Ombordan Omborga Transfer Hisoboti</title>
-          <meta charset="utf-8">
-          <style>
-            body { 
-              font-family: Arial, sans-serif; 
-              margin: 20px; 
-              color: #333;
-            }
-            .header {
-              text-align: center;
-              margin-bottom: 30px;
-              border-bottom: 2px solid #1E56A0;
-              padding-bottom: 15px;
-            }
-            .header h1 {
-              color: #1E56A0;
-              margin: 0;
-              font-size: 24px;
-            }
-            .date-range {
-              margin: 15px 0;
-              padding: 10px;
-              background-color: #f8f9fa;
-              border-radius: 5px;
-            }
-            table { 
-              width: 100%; 
-              border-collapse: collapse; 
-              margin-top: 20px;
-              font-size: 11px;
-            }
-            th, td { 
-              border: 1px solid #ddd; 
-              padding: 6px; 
-              text-align: left;
-            }
-            th { 
-              background-color: #1E56A0; 
-              color: white;
-              font-weight: bold;
-            }
-            tr:nth-child(even) { 
-              background-color: #f9f9f9; 
-            }
-            .footer {
-              margin-top: 30px;
-              text-align: center;
-              font-size: 10px;
-              color: #666;
-            }
-            .status-approved-accepted { color: #10b981; font-weight: bold; }
-            .status-approved-not-accepted { color: #f59e0b; font-weight: bold; }
-            .status-not-approved { color: #ef4444; font-weight: bold; }
-          </style>
-        </head>
-        <body>
-          <div class="header">
-            <h1>E-KOMPLEKTATSIYA</h1>
-            <h2>Ombordan Omborga Transfer Hisoboti</h2>
-          </div>
-          
-          <table>
-            <thead>
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <title>Ombordan Omborga Transfer Hisoboti</title>
+        <meta charset="utf-8">
+        <style>
+          body { 
+            font-family: Arial, sans-serif; 
+            margin: 20px; 
+            color: #333;
+          }
+          .header {
+            text-align: center;
+            margin-bottom: 30px;
+            border-bottom: 2px solid #1E56A0;
+            padding-bottom: 15px;
+          }
+          .header h1 {
+            color: #1E56A0;
+            margin: 0;
+            font-size: 24px;
+          }
+          .date-range {
+            margin: 15px 0;
+            padding: 10px;
+            background-color: #f8f9fa;
+            border-radius: 5px;
+          }
+          table { 
+            width: 100%; 
+            border-collapse: collapse; 
+            margin-top: 20px;
+            font-size: 11px;
+          }
+          th, td { 
+            border: 1px solid #ddd; 
+            padding: 6px; 
+            text-align: left;
+          }
+          th { 
+            background-color: #1E56A0; 
+            color: white;
+            font-weight: bold;
+          }
+          tr:nth-child(even) { 
+            background-color: #f9f9f9; 
+          }
+          .footer {
+            margin-top: 30px;
+            text-align: center;
+            font-size: 10px;
+            color: #666;
+          }
+          .status-approved-accepted { color: #10b981; font-weight: bold; }
+          .status-approved-not-accepted { color: #f59e0b; font-weight: bold; }
+          .status-not-approved { color: #ef4444; font-weight: bold; }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <h1>E-KOMPLEKTATSIYA</h1>
+          <h2>Ombordan Omborga Transfer Hisoboti</h2>
+        </div>
+        
+        <table>
+          <thead>
+            <tr>
+              <th>№</th>
+              <th>Hujjat №</th>
+              <th>Sana</th>
+              <th>Yuboruvchi ombor</th>
+              <th>Qabul qiluvchi ombor</th>
+              <th>Transfer turi</th>
+              <th>Holat</th>
+              <th>Foydalanuvchi</th>
+              <th>M.J.Sh</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${filteredData.map((item, index) => `
               <tr>
-                <th>№</th>
-                <th>Hujjat №</th>
-                <th>Sana</th>
-                <th>Yuboruvchi ombor</th>
-                <th>Qabul qiluvchi ombor</th>
-                
-                <th>Transfer turi</th>
-                <th>Tovarlar soni</th>
-                <th>Umumiy qiymat</th>
-                <th>Holat</th>
-                <th>Foydalanuvchi</th>
-                <th>M.J.Sh</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${filteredData.map((item, index) => `
-                <tr>
-                  <td>${index + 1}</td>
-                  <td>${item.number}</td>
-                  <td>${item.date.split('T').join(" ")}</td>
-                  <td>${item.from_responsible_person}</td>
-                  <td>${item.to_responsible_person}</td>
-                  
-                  <td>${item.transfer_type}</td>
-                  <td>???</td>
-                  <td>??? UZS</td>
-                  <td class="status-${item.is_approved && item.is_accepted ? 'approved-accepted' :
+                <td>${index + 1}</td>
+                <td>${item.number}</td>
+                <td>${item.date.split('T').join(" ")}</td>
+                <td>${item.from_responsible_person}</td>
+                <td>${item.to_responsible_person}</td>
+                <td>${item.transfer_type}</td>
+                <td class="status-${item.is_approved && item.is_accepted ? 'approved-accepted' :
         item.is_approved && !item.is_accepted ? 'approved-not-accepted' : 'not-approved'}">
-                    ${item.is_approved && item.is_accepted ? 'Tasdiqlangan va Qabul qilingan' :
+                  ${item.is_approved && item.is_accepted ? 'Tasdiqlangan va Qabul qilingan' :
         item.is_approved && !item.is_accepted ? 'Tasdiqlangan, Kutilmoqda' : 'Tasdiqlanmagan'}
-                  </td>
-                  <td>${item.user}</td>
-                  <td>${item.to_responsible_person}</td>
-                </tr>
-              `).join('')}
-            </tbody>
-          </table>
-          
-          <div class="footer">
-            <p>Jami: ${filteredData.length} ta transfer</p>
-            <p>Chop etilgan: ${new Date().toLocaleDateString('uz-UZ')} ${new Date().toLocaleTimeString('uz-UZ')}</p>
-          </div>
-        </body>
-      </html>
-    `;
+                </td>
+                <td>${item.user}</td>
+                <td>${item.to_responsible_person}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+        
+        <div class="footer">
+          <p>Jami: ${filteredData.length} ta transfer</p>
+          <p>Chop etilgan: ${new Date().toLocaleDateString('uz-UZ')} ${new Date().toLocaleTimeString('uz-UZ')}</p>
+        </div>
+      </body>
+    </html>
+  `;
 
     printWindow.document.write(htmlContent);
     printWindow.document.close();
     printWindow.print();
   };
+
 
   // API Requests
   const getWarehouseTransfers = async () => {
