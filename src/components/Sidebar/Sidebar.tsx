@@ -1,6 +1,5 @@
 import {
   TrendingUp,
-  RotateCcw,
   ClipboardList,
   Package2,
   MapPin,
@@ -17,8 +16,6 @@ import {
   ChevronRight,
   Phone,
   Headphones,
-  Calendar,
-  FileBarChart,
   FileSearch,
   Receipt,
   Users,
@@ -35,7 +32,7 @@ interface SidebarProps {
 }
 
 const Sidebar: React.FC<SidebarProps> = ({ collapsed }: SidebarProps) => {
-  const [expandedMenus, setExpandedMenus] = useState<string[]>([]);
+  const [expandedMenus, setExpandedMenus] = useState<string[]>(["warehouse-control"]);
   const navigate = useNavigate();
 
   const toggleMenu = (menuId: string) => {
@@ -49,6 +46,38 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed }: SidebarProps) => {
 
 
   const menuItems = [
+    {
+      id: 'warehouse-control',
+      label: "Ombor boshqaruvi",
+      icon: ClipboardList,
+      type: "menu",
+      children: [
+        {
+          id: "product-input",
+          label: "Tovarlar kirimi",
+          icon: PackageOpen,
+          type: "item",
+        },
+        {
+          id: "product-output",
+          label: "Tovarlar chiqimi",
+          icon: PackageIcon,
+          type: "item",
+        },
+        {
+          id: "warehouse-transfer",
+          label: "Ombordan omborga",
+          icon: ArrowRightLeft,
+          type: "item",
+        },
+        {
+          id: "barcode-printing",
+          label: "Shtrix kod chop etish",
+          icon: Barcode,
+          type: "item",
+        },
+      ]
+    },
     {
       id: "orders",
       label: "Buyurtmalar",
@@ -75,47 +104,30 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed }: SidebarProps) => {
           label: "Respublika bo'yicha buyurtma",
           icon: Globe,
         },
+        {
+          id: "price-analysis",
+          label: "Narx tahlili",
+          icon: TrendingUp,
+          type: "item",
+        },
+        {
+          id: "appeal-letter",
+          label: "Murojaat xati",
+          icon: FileText,
+          type: "item",
+        },
       ],
     },
-    {
-      id: "price-analysis",
-      label: "Narx tahlili",
-      icon: TrendingUp,
-      type: "item",
-    },
-    {
-      id: "appeal-letter",
-      label: "Murojaat xati",
-      icon: FileText,
-      type: "item",
-    },
-    {
-      id: "product-input",
-      label: "Tovarlar kirimi",
-      icon: PackageOpen,
-      type: "item",
-    },
-    {
-      id: "product-output",
-      label: "Tovarlar chiqimi",
-      icon: PackageIcon,
-      type: "item",
-    },
-    {
-      id: "warehouse-transfer",
-      label: "Ombordan omborga",
-      icon: ArrowRightLeft,
-      type: "item",
-    },
-    {
-      id: "product-returns",
-      label: "Tovarlarni qaytarish",
-      icon: RotateCcw,
-      type: "item",
-    },
+
+    // {
+    //   id: "product-returns",
+    //   label: "Tovarlarni qaytarish",
+    //   icon: RotateCcw,
+    //   type: "item",
+    // },
     {
       id: "reports",
-      label: "Tovar hisobotlari",
+      label: "Hisobotlar",
       icon: BarChart3,
       type: "menu",
       children: [
@@ -129,19 +141,11 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed }: SidebarProps) => {
           label: "Tovar va materiallar qoldigi",
           icon: Archive,
         },
-      ],
-    },
-    {
-      id: "order-reports",
-      label: "Buyurtma hisobotlari",
-      icon: FileBarChart,
-      type: "menu",
-      children: [
-        {
-          id: "calendar-report",
-          label: "Taqvim",
-          icon: Calendar,
-        },
+        // {
+        //   id: "calendar-report",
+        //   label: "Taqvim",
+        //   icon: Calendar,
+        // },
         {
           id: "order-reports-register",
           label: "Buyurtma hisobotlar reestr",
@@ -163,12 +167,6 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed }: SidebarProps) => {
           icon: Users,
         },
       ],
-    },
-    {
-      id: "barcode-printing",
-      label: "Shtrix kod chop etish",
-      icon: Barcode,
-      type: "item",
     },
   ];
 
@@ -362,7 +360,7 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed }: SidebarProps) => {
               className="w-8 h-8 bg-gradient-to-r from-blue-500 via-blue-600 to-blue-700 rounded-lg flex items-center justify-center shadow-sm mx-auto transition-all duration-300 hover:scale-105 hover:shadow-md"
             >
               <Headphones className="w-4 h-4 text-white" />
-              Qollab quvvatlash
+              {!collapsed && <span>Qo'llab-quvvatlash</span>}
             </button>
           </div>
         )}

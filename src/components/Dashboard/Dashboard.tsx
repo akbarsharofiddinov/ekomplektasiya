@@ -115,7 +115,7 @@ const regionData = [
 
 const statusData = [
   {
-    name: "Xuqand Komplektatsiya",
+    name: "Hududgaz Komplektatsiya",
     value: 34,
     color: "#1E56A0",
   },

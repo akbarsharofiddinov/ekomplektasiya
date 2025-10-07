@@ -1,3 +1,4 @@
+import { useAppSelector } from "@/store/hooks/hooks";
 import {
   User,
   LogOut,
@@ -37,6 +38,8 @@ const Header: React.FC<HeaderProps> = ({
       document.removeEventListener("fullscreenchange", handleFullscreenChange);
   }, []);
 
+  const { currentUserInfo } = useAppSelector(state => state.info)
+
   const handleFullscreen = async () => {
     try {
       if (!document.fullscreenElement) {
@@ -56,9 +59,8 @@ const Header: React.FC<HeaderProps> = ({
 
   return (
     <header
-      className={`bg-white border-b border-slate-200 ${
-        sidebarCollapsed ? "ml-20" : "ml-64"
-      } transition-all duration-500 ease-in-out z-40 sticky top-0 shadow-sm`}
+      className={`bg-white border-b border-slate-200 ${sidebarCollapsed ? "ml-20" : "ml-64"
+        } transition-all duration-500 ease-in-out z-40 sticky top-0 shadow-sm`}
     >
       <div className="flex items-center justify-between px-6 py-3">
         {/* Left Section - Sidebar Toggle & Page Title */}
@@ -229,14 +231,13 @@ const Header: React.FC<HeaderProps> = ({
               </div>
               <div className="hidden sm:block text-left">
                 <p className="text-sm font-medium text-slate-900">
-                  Abdullayev A.A.
+                  {currentUserInfo?.name}
                 </p>
-                <p className="text-xs text-slate-500">Administrator</p>
+                <p className="text-xs text-slate-500">{currentUserInfo?.type_user}</p>
               </div>
               <ChevronDown
-                className={`w-4 h-4 text-slate-500 transition-transform duration-300 ${
-                  showProfileMenu ? "rotate-180" : ""
-                }`}
+                className={`w-4 h-4 text-slate-500 transition-transform duration-300 ${showProfileMenu ? "rotate-180" : ""
+                  }`}
               />
             </button>
 

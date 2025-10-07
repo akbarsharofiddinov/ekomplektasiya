@@ -13,6 +13,22 @@ import { useAppSelector } from '@/store/hooks/hooks';
 import Barcode from 'react-barcode';
 import dayjs from 'dayjs';
 
+interface ProductItem {
+  row_number: number;
+  bar_code: string;
+  product: NamedEntity;
+  model: NamedEntity;
+  product_type: NamedEntity;
+  size: NamedEntity;
+  unit: NamedEntity;
+  price: number;
+  quantity: number;
+  remaining_quantity: number;
+  summa: number;
+  description: string;
+}
+
+
 interface TransferState {
   id: string;
   number: string;
@@ -30,7 +46,7 @@ interface TransferState {
   is_approved: boolean;
   is_accepted: boolean;
   sent_for_approval: boolean;
-  products: TransferProduct[];
+  products: ProductItem[];
 }
 
 const WarehouseTransferDetail: React.FC = () => {
@@ -98,22 +114,6 @@ const WarehouseTransferDetail: React.FC = () => {
     }
   }
 
-  // Fetch warehouse products
-  const getWarehouseProducts = async () => {
-    if (!transferDetail?.from_warehouse?.id) return;
-
-    try {
-      // setProductLoading(true);
-      const response = await axiosAPI.get(`warehouse-products/${transferDetail.from_warehouse.id}/`);
-      console.log(response)
-      // setWarehouseProducts(response.data);
-    } catch (error) {
-      console.error('Ombor mahsulotlarini olishda xatolik:', error);
-      toast.error('Ombor mahsulotlarini yuklashda xatolik yuz berdi');
-    } finally {
-      // setProductLoading(false);
-    }
-  };
 
   // Fetch options
   const fetchOptions = async () => {
@@ -135,7 +135,7 @@ const WarehouseTransferDetail: React.FC = () => {
     if (editData) {
       setEditData({
         ...editData,
-        products: editData.products?.filter((p: TransferProduct) => p.bar_code !== productId) || []
+        products: editData.products?.filter((p: ProductItem) => p.bar_code !== productId) || []
       });
     }
   };
@@ -248,9 +248,35 @@ const WarehouseTransferDetail: React.FC = () => {
         toast('Transfer muvaffaqiyatli o\'chirildi!', { type: 'success', autoClose: 2000 });
         navigate('/transfers');
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Transfer o\'chirishda xatolik:', error);
-      toast("Transferni o'chirishda xatolik yuz berdi", { type: 'error', autoClose: 2000 });
+      toast(error.response.data.error, { type: 'error', autoClose: 2000 });
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+
+
+  // Handle save edited transfer
+  const handleSaveEdit = async () => {
+    if (!editData) return;
+
+    const payload = {
+      ...editData, from_region: editData.from_region.id
+      , from_district: editData.from_district.id, from_warehouse: editData.from_warehouse.id, from_responsible_person: editData.from_responsible_person.id, to_region: editData.to_region.id, to_district: editData.to_district.id, to_warehouse: editData.to_warehouse.id, to_responsible_person: editData.to_responsible_person.id, transfer_type: transferTypes.find(t => t.name === editData.transfer_type)?.id || "", products: editData.products.map(p => ({ ...p, product: p.product.id, model: p.model.id, product_type: p.product_type.id, size: p.size.id, unit: p.unit.id })),
+    }
+
+    try {
+      setActionLoading(true);
+      const response = await axiosAPI.post(`transfers/update/${editData.id}/`, payload);
+
+      if (response.status === 200) {
+        toast.success('Transfer muvaffaqiyatli saqlandi!');
+      }
+    } catch (error: any) {
+      console.error('Transferni saqlashda xatolik:', error);
+      toast.error(error.response.data.error);
     } finally {
       setActionLoading(false);
     }
@@ -544,11 +570,6 @@ const WarehouseTransferDetail: React.FC = () => {
     getTransferDetail();
   }, [id]);
 
-  useEffect(() => {
-    if (transferDetail?.from_warehouse?.id) {
-      getWarehouseProducts();
-    }
-  }, [transferDetail?.from_warehouse?.id]);
 
   useEffect(() => {
     getTransferTypes()
@@ -631,6 +652,7 @@ const WarehouseTransferDetail: React.FC = () => {
                 <>
                   <Button
                     className="bg-green-600 hover:bg-green-700 text-white flex items-center gap-2"
+                    onClick={() => handleSaveEdit()}
                   >
                     <Save className="w-4 h-4" />
                     Saqlash
@@ -1024,7 +1046,7 @@ const WarehouseTransferDetail: React.FC = () => {
             )}
 
             <div className="max-h-[500px] overflow-auto">
-              {/* <Table>
+              <Table>
                 <TableHeader>
                   <TableRow className="bg-gray-50">
                     <TableHead className="text-left font-semibold">№</TableHead>
@@ -1068,14 +1090,21 @@ const WarehouseTransferDetail: React.FC = () => {
                           </p>
                         </div>
                       </TableCell>
-                      <TableCell>{product.product_type || 'N/A'}</TableCell>
-                      <TableCell>{product.size || 'N/A'}</TableCell>
+                      <TableCell>{product.product_type.name || 'N/A'}</TableCell>
+                      <TableCell>{product.size.name || 'N/A'}</TableCell>
                       <TableCell>
                         {isEditing ? (
                           <Input
                             type="number"
+                            max={product.remaining_quantity}
                             value={product.quantity || 0}
-                            onChange={(e) => handleUpdateProduct(product.bar_code, 'quantity', parseInt(e.target.value) || 0)}
+                            onChange={(e) => {
+                              if (Number(e.target.value) <= Number(product.remaining_quantity)) {
+                                handleUpdateProduct(product.bar_code, 'quantity', parseInt(e.target.value))
+                              } else {
+                                handleUpdateProduct(product.bar_code, 'quantity', product.remaining_quantity)
+                              }
+                            }}
                             className="w-20"
                             min="1"
                           />
@@ -1083,7 +1112,7 @@ const WarehouseTransferDetail: React.FC = () => {
                           <span className="font-medium">{product.quantity || 0}</span>
                         )}
                       </TableCell>
-                      <TableCell>{product.unit || 'N/A'}</TableCell>
+                      <TableCell>{product.unit.name || 'N/A'}</TableCell>
                       <TableCell>
                         <span>{(product.price || 0).toLocaleString()} UZS</span>
                       </TableCell>
@@ -1125,153 +1154,7 @@ const WarehouseTransferDetail: React.FC = () => {
                       </TableRow>
                     )}
                 </TableBody>
-              </Table> */}
-              <Table>
-                <TableHeader>
-                  <TableRow className="bg-gray-50">
-                    <TableHead className="text-left font-semibold">№</TableHead>
-                    <TableHead className="text-left font-semibold">Shtrix kod</TableHead>
-                    <TableHead className="text-left font-semibold">Tovar nomi</TableHead>
-                    <TableHead className="text-left font-semibold">Tovar turi</TableHead>
-                    <TableHead className="text-left font-semibold">O'lcham</TableHead>
-                    <TableHead className="text-left font-semibold">Miqdor</TableHead>
-                    <TableHead className="text-left font-semibold">O'lchov birligi</TableHead>
-                    <TableHead className="text-left font-semibold">Narx</TableHead>
-                    <TableHead className="text-left font-semibold">Summa</TableHead>
-                    <TableHead className="text-left font-semibold">Izoh</TableHead>
-                    {isEditing && <TableHead className="text-left font-semibold">Amallar</TableHead>}
-                  </TableRow>
-                </TableHeader>
-
-                <TableBody>
-                  {currentData?.[0]?.products?.length > 0 ? (
-                    currentData[0].products.map((product, index) => (
-                      <TableRow key={index} className="hover:bg-gray-50">
-                        <TableCell className="font-medium">{index + 1}</TableCell>
-
-                        {/* 🔹 Shtrix kod */}
-                        <TableCell>
-                          <div className="flex items-center justify-center gap-2">
-                            <div
-                              className="w-12 h-6 bg-slate-100 border border-slate-300 rounded flex items-center justify-center"
-                              onClick={() => setOpenBarCodeModal(product.bar_code || "")}
-                            >
-                              <div className="w-8 h-3 bg-slate-300 rounded-sm flex products-center justify-center cursor-pointer">
-                                {product.bar_code ? (
-                                  <Barcode value={product.bar_code} className="w-8 h-8" />
-                                ) : null}
-                              </div>
-                            </div>
-                          </div>
-                        </TableCell>
-
-                        {/* 🔹 Tovar nomi */}
-                        <TableCell>
-                          <div className="max-w-xs">
-                            <p
-                              className="font-medium text-gray-900 truncate"
-                              title={product.product?.name}
-                            >
-                              {product.product?.name
-                                ? product.product.name.slice(0, 25) + "..."
-                                : "Belgilanmagan"}
-                            </p>
-                          </div>
-                        </TableCell>
-
-                        {/* 🔹 Tovar turi */}
-                        <TableCell>{product.product_type?.name || "N/A"}</TableCell>
-
-                        {/* 🔹 O'lcham */}
-                        <TableCell>{product.size?.name || "N/A"}</TableCell>
-
-                        {/* 🔹 Miqdor */}
-                        <TableCell>
-                          {isEditing ? (
-                            <Input
-                              type="number"
-                              value={product.quantity || 0}
-                              onChange={(e) =>
-                                handleUpdateProduct(
-                                  product.bar_code,
-                                  "quantity",
-                                  parseInt(e.target.value) || 0
-                                )
-                              }
-                              className="w-20"
-                              min="1"
-                            />
-                          ) : (
-                            <span className="font-medium">{product.quantity || 0}</span>
-                          )}
-                        </TableCell>
-
-                        {/* 🔹 O'lchov birligi */}
-                        <TableCell>{product.unit?.name || "N/A"}</TableCell>
-
-                        {/* 🔹 Narx */}
-                        <TableCell>
-                          <span>{(product.price || 0).toLocaleString()} UZS</span>
-                        </TableCell>
-
-                        {/* 🔹 Summa */}
-                        <TableCell className="font-medium text-green-600">
-                          {(product.summa || 0).toLocaleString()} UZS
-                        </TableCell>
-
-                        {/* 🔹 Izoh */}
-                        <TableCell>
-                          {isEditing ? (
-                            <Input
-                              value={product.description || ""}
-                              onChange={(e) =>
-                                handleUpdateProduct(
-                                  product.bar_code,
-                                  "description",
-                                  e.target.value
-                                )
-                              }
-                              placeholder="Izoh kiriting"
-                              className="w-32"
-                            />
-                          ) : (
-                            <span
-                              className={`${product.description ? "text-gray-900" : "text-gray-400"
-                                }`}
-                            >
-                              {product.description || "—"}
-                            </span>
-                          )}
-                        </TableCell>
-
-                        {/* 🔹 Amallar */}
-                        {isEditing && (
-                          <TableCell>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleRemoveProduct(product.bar_code)}
-                              className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </Button>
-                          </TableCell>
-                        )}
-                      </TableRow>
-                    ))
-                  ) : (
-                    <TableRow>
-                      <TableCell
-                        colSpan={isEditing ? 11 : 10}
-                        className="text-center py-8 text-gray-500"
-                      >
-                        Hech qanday tovar topilmadi
-                      </TableCell>
-                    </TableRow>
-                  )}
-                </TableBody>
               </Table>
-
             </div>
 
             {/* Total Footer */}

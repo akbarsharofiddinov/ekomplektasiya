@@ -69,7 +69,7 @@ interface IDocumentData {
   date: string;
   is_approved: boolean;
   number: string;
-  product_status: string;
+  product_status: { id: string; name: string };
   products: ProductItem[];
   district: { id: string; name: string }
   responsible_person: { id: string; name: string } | null;
@@ -95,6 +95,7 @@ const ProductOutDetailPage: React.FC = () => {
   const { id: documentNumber } = useParams();
 
   const [selectedItems, setSelectedItems] = useState<string[]>([]);
+  setSelectedItems([]); // selectedItems faqat o'qish uchun
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
@@ -294,8 +295,8 @@ const ProductOutDetailPage: React.FC = () => {
         type_output: documentData.type_output.id,
         region: documentData.region.id,
         district: documentData.district.id,
-        products: documentData.products || [],
-        product_status: documentData.product_status
+        products: documentData.products.map(product => ({ ...product, product: product.product.id, model: product.model.id, product_type: product.product_type.id, size: product.size.id, unit: product.unit.id })),
+        product_status: documentData.product_status.id
       };
       const res = await axiosAPI.post(
         `/write-offs/update/${documentData.id}`,
@@ -339,9 +340,9 @@ const ProductOutDetailPage: React.FC = () => {
         setMockData(documentData);
         setDataChanged(false);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.log(error);
-      toast("Tasdiqlashda xatolik yuz berdi", { type: "error" });
+      toast(error.response.data.error, { type: "error" });
     } finally {
       setSaving(false);
     }

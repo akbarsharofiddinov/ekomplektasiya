@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-non-null-asserted-optional-chain */
 import { DatePicker, Input, Select, type DatePickerProps } from "antd";
 import React, { useEffect, useState } from "react";
@@ -6,7 +7,6 @@ import { axiosAPI } from "@/services/axiosAPI";
 import { useAppDispatch, useAppSelector } from "@/store/hooks/hooks";
 import {
   setCounterParties,
-  setDistricts,
   setRegions,
   setTypesOfGoods,
   setWarehouses,
@@ -18,7 +18,6 @@ import {
   setProductTypes,
 } from "@/store/productSlice/productSlice";
 import { Plus, Trash } from "lucide-react";
-import { Button } from "@/components/UI/button";
 import CounterPartyForm from "./CounterPartyForm";
 import Typography from "@mui/material/Typography";
 import {
@@ -57,7 +56,6 @@ const ProductInputForm: React.FC<IProductInputFormProps> = ({
   // States
   const [dateValue, setDateValue] = useState<Dayjs | null>(dayjs());
   const [region, setRegion] = useState<string>("");
-  const [district, setDistrict] = useState<string>("");
   const [warehouse, setWarehouse] = useState<string>("");
   const [selectedCounterParty, setSelectedCounterParty] =
     useState<string>("");
@@ -68,7 +66,15 @@ const ProductInputForm: React.FC<IProductInputFormProps> = ({
   >([]);
   const [selectedResponsiblePerson, setSelectedResponsiblePerson] =
     useState<string>("");
-  const [formData, setFormData] = useState<any>({
+  const [formData, setFormData] = useState<{
+    date: string;
+    region: string;
+    warehouse: string;
+    counterparty: string;
+    type_goods: string;
+    responsible_person: string;
+    products: Product[];
+  }>({
     date: dateValue?.format("YYYY-MM-DDTHH:mm:ss") || "",
     region,
     warehouse,
@@ -96,7 +102,7 @@ const ProductInputForm: React.FC<IProductInputFormProps> = ({
     if (typeof dateString === "string") {
       setDateValue(value);
       console.log(dateString.split(" ").join("T"))
-      setFormData((prev) => ({
+      setFormData((prev: any) => ({
         ...prev,
         // date: dateString.split(" ").join("T"),
         date_party: dateString.split(" ").join("T"),
@@ -141,7 +147,6 @@ const ProductInputForm: React.FC<IProductInputFormProps> = ({
       const response = await axiosAPI.get("regions/list/?order_by=2");
       if (response.status === 200) {
         dispatch(setRegions(response.data));
-        setDistrict("");
       }
     } catch (error) {
       console.log(error);
@@ -161,7 +166,7 @@ const ProductInputForm: React.FC<IProductInputFormProps> = ({
         console.log(error);
       }
     }
-  }, [region, district, dispatch]);
+  }, [region, dispatch]);
 
   // Get counter parties list
   const getCounterPartiesList = React.useCallback(async () => {
@@ -194,7 +199,7 @@ const ProductInputForm: React.FC<IProductInputFormProps> = ({
       if (!currentWarehouse) {
         setResponsiblePerson([]);
         setSelectedResponsiblePerson("");
-        setFormData((prev) => ({ ...prev, responsible_person: "" }));
+        setFormData((prev: any) => ({ ...prev, responsible_person: "" }));
         return;
       }
 
@@ -208,13 +213,13 @@ const ProductInputForm: React.FC<IProductInputFormProps> = ({
 
           if (list.length === 1) {
             setSelectedResponsiblePerson(list[0].name);
-            setFormData((prev) => ({
+            setFormData((prev: any) => ({
               ...prev,
               responsible_person: list[0].id,
             }));
-          } else if(list.length > 1) {
+          } else if (list.length > 1) {
             setSelectedResponsiblePerson("");
-            setFormData((prev) => ({ ...prev, responsible_person: "" }));
+            setFormData((prev: any) => ({ ...prev, responsible_person: "" }));
           } else {
             toast("Ushbu ombor uchun moddiy javobgar shaxs topilmadi  . Iltimos, Administratorga murojat qiling!", { type: "error" });
           }
@@ -284,7 +289,7 @@ const ProductInputForm: React.FC<IProductInputFormProps> = ({
 
   useEffect(() => {
     if ((region) || region === "Худудгазтаъминот" || region === "Худудгаз Комплектатция") getWarehousesList();
-  }, [region]);
+  }, [getWarehousesList, region]);
 
   useEffect(() => {
     getCounterPartiesList();

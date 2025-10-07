@@ -9,6 +9,7 @@ import {
   User as UserIcon,
 } from "lucide-react";
 import { axiosAPI } from "@/services/axiosAPI";
+import logo from "@/assets/hudud_logo.png"
 
 // UTF-8 safe Base64 encoding
 function btoaUTF8(str: string) {
@@ -53,8 +54,10 @@ const Login: React.FC = () => {
         {/* Brand / Illustration side */}
         <div className="hidden md:flex flex-col justify-between bg-gradient-to-br from-[#1E56A0] to-[#1E56A0]/80 p-8 text-white">
           <div className="flex items-center gap-3">
-            <span className="bg-white/20 p-3 rounded-xl">
-              <LucideBuilding2 size={28} color="white" />
+            <span className="relative inline-flex p-[2px] rounded-2xl bg-gradient-to-br from-[#1E56A0] via-[#2B7CD3] to-[#57CC99] shadow-lg shadow-black/10">
+              <span className="flex items-center justify-center rounded-xl bg-white/70 backdrop-blur-sm p-2.5">
+                <img src={logo} alt="logo" className="w-9 h-9 drop-shadow-sm object-cover" />
+              </span>
             </span>
             <div className="font-semibold text-lg">EKomplektatsiya</div>
           </div>
@@ -135,7 +138,7 @@ const Login: React.FC = () => {
               htmlType="submit"
               size="large"
               loading={loading}
-              className="w-full bg-[#1E56A0] hover:!bg-[#1E56A0]/90"
+              className="w-full bg-[#2A5DA4] hover:!bg-[#1E56A0]/90"
             >
               Kirish
             </Button>

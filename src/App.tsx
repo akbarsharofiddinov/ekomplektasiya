@@ -5,7 +5,6 @@ import { Layout } from "@/components";
 import { Toaster } from "react-hot-toast";
 import { ToastContainer } from "react-toastify"
 import ProductMaterialsBalance from "./pages/Reports/ProductMaterialsBalance";
-import PrintPage from "./pages/Products/ProductIn/PrintPage";
 // import CKEditorComponent from "./components/DocEditor/CKEditorComponent";
 // import TinyMCEComponent from "./components/DocEditor/TinyMCEComponent";
 
@@ -59,10 +58,6 @@ const routes = createBrowserRouter([
       {
         path: 'product-materials-balance',
         element: <ProductMaterialsBalance />
-      },
-      {
-        path: "/print",
-        element: <PrintPage />,
       },
     ],
   },

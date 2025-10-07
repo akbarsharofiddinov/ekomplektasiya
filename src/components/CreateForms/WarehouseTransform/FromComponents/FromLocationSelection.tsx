@@ -36,8 +36,9 @@ const FromLocationSelection: React.FC<IToLocationSelectionProps> = ({ formData, 
     try {
       const response = await axiosAPI.get(`warehouses/list/?region=${region}&district=${district}`);
       if (response.status === 200) {
-        setWarehouses(response.data);
         if (response.data.length === 1) {
+          setWarehouses(response.data);
+          setWarehouse(response.data[0].id)
           setFormData(prev => ({ ...prev, from_warehouse: response.data[0].id }))
         }
       }
@@ -50,13 +51,14 @@ const FromLocationSelection: React.FC<IToLocationSelectionProps> = ({ formData, 
   const getResponsiblePersonsList = useCallback(async () => {
     if (warehouse) {
       try {
-        const currentWarehouse = warehouses.find(w => w.name === warehouse);
-        if (!currentWarehouse) return;
-        const response = await axiosAPI.get(`warehouses/responsible_person/${currentWarehouse.id}`);
+        const response = await axiosAPI.get(`warehouses/responsible_person/${warehouse}/`);
+        console.log(response)
         if (response.status === 200) {
           setResponsiblePersons(response.data);
           if (response.data.length === 1) {
             setFormData(prev => ({ ...prev, from_responsible_person: response.data[0].id }))
+          } else {
+            setResponsiblePersons(response.data);
           }
         }
       } catch (error) {
@@ -145,7 +147,7 @@ const FromLocationSelection: React.FC<IToLocationSelectionProps> = ({ formData, 
           <Select
             placeholder="Omborni tanlang"
             className="w-full"
-            value={warehouse || undefined}
+            value={warehouses.find(w => w.id === warehouse)?.name || undefined}
             disabled
           >
             {warehouses.map(warehouse => (

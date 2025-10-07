@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable react-hooks/exhaustive-deps */
 import { DatePicker, Input, Select, type DatePickerProps } from "antd";
 import React, { useEffect } from "react";
@@ -33,6 +34,7 @@ const ProductOutputForm: React.FC<ProductOutputFormProps> = ({ setIsCreateFormMo
   const [dateValue, setDateValue] = React.useState<Dayjs | null>(dayjs());
   const [region, setRegion] = React.useState<string>("");
   const [district, setDistrict] = React.useState<string>("");
+  const [productStatus, setProductStatus] = React.useState<NamedEntity[]>([]);
   const [warehouse, setWarehouse] = React.useState<string>("");
   const [selectedResponsiblePerson, setSelectedResponsiblePerson] =
     React.useState<string>("");
@@ -41,7 +43,7 @@ const ProductOutputForm: React.FC<ProductOutputFormProps> = ({ setIsCreateFormMo
     IReponsiblePerson[]
   >([]);
   const [formData, setFormData] = React.useState<WarehouseOutput>({
-    date: dateValue?.format("DD-MM-YYYYTHH:mm:ss") + "",
+    date: dateValue?.format("YYYY-MM-DDTHH:MM:ss") + "",
     region,
     warehouse,
     type_output: "",
@@ -78,7 +80,7 @@ const ProductOutputForm: React.FC<ProductOutputFormProps> = ({ setIsCreateFormMo
     console.log(data)
     const filteredProducts = data.products.map(({ product_type, ...rest }) => rest)
     try {
-      const response = await axiosAPI.post("write-offs/create/", {...data, products: filteredProducts});
+      const response = await axiosAPI.post("write-offs/create/", { ...data, products: filteredProducts });
       if (response.status === 200) {
         toast("Yangi tovar chiqimi yaratildi!", { type: "success" });
         setIsCreateFormModalOpen(false)
@@ -264,6 +266,22 @@ const ProductOutputForm: React.FC<ProductOutputFormProps> = ({ setIsCreateFormMo
       console.error("Xatolik:", error);
     }
   }
+
+  // get product status list
+  const getProductStatusList = async () => {
+    try {
+      const response = await axiosAPI.get("write-offs/product_statuses/");
+      if (response.status === 200) {
+        setProductStatus(response.data);
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  useEffect(() => {
+    getProductStatusList();
+  }, []);
 
   useEffect(() => {
     if (currentUserInfo) {
@@ -486,6 +504,27 @@ const ProductOutputForm: React.FC<ProductOutputFormProps> = ({ setIsCreateFormMo
               {responsiblePerson.map((person) => (
                 <Select.Option key={person.id} value={person.name}>
                   {person.name}
+                </Select.Option>
+              ))}
+            </Select>
+          </div>
+
+          {/* Product status */}
+          <div className="flex flex-col">
+            <label className="mb-1">Tovar holati</label>
+            <Select
+              placeholder="Tovar holatini tanlang"
+              value={formData.product_status || undefined}
+              onChange={(value) => {
+                setFormData((prev) => ({
+                  ...prev,
+                  product_status: productStatus.find((s) => s.name === value)?.id || "",
+                }));
+              }}
+            >
+              {productStatus.map((status) => (
+                <Select.Option key={status.id} value={status.name}>
+                  {status.name}
                 </Select.Option>
               ))}
             </Select>

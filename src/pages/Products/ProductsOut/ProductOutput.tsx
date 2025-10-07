@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 import { useEffect, useState, useRef } from "react";
 // import { FilterPanel } from "./FilterPanel";
 import {
@@ -46,6 +47,7 @@ const ProductOutput: React.FC = () => {
   const [mockData, setMockData] = useState<ProductOutputData[]>([]);
   // const [fromDate, setFromDate] = useState<Date | undefined>(undefined);
   const [toDate, setToDate] = useState<Date | undefined>(undefined);
+  setToDate("" as unknown as Date | undefined); // toDate faqat o'qish uchun
   // const [isFromDateOpen, setIsFromDateOpen] = useState(false);
   const [statusFilter, setStatusFilter] = useState<FilterStatus>("rejected");
   // const [isToDateOpen, setIsToDateOpen] = useState(false);
@@ -345,7 +347,6 @@ const ProductOutput: React.FC = () => {
 
   useEffect(() => {
     applyFilters(statusFilter);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [toDate]);
 
   useEffect(() => {

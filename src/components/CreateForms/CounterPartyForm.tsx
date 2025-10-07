@@ -6,7 +6,15 @@ import { useAppDispatch, useAppSelector } from '@/store/hooks/hooks';
 import { setCounterParties, setCurrentCreatedCounterParty } from '@/store/infoSlice/infoSlice';
 
 interface CounterPartyFormProps {
-  setFormData: React.Dispatch<React.SetStateAction<OrderPayload>>;
+  setFormData: React.Dispatch<React.SetStateAction<{
+    date: string;
+    region: string;
+    warehouse: string;
+    counterparty: string;
+    type_goods: string;
+    responsible_person: string;
+    products: Product[];
+  }>>;
   setCreateCounterPartyModal: React.Dispatch<React.SetStateAction<boolean>>;
   setSelectedCounterParty: React.Dispatch<React.SetStateAction<string>>;
 }
