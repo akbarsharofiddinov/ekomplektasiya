@@ -5,7 +5,7 @@ import { Badge } from '@/components/UI/badge';
 import { Button } from '@/components/UI/button';
 // import { Popover, PopoverContent, PopoverTrigger } from '@/components/UI/popover';
 import { Input } from '@/components/UI/input';
-import { Plus, RefreshCw, Calendar as CalendarIcon, Printer, X, Search, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, CheckCircle, XCircle, Clock } from 'lucide-react';
+import { Plus, RefreshCw, Calendar as  Printer, Search, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, CheckCircle, XCircle, Clock } from 'lucide-react';
 import { axiosAPI } from '@/services/axiosAPI';
 import { useAppDispatch, useAppSelector } from '@/store/hooks/hooks';
 import { setWarehouseTransfers } from '@/store/transferSlice/transferSlice';
@@ -113,22 +113,6 @@ const WarehouseTransfer: React.FC = () => {
       });
     }
 
-    // // Apply date range filter
-    // if (fromDate && toDate) {
-    //   filtered = filtered.filter(item => {
-    //     const itemDate = new Date(item.date);
-    //     return itemDate >= fromDate && itemDate <= toDate;
-    //   });
-    // } else if (fromDate) {
-    //   filtered = filtered.filter(item => {
-    //     const itemDate = new Date(item.date);
-    //     return itemDate >= fromDate;
-    //   });
-    // } else if (toDate) {
-    //   filtered = filtered.filter(item => {
-    //     const itemDate = new Date(item.date);
-    //     return itemDate <= toDate;
-    //   });
     // }
 
     setFilteredData(filtered);

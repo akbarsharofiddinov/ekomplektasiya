@@ -56,11 +56,6 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed }: SidebarProps) => {
       type: "menu",
       children: [
         {
-          id: "order-by-configuration",
-          label: "Komplektatsiya bo'yicha buyurtma",
-          icon: Package2,
-        },
-        {
           id: "order-by-districts",
           label: "Tumanlar bo'yicha buyurtma",
           icon: MapPin,
@@ -74,6 +69,11 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed }: SidebarProps) => {
           id: "order-by-republic",
           label: "Respublika bo'yicha buyurtma",
           icon: Globe,
+        },
+        {
+          id: "order-by-configuration",
+          label: "Komplektatsiya bo'yicha buyurtma",
+          icon: Package2,
         },
       ],
     },
