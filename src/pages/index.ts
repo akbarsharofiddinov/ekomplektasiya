@@ -7,3 +7,7 @@ export { default as ProductOutDetailPage } from "./Products/ProductsOut/ProductO
 export { default as WarehouseTransfer } from "./Transfer/WarehouseTransfer";
 export { default as WarehouseTransferDetail } from "./Transfer/WarehouseTransferDetail";
 export { default as ProductTurnOverReport } from "./Reports/ProductTurnOverReport";
+export { default as DistrictOrder } from "./Orders/DistrictOrder/DistrictOrder";
+export { default as DistrictOrderDetail } from "./Orders/DistrictOrder/DistrictOrderDetail";
+export { default as RegionOrder } from "./Orders/RegionOrder/RegionOrder";
+export { default as RegionOrderDetail } from "./Orders/RegionOrder/RegionOrderDetail";

@@ -1,12 +1,10 @@
 import React from "react";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
-import { Home, Login, ProductInputDetailPage, ProductOutDetailPage, ProductOutput, ProductsInput, ProductTurnOverReport, WarehouseTransfer, WarehouseTransferDetail } from "@/pages";
+import { DistrictOrder, DistrictOrderDetail, Home, Login, ProductInputDetailPage, ProductOutDetailPage, ProductOutput, ProductsInput, ProductTurnOverReport, RegionOrder, RegionOrderDetail, WarehouseTransfer, WarehouseTransferDetail } from "@/pages";
 import { Layout } from "@/components";
 import { Toaster } from "react-hot-toast";
 import { ToastContainer } from "react-toastify"
 import ProductMaterialsBalance from "./pages/Reports/ProductMaterialsBalance";
-import DistrictOrder from "./pages/Orders/DistrictOrder/DistrictOrder";
-import DistrictOrderDetail from "./pages/Orders/DistrictOrder/DistrictOrderDetail";
 // import CKEditorComponent from "./components/DocEditor/CKEditorComponent";
 // import TinyMCEComponent from "./components/DocEditor/TinyMCEComponent";
 
@@ -51,11 +49,21 @@ const routes = createBrowserRouter([
       },
       {
         path: "order-by-districts",
-        element: <DistrictOrder/>,
+        element: <DistrictOrder />,
         children: [
           {
             path: "order-details/:id",
-            element: <DistrictOrderDetail/>
+            element: <DistrictOrderDetail />
+          }
+        ]
+      },
+      {
+        path: "order-by-regions",
+        element: <RegionOrder />,
+        children: [
+          {
+            path: "order-details/:id",
+            element: <RegionOrderDetail />
           }
         ]
       },
@@ -73,7 +81,7 @@ const routes = createBrowserRouter([
     path: "/login",
     element: <Login />,
   },
-  
+
 ]);
 
 const App: React.FC = () => {
