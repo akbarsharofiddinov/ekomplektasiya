@@ -179,15 +179,15 @@ const WarehouseTransferDetail: React.FC = () => {
 
     try {
       setActionLoading(true);
-      const response = await axiosAPI.patch(`transfers/${transferDetail.id}/approve/`);
+      const response = await axiosAPI.post(`transfers/confirmation/${transferDetail.id}/`);
 
       if (response.status === 200) {
         toast.success('Transfer tasdiqlandi!');
         setTransferDetail(prev => prev ? { ...prev, is_approved: true } : null);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Transfer tasdiqlashda xatolik:', error);
-      toast.error('Transfer tasdiqlashda xatolik yuz berdi');
+      toast.error(error.response.data.error);
     } finally {
       setActionLoading(false);
     }
@@ -208,26 +208,6 @@ const WarehouseTransferDetail: React.FC = () => {
     } catch (error) {
       console.error('Transfer qabul qilishda xatolik:', error);
       toast.error('Transfer qabul qilishda xatolik yuz berdi');
-    } finally {
-      setActionLoading(false);
-    }
-  };
-
-  // Reject transfer
-  const handleReject = async () => {
-    if (!transferDetail) return;
-
-    try {
-      setActionLoading(true);
-      const response = await axiosAPI.patch(`transfers/${transferDetail.id}/reject/`);
-
-      if (response.status === 200) {
-        toast.success('Transfer rad etildi!');
-        setTransferDetail(prev => prev ? { ...prev, is_approved: false, is_accepted: false } : null);
-      }
-    } catch (error) {
-      console.error('Transfer rad etishda xatolik:', error);
-      toast.error('Transfer rad etishda xatolik yuz berdi');
     } finally {
       setActionLoading(false);
     }
@@ -534,15 +514,6 @@ const WarehouseTransferDetail: React.FC = () => {
     }
   };
 
-  const canApprove = () => {
-    return !transferDetail?.is_approved && currentUserInfo?.type_user === 'admin';
-  };
-
-  const canAccept = () => {
-    return transferDetail?.is_approved && !transferDetail?.is_accepted &&
-      currentUserInfo?.warehouse?.id === transferDetail?.to_warehouse?.id;
-  };
-
   const canEdit = () => {
     return !transferDetail?.is_approved && currentUserInfo?.id === transferDetail?.user?.id;
   };
@@ -695,43 +666,6 @@ const WarehouseTransferDetail: React.FC = () => {
             </div>
           </div>
         </div>
-
-        {/* Action Buttons */}
-        {!isEditing && (canApprove() || canAccept()) && (
-          <div className="flex items-center gap-3 pt-4 border-t">
-            {canApprove() && (
-              <Button
-                onClick={handleApprove}
-                disabled={actionLoading}
-                className="bg-green-600 hover:bg-green-700 text-white flex items-center gap-2"
-              >
-                <CheckCircle className="w-4 h-4" />
-                {actionLoading ? 'Tasdiqlanmoqda...' : 'Tasdiqlash'}
-              </Button>
-            )}
-
-            {canAccept() && (
-              <Button
-                onClick={handleAccept}
-                disabled={actionLoading}
-                className="bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-2"
-              >
-                <Package className="w-4 h-4" />
-                {actionLoading ? 'Qabul qilinmoqda...' : 'Qabul qilish'}
-              </Button>
-            )}
-
-            <Button
-              onClick={handleReject}
-              disabled={actionLoading}
-              variant="outline"
-              className="text-red-600 hover:text-red-700 hover:bg-red-50 flex items-center gap-2"
-            >
-              <XCircle className="w-4 h-4" />
-              {actionLoading ? 'Rad etilmoqda...' : 'Rad etish'}
-            </Button>
-          </div>
-        )}
       </div>
 
       {/* Transfer Info with Accordion */}
@@ -1163,12 +1097,15 @@ const WarehouseTransferDetail: React.FC = () => {
                 <span className="text-gray-600">Jami tovarlar: {currentData?.products?.length || 0} ta</span>
 
                 <div className="text-right flex items-center gap-4">
-                  <Button variant="outline">
-                    Tasdiqlash
+                  <Button variant="outline" onClick={handleApprove} disabled={currentData?.is_approved} className="bg-slate-50 hover:bg-green-700 text-slate-600 cursor-pointer flex items-center gap-2">
+                    <CheckCircle className="w-4 h-4" />
+                    {currentData?.is_approved ? "Tadiqlangan" : "Tasdiqlash"}
                   </Button>
-                  <Button variant={"outline"} className="bg-green-600 hover:bg-green-700 text-white cursor-pointer">
-                    Qabul qilish
-                  </Button>
+                  {currentUserInfo?.name.toLowerCase().trim() !== currentData?.from_responsible_person.name.toLowerCase().trim() && (
+                    <Button variant={"outline"} className="bg-green-600 hover:bg-green-700 text-white cursor-pointer" onClick={handleAccept}>
+                      Qabul qilish
+                    </Button>
+                  )}
                   <span className="text-lg font-bold text-gray-900">
                     Umumiy summa: {(currentData?.products?.reduce((acc, product) => acc + (product.summa || 0), 0) || 0).toLocaleString()} UZS
                   </span>
