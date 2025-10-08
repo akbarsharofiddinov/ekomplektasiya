@@ -1,7 +1,6 @@
 import {
   TrendingUp,
   ClipboardList,
-  Package2,
   MapPin,
   Map,
   Globe,
@@ -84,11 +83,6 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed }: SidebarProps) => {
       icon: ClipboardList,
       type: "menu",
       children: [
-        {
-          id: "order-by-configuration",
-          label: "Komplektatsiya bo'yicha buyurtma",
-          icon: Package2,
-        },
         {
           id: "order-by-districts",
           label: "Tumanlar bo'yicha buyurtma",

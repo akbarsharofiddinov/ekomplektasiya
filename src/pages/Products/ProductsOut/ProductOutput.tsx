@@ -47,10 +47,13 @@ const ProductOutput: React.FC = () => {
   const [mockData, setMockData] = useState<ProductOutputData[]>([]);
   // const [fromDate, setFromDate] = useState<Date | undefined>(undefined);
   const [toDate, setToDate] = useState<Date | undefined>(undefined);
-  setToDate("" as unknown as Date | undefined); // toDate faqat o'qish uchun
   // const [isFromDateOpen, setIsFromDateOpen] = useState(false);
   const [statusFilter, setStatusFilter] = useState<FilterStatus>("rejected");
   // const [isToDateOpen, setIsToDateOpen] = useState(false);
+
+  useEffect(() => {
+    setToDate(new Date());
+  }, [])
 
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);

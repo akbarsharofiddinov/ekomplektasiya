@@ -1,0 +1,627 @@
+/* eslint-disable react-hooks/exhaustive-deps */
+import React, { useEffect, useState, useRef } from 'react';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/UI/table';
+// import { Badge } from '@/components/UI/badge';
+import { Button } from '@/components/UI/button';
+// import { Popover, PopoverContent, PopoverTrigger } from '@/components/UI/popover';
+import { Input } from '@/components/UI/input';
+import { Plus, RefreshCw, Calendar as Search, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, CheckCircle, XCircle, Clock } from 'lucide-react';
+import { axiosAPI } from '@/services/axiosAPI';
+import { useAppDispatch, useAppSelector } from '@/store/hooks/hooks';
+// import { setWarehouseTransfers } from '@/store/transferSlice/transferSlice';
+import { Outlet, useNavigate, useParams } from 'react-router-dom';
+// import { SearchOutlined } from '@ant-design/icons';
+import { setRegions } from '@/store/infoSlice/infoSlice';
+import { Select } from 'antd';
+
+interface DocumentInfo {
+    id: string;
+    type_document_for_filter: string;
+    application_status_district: string;
+    confirmation_date: string;
+    is_approved: boolean;
+    is_seen: boolean;
+    exit_date: string;
+    exit_number: string;
+    from_district: string;
+    sender_from_district: string;
+    to_region: string;
+    recipient_region: string;
+    reception_date: string;
+    reception_number: string;
+    from_region: string;
+    sender_from_region: string;
+    to_district: string;
+    recipient_district: string;
+}
+
+
+
+type FilterStatus = 'all' | 'approved' | 'approved_not_accepted' | 'not_approved' | "Canceled";
+
+const DistrictOrder: React.FC = () => {
+    const [data, setData] = useState<DocumentInfo[]>([]);
+    const [filteredData, setFilteredData] = useState<DocumentInfo[]>([]);
+    const [mockData, setMockData] = useState<DocumentInfo[]>([]);
+
+    // Pagination state
+    const [currentPage, setCurrentPage] = useState(1);
+    const itemsPerPage = 10;
+
+    const [searchTerm, setSearchTerm] = useState("");
+    const searchInputRef = useRef<HTMLInputElement>(null);
+
+    // order type
+    const [orderType, setOrderType] = useState<"outgoing" | "incoming">("outgoing")
+
+    const [statusFilter, setStatusFilter] = useState<FilterStatus>('not_approved');
+    // const [fromDate, setFromDate] = useState<Date | undefined>(undefined);
+    // const [toDate, setToDate] = useState<Date | undefined>(undefined);
+    // const [isFromDateOpen, setIsFromDateOpen] = useState(false);
+    // const [isToDateOpen, setIsToDateOpen] = useState(false);
+
+    // Create Transfer modal state
+    const [isCreateFormModalOpen, setIsCreateFormModalOpen] = useState(false);
+    const [totalItems, setTotalItems] = useState(0);
+
+    const [searchValue, setSearchValue] = useState("");
+
+    // Redux
+    const dispatch = useAppDispatch()
+    const { warehouse_transfers } = useAppSelector(state => state.transferSlice)
+
+    // Calculate pagination
+    const totalPages = Math.ceil(totalItems / itemsPerPage);
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+
+    // Generate PDF for printing
+    //     const handlePrintPDF = () => {
+    //         const printWindow = window.open('', '_blank');
+    //         if (!printWindow) return;
+
+    //         const htmlContent = `
+    //     <!DOCTYPE html>
+    //     <html>
+    //       <head>
+    //         <title>Ombordan Omborga Transfer Hisoboti</title>
+    //         <meta charset="utf-8">
+    //         <style>
+    //           body { 
+    //             font-family: Arial, sans-serif; 
+    //             margin: 20px; 
+    //             color: #333;
+    //           }
+    //           .header {
+    //             text-align: center;
+    //             margin-bottom: 30px;
+    //             border-bottom: 2px solid #1E56A0;
+    //             padding-bottom: 15px;
+    //           }
+    //           .header h1 {
+    //             color: #1E56A0;
+    //             margin: 0;
+    //             font-size: 24px;
+    //           }
+    //           .date-range {
+    //             margin: 15px 0;
+    //             padding: 10px;
+    //             background-color: #f8f9fa;
+    //             border-radius: 5px;
+    //           }
+    //           table { 
+    //             width: 100%; 
+    //             border-collapse: collapse; 
+    //             margin-top: 20px;
+    //             font-size: 11px;
+    //           }
+    //           th, td { 
+    //             border: 1px solid #ddd; 
+    //             padding: 6px; 
+    //             text-align: left;
+    //           }
+    //           th { 
+    //             background-color: #1E56A0; 
+    //             color: white;
+    //             font-weight: bold;
+    //           }
+    //           tr:nth-child(even) { 
+    //             background-color: #f9f9f9; 
+    //           }
+    //           .footer {
+    //             margin-top: 30px;
+    //             text-align: center;
+    //             font-size: 10px;
+    //             color: #666;
+    //           }
+    //           .status-approved-accepted { color: #10b981; font-weight: bold; }
+    //           .status-approved-not-accepted { color: #f59e0b; font-weight: bold; }
+    //           .status-not-approved { color: #ef4444; font-weight: bold; }
+    //         </style>
+    //       </head>
+    //       <body>
+    //         <div class="header">
+    //           <h1>E-KOMPLEKTATSIYA</h1>
+    //           <h2>Ombordan Omborga Transfer Hisoboti</h2>
+    //         </div>
+
+    //         <table>
+    //           <thead>
+    //             <tr>
+    //               <th>№</th>
+    //               <th>Hujjat №</th>
+    //               <th>Sana</th>
+    //               <th>Yuboruvchi ombor</th>
+    //               <th>Qabul qiluvchi ombor</th>
+    //               <th>Transfer turi</th>
+    //               <th>Holat</th>
+    //               <th>Foydalanuvchi</th>
+    //               <th>M.J.Sh</th>
+    //             </tr>
+    //           </thead>
+    //           <tbody>
+    //             ${filteredData.map((item, index) => `
+    //               <tr>
+    //                 <td>${index + 1}</td>
+    //                 <td>${item.number}</td>
+    //                 <td>${item.date.split('T').join(" ")}</td>
+    //                 <td>${item.from_responsible_person}</td>
+    //                 <td>${item.to_responsible_person}</td>
+    //                 <td>${item.transfer_type}</td>
+    //                 <td class="status-${item.is_approved && item.is_accepted ? 'approved-accepted' :
+    //                 item.is_approved && !item.is_accepted ? 'approved-not-accepted' : 'not-approved'}">
+    //                   ${item.is_approved && item.is_accepted ? 'Tasdiqlangan va Qabul qilingan' :
+    //                 item.is_approved && !item.is_accepted ? 'Tasdiqlangan, Kutilmoqda' : 'Tasdiqlanmagan'}
+    //                 </td>
+    //                 <td>${item.user}</td>
+    //                 <td>${item.to_responsible_person}</td>
+    //               </tr>
+    //             `).join('')}
+    //           </tbody>
+    //         </table>
+
+    //         <div class="footer">
+    //           <p>Jami: ${filteredData.length} ta transfer</p>
+    //           <p>Chop etilgan: ${new Date().toLocaleDateString('uz-UZ')} ${new Date().toLocaleTimeString('uz-UZ')}</p>
+    //         </div>
+    //       </body>
+    //     </html>
+    //   `;
+
+    //         printWindow.document.write(htmlContent);
+    //         printWindow.document.close();
+    //         printWindow.print();
+    //     };
+
+
+    // API Requests
+    const getDistrictOrderList = async () => {
+        try {
+            const response = await axiosAPI.get(`district-orders/list/?limit=${itemsPerPage}&offset=${(currentPage - 1) * itemsPerPage}&type_document_for_filter=${orderType === "outgoing" ? encodeURIComponent("Тумандан") : encodeURIComponent("Вилоятдан")}`);
+            setFilteredData(response.data.results);
+            setMockData(response.data.results);
+            setTotalItems(response.data.count);
+        } catch (error) {
+            console.error('Error fetching warehouse transfers:', error);
+        }
+    };
+
+    const handleDocumentClick = (id: string) => {
+        navigate("order-details/" + id);
+      };
+
+    useEffect(() => {
+        getDistrictOrderList();
+    }, [orderType, currentPage]);
+
+
+    const navigate = useNavigate();
+    const { id } = useParams()
+
+    // 🔹 ViewMode bo‘yicha filter
+    useEffect(() => {
+        let filtered = data;
+        if (orderType === "outgoing") {
+            filtered = data.filter(
+                (item) => item.type_document_for_filter === "Тумандан"
+            );
+        } else {
+            filtered = data.filter(
+                (item) => item.type_document_for_filter === "Вилоятдан"
+            );
+        }
+
+        // 🔸 Search qo‘llanadi
+        if (searchValue.trim() !== "") {
+            const query = searchValue.toLowerCase();
+            filtered = filtered.filter(
+                (item) =>
+                    item.exit_number?.toLowerCase().includes(query) ||
+                    item.reception_number?.toLowerCase().includes(query) ||
+                    item.from_district?.toLowerCase().includes(query) ||
+                    item.to_region?.toLowerCase().includes(query) ||
+                    item.application_status_district?.toLowerCase().includes(query) ||
+                    item.from_region?.toLowerCase().includes(query) ||
+                    item.to_district?.toLowerCase().includes(query)
+            );
+        }
+
+        setFilteredData(filtered);
+        setCurrentPage(1);
+    }, [orderType, searchValue, data]);
+
+
+    // Pagination handlers
+    const goToFirstPage = () => setCurrentPage(1);
+    const goToLastPage = () => setCurrentPage(totalPages);
+    const goToPreviousPage = () => setCurrentPage(Math.max(1, currentPage - 1));
+    const goToNextPage = () => setCurrentPage(Math.min(totalPages, currentPage + 1));
+    const goToPage = (page: number) => setCurrentPage(page);
+
+    // Get row styling based on status - with left border indicator
+    // const getRowStyling = (isApproved: boolean, isAccepted: boolean) => {
+    //     const baseStyles = "border-b border-slate-100 cursor-pointer transition-all duration-200 bg-white hover:bg-slate-50";
+
+    //     if (isApproved && isAccepted) {
+    //         // Green - Approved and Accepted
+    //         return `${baseStyles} border-l-4 border-l-emerald-500`;
+    //     } else if (isApproved && !isAccepted) {
+    //         // Yellow - Approved but not Accepted
+    //         return `${baseStyles} border-l-4 border-l-amber-500`;
+    //     } else {
+    //         // Red - Not Approved
+    //         return `${baseStyles} border-l-4 border-l-red-500`;
+    //     }
+    // };
+
+    // Get document number styling and icon based on status
+    const getDocumentStyling = (isApproved: boolean, isAccepted: boolean) => {
+        if (isApproved && isAccepted) {
+            // Green - Approved and Accepted
+            return {
+                color: 'text-emerald-600 hover:text-emerald-700',
+                icon: CheckCircle,
+                iconColor: 'text-emerald-500'
+            };
+        } else if (isApproved && !isAccepted) {
+            // Yellow - Approved but not Accepted
+            return {
+                color: 'text-amber-600 hover:text-amber-700',
+                icon: Clock,
+                iconColor: 'text-amber-500'
+            };
+        } else {
+            // Red - Not Approved
+            return {
+                color: 'text-red-600 hover:text-red-700',
+                icon: XCircle,
+                iconColor: 'text-red-500'
+            };
+        }
+    };
+
+    // Generate page numbers for pagination
+    const getPageNumbers = () => {
+        const pages = [];
+        const maxVisiblePages = 5;
+        let startPage = Math.max(1, currentPage - 2);
+        const endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+
+        // Adjust start page if we're near the end
+        if (endPage - startPage < maxVisiblePages - 1) {
+            startPage = Math.max(1, endPage - maxVisiblePages + 1);
+        }
+
+        for (let i = startPage; i <= endPage; i++) {
+            pages.push(i);
+        }
+
+        return pages;
+    };
+
+    // API Requests
+    // Get regions
+    const getRegionsList = React.useCallback(async () => {
+        try {
+            const response = await axiosAPI.get("regions/list/?order_by=2");
+            if (response.status === 200) {
+                dispatch(setRegions(response.data));
+            }
+        } catch (error) {
+            console.log(error);
+        }
+    }, [dispatch]);
+
+    useEffect(() => {
+        getRegionsList();
+    }, []);
+
+    // Get counts for each status
+    const statusCounts = {
+        all: mockData.length,
+        approved: mockData.filter(item => item.is_approved && item.is_accepted).length,
+        approved_not_accepted: mockData.filter(item => item.is_approved && !item.is_accepted).length,
+        not_approved: mockData.filter(item => !item.is_approved).length,
+    };
+
+    return (
+        <>
+            {isCreateFormModalOpen ? (
+                <>
+                </>
+            ) : id ? (
+                <Outlet />
+            ) : (
+                <div className="space-y-4 animate-in fade-in duration-700">
+                    {/* Professional Status Filter with Action Buttons */}
+                    <div className="animate-in slide-in-from-top-4 fade-in duration-600">
+                        <div className="bg-white rounded-lg border border-slate-200 p-3 shadow-sm">
+                            <h1 className='text-2xl text-black pb-4'>Tumanlar bo'yicha buyurtma</h1>
+                            <div className="flex items-center justify-between gap-20">
+                                {/* Status Filter Tabs - Left Side */}
+                                <div className="flex gap-2">
+                                    <button
+                                        onClick={() => handleStatusFilter('all')}
+                                        className={`flex items-center space-x-1 px-2 py-1 rounded-md transition-all duration-300 font-medium text-sm ${statusFilter === 'all'
+                                            ? 'bg-slate-100 text-slate-900 shadow-sm'
+                                            : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+                                            }`}
+                                    >
+                                        <span>Barchasi</span>
+                                        <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${statusFilter === 'all'
+                                            ? 'bg-slate-200 text-slate-700'
+                                            : 'bg-slate-100 text-slate-600'
+                                            }`}>
+                                            {statusCounts.all}
+                                        </span>
+                                    </button>
+
+                                    {/* Green - Approved and Accepted */}
+                                    <button
+                                        onClick={() => handleStatusFilter('approved')}
+                                        className={`flex items-center space-x-1 px-2 py-1 rounded-md transition-all duration-300 font-medium text-sm ${statusFilter === 'approved_accepted'
+                                            ? 'bg-emerald-50 text-emerald-800 shadow-sm border border-emerald-200'
+                                            : 'text-slate-600 hover:text-emerald-700 hover:bg-emerald-50'
+                                            }`}
+                                    >
+                                        <span>Tasdiqlangan</span>  v
+                                        <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${statusFilter === 'approved'
+                                            ? 'bg-emerald-100 text-emerald-700'
+                                            : 'bg-slate-100 text-slate-600'
+                                            }`}>
+                                            {statusCounts.approved}
+                                        </span>
+                                    </button>
+
+                                    {/* Red - Not Approved */}
+                                    <button
+                                        onClick={() => handleStatusFilter('not_approved')}
+                                        className={`flex items-center space-x-1 px-2 py-1 rounded-md transition-all duration-300 font-medium text-sm ${statusFilter === 'not_approved'
+                                            ? 'bg-red-50 text-red-800 shadow-sm border border-red-200'
+                                            : 'text-slate-600 hover:text-red-700 hover:bg-red-50'
+                                            }`}
+                                    >
+                                        <span>Tasdiqlanmagan</span>
+                                        <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${statusFilter === 'not_approved'
+                                            ? 'bg-red-100 text-red-700'
+                                            : 'bg-slate-100 text-slate-600'
+                                            }`}>
+                                            {statusCounts.not_approved}
+                                        </span>
+                                    </button>
+
+                                    <button
+                                        onClick={() => handleStatusFilter('Canceled')}
+                                        className={`flex items-center space-x-1 px-2 py-1 rounded-md transition-all duration-300 font-medium text-sm ${statusFilter === 'approved_accepted'
+                                            ? 'bg-emerald-50 text-emerald-800 shadow-sm border border-emerald-200'
+                                            : 'text-slate-600 hover:text-emerald-700 hover:bg-emerald-50'
+                                            }`}
+                                    >
+                                        <span>Bekor qilingan</span>
+                                        <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${statusFilter === 'Canceled'
+                                            ? 'bg-amber-50 text-amber-800 shadow-sm border border-amber-200'
+                                            : 'text-slate-600 hover:text-amber-700 hover:bg-amber-50'
+                                            }`}>
+                                            {statusCounts.Canceled}
+                                        </span>
+                                    </button>
+
+                                    {/* Yellow - Approved but not Accepted */}
+                                    <button
+                                        onClick={() => handleStatusFilter('approved_not_accepted')}
+                                        className={`flex items-center space-x-1 px-2 py-1 rounded-md transition-all duration-300 font-medium text-sm ${statusFilter === 'approved_not_accepted'
+                                            ? 'bg-amber-50 text-amber-800 shadow-sm border border-amber-200'
+                                            : 'text-slate-600 hover:text-amber-700 hover:bg-amber-50'
+                                            }`}
+                                    >
+                                        <span>Kurilmagan</span>
+                                        <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${statusFilter === 'approved_not_accepted'
+                                            ? 'bg-amber-100 text-amber-700'
+                                            : 'bg-slate-100 text-slate-600'
+                                            }`}>
+                                            {statusCounts.approved_not_accepted}
+                                        </span>
+                                    </button>
+                                </div>
+                                <div className='w-[30%]'>
+                                    <Select
+                                        placeholder="tur"
+                                        value={orderType}
+                                        className='w-full'
+                                        options={[
+                                            { value: 'outgoing', label: 'Chiquvchi xabarlar' },
+                                            { value: 'incoming', label: 'Kiruvchi xabarlar' },
+                                        ]}
+                                        onChange={value => {
+                                            if (value === "incoming") setOrderType("incoming")
+                                            else setOrderType("outgoing")
+                                        }}
+                                    />
+                                </div>
+
+                                {/* Action Buttons - Right Side */}
+
+                            </div>
+                        </div>
+                    </div>
+                    <div className="bg-white rounded-lg border border-slate-200 p-3 shadow-md flex justify-between">
+                        <div className='flex items-center gap-3'>
+                            <Button className='cursor-pointer'>
+                                <Plus></Plus>
+                                Yaratish
+                            </Button>
+
+                            <Button className='cursor-pointer'>
+                                <RefreshCw></RefreshCw>
+                                Yangilash
+                            </Button>
+                            <Button className='cursor-pointer'>
+                                Buyurtma xolati
+                            </Button>
+                        </div>
+                        <div className="relative">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4" />
+                            <Input
+                                type="text"
+                                placeholder="Qidirish (Ctrl+F)"
+                                className="w-64 h-8 pl-9 text-sm border-slate-200"
+                            />
+                        </div>
+                    </div>
+
+                    {/* Table with Status-Based Row Colors */}
+                    <div className="bg-white rounded-xl border border-slate-100 shadow-sm overflow-hidden transform transition-all hover:shadow-lg animate-in slide-in-from-bottom-4 fade-in duration-700">
+                        <div className="overflow-x-auto">
+                            <Table>
+                                <TableHeader>
+                                    <TableRow className="bg-slate-50 border-b border-slate-200">
+                                        {orderType === "outgoing" ? (
+                                            <>
+                                                <TableHead>Chiqish №</TableHead>
+                                                <TableHead>Chiqish sanasi</TableHead>
+                                                <TableHead>Buyurtma holati</TableHead>
+                                                <TableHead>Tumandan</TableHead>
+                                                <TableHead>Viloyatga</TableHead>
+                                                <TableHead>Tumandan jo‘natuvchi</TableHead>
+                                                <TableHead>Viloyatda qabul qiluvchi</TableHead>
+                                                <TableHead>Tasdiqlangan sana</TableHead>
+                                            </>
+                                        ) : (
+                                            <>
+                                                <TableHead>Kirish №</TableHead>
+                                                <TableHead>Kirish sanasi</TableHead>
+                                                <TableHead>Buyurtma holati</TableHead>
+                                                <TableHead>Viloyatdan</TableHead>
+                                                <TableHead>Tumanga</TableHead>
+                                                <TableHead>Viloyatdan jo‘natuvchi</TableHead>
+                                                <TableHead>Tumanda qabul qiluvchi</TableHead>
+                                                <TableHead>Tasdiqlangan sana</TableHead>
+                                            </>
+                                        )}
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    {filteredData.map((item, index) => {
+                                        const documentStyle = getDocumentStyling(item.is_approved, item.is_accepted);
+                                        const StatusIcon = documentStyle.icon;
+
+                                        return (
+                                            <TableRow
+                                                key={`${index}`}
+                                                // className={getRowStyling(item.is_approved, item.is_accepted)}
+                                                onClick={() => handleDocumentClick(item.id)}
+                                            >
+                                                <TableCell className="py-3 px-4">{item.exit_number}</TableCell>
+                                                <TableCell className="py-3 px-4">{item.exit_date}</TableCell>
+                                                <TableCell className="text-slate-700 py-3 px-4">{item.application_status_district}</TableCell>
+                                                <TableCell className="text-slate-700 py-3 px-4">{item.from_district}</TableCell>
+                                                <TableCell className="text-slate-700 py-3 px-4">{item.to_region}</TableCell>
+                                                <TableCell className="py-3 px-4">{item.sender_from_district}</TableCell>
+                                                <TableCell className="text-slate-700 py-3 px-4">{item.recipient_region}</TableCell>
+                                                <TableCell className="text-slate-700 py-3 px-4">{item.confirmation_date}</TableCell>
+                                            </TableRow>
+                                        );
+                                    })}
+                                </TableBody>
+                            </Table>
+                        </div>
+
+                        {/* Enhanced Professional Pagination */}
+                        <div className="border-t border-slate-100 px-6 py-4 bg-slate-50/50">
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-2">
+                                    <span className="text-sm text-slate-600">
+                                        Jami: <span className="font-medium text-slate-900">{totalItems}</span> ta transfer
+                                    </span>
+                                    <span className="text-slate-300">|</span>
+                                    <span className="text-sm text-slate-600">
+                                        Ko'rsatilmoqda: <span className="font-medium text-slate-900">{startIndex + 1}</span>-<span className="font-medium text-slate-900">{Math.min(endIndex, totalItems)}</span>
+                                    </span>
+                                </div>
+
+                                <div className="flex items-center gap-1">
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={goToFirstPage}
+                                        disabled={currentPage === 1}
+                                        className="h-8 w-8 p-0 border-slate-300 text-slate-600 hover:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+                                    >
+                                        <ChevronsLeft className="w-4 h-4" />
+                                    </Button>
+
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={goToPreviousPage}
+                                        disabled={currentPage === 1}
+                                        className="h-8 w-8 p-0 border-slate-300 text-slate-600 hover:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+                                    >
+                                        <ChevronLeft className="w-4 h-4" />
+                                    </Button>
+
+                                    {getPageNumbers().map((pageNum) => (
+                                        <Button
+                                            key={pageNum}
+                                            variant={currentPage === pageNum ? "default" : "outline"}
+                                            size="sm"
+                                            onClick={() => goToPage(pageNum)}
+                                            className={`h-8 w-8 p-0 transition-all duration-200 ${currentPage === pageNum
+                                                ? 'bg-[#1E56A0] text-white hover:bg-[#1E56A0]/90 shadow-sm'
+                                                : 'border-slate-300 text-slate-600 hover:bg-slate-100'
+                                                }`}
+                                        >
+                                            {pageNum}
+                                        </Button>
+                                    ))}
+
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={goToNextPage}
+                                        disabled={currentPage === totalPages}
+                                        className="h-8 w-8 p-0 border-slate-300 text-slate-600 hover:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+                                    >
+                                        <ChevronRight className="w-4 h-4" />
+                                    </Button>
+
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={goToLastPage}
+                                        disabled={currentPage === totalPages}
+                                        className="h-8 w-8 p-0 border-slate-300 text-slate-600 hover:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+                                    >
+                                        <ChevronsRight className="w-4 h-4" />
+                                    </Button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+        </>
+    );
+}
+
+export default DistrictOrder;

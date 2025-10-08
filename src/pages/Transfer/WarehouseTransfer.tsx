@@ -113,22 +113,6 @@ const WarehouseTransfer: React.FC = () => {
       });
     }
 
-    // // Apply date range filter
-    // if (fromDate && toDate) {
-    //   filtered = filtered.filter(item => {
-    //     const itemDate = new Date(item.date);
-    //     return itemDate >= fromDate && itemDate <= toDate;
-    //   });
-    // } else if (fromDate) {
-    //   filtered = filtered.filter(item => {
-    //     const itemDate = new Date(item.date);
-    //     return itemDate >= fromDate;
-    //   });
-    // } else if (toDate) {
-    //   filtered = filtered.filter(item => {
-    //     const itemDate = new Date(item.date);
-    //     return itemDate <= toDate;
-    //   });
     // }
 
     setFilteredData(filtered);
