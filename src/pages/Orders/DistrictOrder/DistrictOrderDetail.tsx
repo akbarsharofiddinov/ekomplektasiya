@@ -1,16 +1,17 @@
-
-// function DistrictOrderDetail() {
-//   return (
-//     <div>DistrictOrderDetail</div>
-//   )
-// }
-
-// export default DistrictOrderDetail
-
 import React, { useState, useEffect } from 'react';
-import { FileText, User, MapPin, Calendar, Package, CheckCircle, Clock } from 'lucide-react';
+// import { FileText, User, MapPin, Calendar, Package, CheckCircle, Clock } from 'lucide-react';
+import { EllipsisVertical, Plus, Search } from 'lucide-react';
+import { Input } from '@/components/UI/input';
+import { Button } from '@/components/UI/button';
+import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
+
 import { axiosAPI } from '@/services/axiosAPI';
 import { useParams } from 'react-router-dom';
+import Accordion from '@mui/material/Accordion';
+import AccordionSummary from '@mui/material/AccordionSummary';
+import Typography from '@mui/material/Typography';
+import AccordionDetails from '@mui/material/AccordionDetails';
+import { Select } from 'antd';
 
 
 interface IdName {
@@ -62,47 +63,40 @@ interface OrderDetail {
 const DistrictOrderDetail: React.FC = () => {
     const [orderData, setOrderData] = useState<OrderDetail | null>(null);
     const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
+    const [documentTypes, setDocumentTypes] = useState<IdName[]>([]);
+    const [documentFormData, setDocumentFormData] = useState<{
+        selectedDocumentType: string;
+        filename: string;
+        extension: string;
+        fileBinary: string;
+    }>();
 
     const { id } = useParams();
 
     const fetchOrderDetail = async () => {
         try {
-            const response = await axiosAPI.get(`district-orders/detail/${id}`);    
-            console.log(response)
+            const response = await axiosAPI.get(`district-orders/detail/${id}`);
+            setOrderData(response.data[0]);
         } catch (error) {
             console.log(error)
+        } finally {
+            setLoading(false)
+        }
+    }
+
+    const fetchDocumentTypesList = async () => {
+        try {
+            const response = await axiosAPI.get('enumerations/document_types');
+            setDocumentTypes(response.data);
+        } catch (error) {
+            console.log(error);
         }
     }
 
     useEffect(() => {
         fetchOrderDetail();
+        fetchDocumentTypesList();
     }, []);
-
-    const formatDate = (dateString: string) => {
-        if (!dateString) return 'Кўрсатилмаган';
-        const date = new Date(dateString);
-        return date.toLocaleDateString('uz-UZ', {
-            year: 'numeric',
-            month: 'long',
-            day: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit'
-        });
-    };
-
-    const getStatusColor = (status: string) => {
-        switch (status?.toLowerCase()) {
-            case 'юборилган':
-                return 'bg-blue-100 text-blue-800';
-            case 'буюртма ёзилди':
-                return 'bg-yellow-100 text-yellow-800';
-            case 'тасдиқланди':
-                return 'bg-green-100 text-green-800';
-            default:
-                return 'bg-gray-100 text-gray-800';
-        }
-    };
 
     if (loading) {
         return (
@@ -120,203 +114,214 @@ const DistrictOrderDetail: React.FC = () => {
         );
     }
 
-    console.log(orderData)
-
     return (
-        <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-8 px-4">
-            <div className="max-w-7xl mx-auto">
+        <div className="min-h-screen py-2 px-2 bg-white">
+            <div className="max-w-8xl mx-auto bg-white">
                 {/* Header */}
-                <div className="bg-white rounded-2xl shadow-xl mb-6 overflow-hidden">
-                    {/* 
+                <div className="bg-white mb-6 overflow-hidden">
+                    <div className="flex items-center justify-between p-4">
+                        <div className="text-center border-gray-200">
+                            <p className="text-xs text-gray-500 uppercase font-semibold mb-2">Chiqish</p>
+                            <p className="text-md font-semibold text-gray-800">{orderData.exit_number}</p>
+                        </div>
 
-                    <div>
-                        <h1>Chiqish N</h1>
-                        {orderData.exit_number}
-                    </div>
-                    <div>
-                        <h1>Chiqish sana</h1>
-                        {orderData.exit_number}
-                    </div>
-                    <div>
-                        <h1>Chiqish N</h1>
-                        {orderData.exit_number}
-                    </div>
-                    <div>
-                        <h1>Chiqish N</h1>
-                        {orderData.exit_number}
-                    </div>
-                    <div>
-                        <h1>Chiqish N</h1>
-                        {orderData.exit_number}
-                    </div> */}
+                        <div className="text-center border-gray-200">
+                            <p className="text-xs text-gray-500 uppercase font-semibold mb-2">Chiqish Sana</p>
+                            <p className="text-md font-semibold text-gray-800">{orderData.exit_date}</p>
+                        </div>
 
-                    <p><strong>ID:</strong> {orderData.id}</p>
-                    <p><strong>Raqam:</strong> {orderData.exit_number}</p>
-                    <p><strong>Sana:</strong> {orderData.exit_date}</p>
-                    <p><strong>Holat:</strong> {orderData.application_status_district?.name}</p>
-                    <p><strong>Kimdan:</strong> {orderData.from_district?.name}</p>
-                    <p><strong>Kimga:</strong> {orderData.recipient_district?.name}</p>
-                    <p><strong>Viloyat:</strong> {orderData.from_region?.name}</p>
+                        <div className="text-center border-gray-200">
+                            <p className="text-xs text-gray-500 uppercase font-semibold mb-2">Tumandan</p>
+                            <p className="text-md font-semibold text-gray-800">{orderData.from_district?.name}</p>
+                        </div>
 
-                    {/* <div className="bg-gradient-to-r from-indigo-600 to-blue-600 p-6 text-white">
-                        <div className="flex items-center justify-between flex-wrap gap-4">
+                        <div className="text-center">
+                            <p className="text-xs text-gray-500 uppercase font-semibold mb-2">Viloyat</p>
+                            <p className="text-md font-semibold text-gray-800">{orderData.from_region?.name}</p>
+                        </div>
+
+                        <div className="text-center border-gray-200">
+                            <p className="text-xs text-gray-500 uppercase font-semibold mb-2">Tumandan junatuvchi</p>
+                            <p className="text-md font-semibold text-gray-800">{orderData.recipient_district?.name}</p>
+                        </div>
+
+                        <div className="text-center border-gray-200">
+                            <p className="text-xs text-gray-500 uppercase font-semibold mb-2">Viloyatdan qabul qiluvchi</p>
+                            <p className="text-md font-semibold text-gray-800">{orderData.recipient_region?.name}</p>
+                        </div>
+
+                    </div>
+                </div>
+
+                <div>
+                    <Accordion defaultExpanded>
+                        <AccordionSummary
+                            expandIcon={<ExpandMoreIcon />}
+                            aria-controls="panel1a-content"
+                        >
+                            <Typography fontSize={"20px"} fontWeight={600} color="#0f172b">Buyurtma uchun berilgan tovarlar ruyhati</Typography>
+                        </AccordionSummary>
+                        <AccordionDetails>
+
+                            <div className="bg-transparent rounded-md p-2 flex justify-between mb-6">
+                                <div className='flex items-center gap-3'>
+                                    <Button className='cursor-pointer'>
+                                        <Plus></Plus>
+                                        Kiritish
+                                    </Button>
+                                    <Button className='cursor-pointer'>
+                                        Qoldiqlar
+                                    </Button>
+                                </div>
+                                <div className="relative">
+                                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4" />
+                                    <Input
+                                        type="text"
+                                        placeholder="Qidirish (Ctrl+F)"
+                                        className="w-64 h-9 pl-9 text-sm border-slate-200 bg-white"
+                                    />
+                                </div>
+                            </div>
+
+
+                            <div className="bg-white rounded-xl mb-6 overflow-hidden">
+                                <div className="overflow-x-auto">
+                                    <table className="w-full">
+                                        <thead className="bg-gray-50 border-b-2">
+                                            <tr>
+                                                <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">№</th>
+                                                <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Buyurtma nomi</th>
+                                                <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Model</th>
+                                                <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Buyurtma turi</th>
+                                                <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">O'lcham</th>
+                                                <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">O'lchov birligi</th>
+                                                <th className="px-6 py-4 text-right text-sm font-semibold text-gray-700">Soni</th>
+                                                <th className="px-6 py-4 text-right text-sm font-semibold text-gray-700">Buyurtma bo'yicha izoh</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className=" bg-[#f2f2f2b6]">
+                                            {orderData.products?.map((product, index) => (
+                                                <tr key={index} className="hover:bg-indigo-50 transition-colors">
+                                                    <td className="px-6 py-4 text-sm text-gray-900 font-medium">{product.row_number}</td>
+                                                    <td className="px-6 py-4 text-sm text-gray-900">{product.product?.name}</td>
+                                                    <td className="px-6 py-4 text-sm text-gray-900 font-medium">{product.model?.name}</td>
+                                                    <td className="px-6 py-4 text-sm text-gray-900">{product.product_type?.name}</td>
+                                                    <td className="px-6 py-4 text-sm text-gray-700">{product.size?.name}</td>
+                                                    <td className="px-6 py-4 text-sm text-gray-700">{product.unit?.name}</td>
+                                                    <td className="px-6 py-4 text-sm text-gray-900 text-right font-bold">{product.quantity}</td>
+                                                    <td className="px-6 py-4 text-sm text-gray-900 text-right font-bold">{product.description}</td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+
+                        </AccordionDetails>
+                    </Accordion>
+                </div>
+
+
+                <div>
+                    <Accordion defaultExpanded>
+                        <AccordionSummary
+                            expandIcon={<ExpandMoreIcon />}
+                            aria-controls="panel1a-content"
+                        >
+                            <Typography fontSize={"20px"} fontWeight={600} color="#0f172b">Imzolovchilar ruyhati</Typography>
+                        </AccordionSummary>
+                        <AccordionDetails>
+
+
+                            <div className="bg-transparent rounded-md p-2 flex justify-between mb-6">
+                                <div className='flex items-center gap-3'>
+                                    <Button className='cursor-pointer'>
+                                        <Plus></Plus>
+                                        Kiritish
+                                    </Button>
+                                    <Button className='cursor-pointer'>
+                                        Yuborish
+                                    </Button>
+                                </div>
+                                <div className="relative">
+                                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4" />
+                                    <Input
+                                        type="text"
+                                        placeholder="Qidirish (Ctrl+F)"
+                                        className="w-64 h-9 pl-9 text-sm border-slate-200 bg-white"
+                                    />
+                                </div>
+                            </div>
+
+
+                            <div className="bg-white rounded-xl mb-6 overflow-hidden">
+                                <div className="overflow-x-auto">
+                                    <table className="w-full">
+                                        <thead className="bg-gray-50 border-b-2">
+                                            <tr>
+                                                <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">№</th>
+                                                <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Xabar xolati</th>
+                                                <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Imzolovchi xodim</th>
+                                                <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Lavozim nomi</th>
+                                                <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Imzolash xoati</th>
+                                                <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Sana</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className=" bg-[#f2f2f2b6]">
+                                            {orderData.executors?.map((executor, index) => (
+                                                <tr key={index} className="hover:bg-indigo-50 transition-colors">
+                                                    <td className="px-6 py-4 text-sm text-gray-900"></td>
+                                                    <td className="px-6 py-4 text-sm text-gray-900">{executor.status?.name}</td>
+                                                    <td className="px-6 py-4 text-sm text-gray-900 font-medium">{executor.executor?.name}</td>
+                                                    <td className="px-6 py-4 text-sm text-gray-900"></td>
+                                                    <td className="px-6 py-4 text-sm text-gray-900">{executor.message}</td>
+                                                    <td className="px-6 py-4 text-sm text-gray-700">{executor.confirmation_date}</td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+
+                        </AccordionDetails>
+                    </Accordion>
+                </div>
+
+                {/* File upload modal */}
+                <div className='fixed inset-0 z-50 flex items-center justify-center bg-black/20 backdrop-blur-md'>
+                    {/* Modal content */}
+                    <div className='bg-white p-4 shadow-lg rounded-lg min-w-[500px]'>
+                        {/* top */}
+                        <div className='flex items-center justify-between'>
+                            <h2>Hujjat biriktirish oynasi</h2>
+                            <button><EllipsisVertical /></button>
+                        </div>
+
+                        {/* Form */}
+                        <div>
+                            {/* Document types select */}
+                            <Select
+                                value={documentFormData?.selectedDocumentType || undefined}
+                                placeholder="Hujjat turini tanlang"
+                                className='w-full'
+                                onChange={value => setDocumentFormData(prev => ({ ...prev!, selectedDocumentType: value }))}
+                                options={documentTypes.map((documentType) => ({
+                                    value: documentType.id,
+                                    label: documentType.name
+                                }))} />
+
+                            {/* File Input */}
                             <div>
-                                <h1 className="text-3xl font-bold mb-2">Буюртма тафсилотлари</h1>
-                                <p className="text-indigo-100 flex items-center gap-2">
-                                    <FileText className="w-5 h-5" />
-                                    {orderData.exit_number}
-                                </p>
-                            </div>
-                            <div className="text-right">
-                                <div className={`inline-block px-4 py-2 rounded-full text-sm font-semibold ${getStatusColor(orderData.application_status_district?.name)}`}>
-                                </div>
+                                <label htmlFor="file">File yuklang</label>
+                                <input type="file" name="file" id="file" onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                                    console.log(e.target.files![0])
+                                }} />
                             </div>
                         </div>
-                    </div> */}
-
-
-
-                    {/* <div className="p-6 grid md:grid-cols-2 gap-6">
-                        <div className="space-y-4">
-                            <div className="flex items-start gap-3 p-4 bg-gray-50 rounded-lg">
-                                <Calendar className="w-5 h-5 text-indigo-600 mt-1" />
-                                <div>
-                                    <p className="text-sm text-gray-600">Chiqish N</p>
-                                    <p className="font-semibold text-gray-900">{formatDate(orderData.exit_number)}</p>
-                                </div>
-                            </div>
-                            <div className="flex items-start gap-3 p-4 bg-gray-50 rounded-lg">
-                                <Calendar className="w-5 h-5 text-indigo-600 mt-1" />
-                                <div>
-                                    <p className="text-sm text-gray-600">Chiqish sana</p>
-                                    <p className="font-semibold text-gray-900">{formatDate(orderData.exit_date)}</p>
-                                </div>
-                            </div>
-
-                            <div className="flex items-start gap-3 p-4 bg-gray-50 rounded-lg">
-                                <FileText className="w-5 h-5 text-indigo-600 mt-1" />
-                                <div>
-                                    <p className="text-sm text-gray-600">Ҳужжат тури</p>
-                                    <p className="font-semibold text-gray-900">{orderData.type_document_for_filter?.name}</p>
-                                </div>
-                            </div>
-
-                            <div className="flex items-start gap-3 p-4 bg-gray-50 rounded-lg">
-                                <MapPin className="w-5 h-5 text-indigo-600 mt-1" />
-                                <div>
-                                    <p className="text-sm text-gray-600">Қайси туман</p>
-                                    <p className="font-semibold text-gray-900">{orderData.from_district?.name}</p>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div className="space-y-4">
-                            <div className="flex items-start gap-3 p-4 bg-gray-50 rounded-lg">
-                                <User className="w-5 h-5 text-indigo-600 mt-1" />
-                                <div>
-                                    <p className="text-sm text-gray-600">Юборувчи</p>
-                                    <p className="font-semibold text-gray-900">{orderData.sender_from_district?.name}</p>
-                                </div>
-                            </div>
-
-                            <div className="flex items-start gap-3 p-4 bg-gray-50 rounded-lg">
-                                <User className="w-5 h-5 text-indigo-600 mt-1" />
-                                <div>
-                                    <p className="text-sm text-gray-600">Қабул қилувчи</p>
-                                    <p className="font-semibold text-gray-900">{orderData.recipient_district?.name || 'Кўрсатилмаган'}</p>
-                                </div>
-                            </div>
-
-                            <div className="flex items-start gap-3 p-4 bg-gray-50 rounded-lg">
-                                <MapPin className="w-5 h-5 text-indigo-600 mt-1" />
-                                <div>
-                                    <p className="text-sm text-gray-600">Вилоят</p>
-                                    <p className="font-semibold text-gray-900">{orderData.from_region?.name}</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div> */}
-                </div>
-
-                {/* Products Table */}
-                <div className="bg-white rounded-2xl shadow-xl mb-6 overflow-hidden">
-                    <div className="bg-gradient-to-r from-indigo-600 to-blue-600 p-6 text-white">
-                        <h2 className="text-2xl font-bold flex items-center gap-2">
-                            <Package className="w-6 h-6" />
-                            Маҳсулотлар рўйхати
-                        </h2>
-                    </div>
-
-                    <div className="overflow-x-auto">
-                        <table className="w-full">
-                            <thead className="bg-gray-50 border-b-2 border-indigo-200">
-                                <tr>
-                                    <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">№</th>
-                                    <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Маҳсулот тури</th>
-                                    <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Модел</th>
-                                    <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Ўлчам</th>
-                                    <th className="px-6 py-4 text-right text-sm font-semibold text-gray-700">Миқдор</th>
-                                    <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Ўлчов бирлиги</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-gray-200">
-                                {orderData.products?.map((product, index) => (
-                                    <tr key={index} className="hover:bg-indigo-50 transition-colors">
-                                        <td className="px-6 py-4 text-sm text-gray-900 font-medium">{product.row_number}</td>
-                                        <td className="px-6 py-4 text-sm text-gray-900">{product.product_type?.name}</td>
-                                        <td className="px-6 py-4 text-sm text-gray-900 font-medium">{product.model?.name}</td>
-                                        <td className="px-6 py-4 text-sm text-gray-700">{product.size?.name}</td>
-                                        <td className="px-6 py-4 text-sm text-gray-900 text-right font-bold">{product.quantity}</td>
-                                        <td className="px-6 py-4 text-sm text-gray-700">{product.unit?.name}</td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                            <tfoot className="bg-gray-50 border-t-2 border-indigo-200">
-                                <tr>
-                                    <td colSpan={4} className="px-6 py-4 text-right text-sm font-bold text-gray-900">Жами:</td>
-                                    <td className="px-6 py-4 text-right text-sm font-bold text-indigo-600">
-                                        {orderData.products?.reduce((sum, p) => sum + p.quantity, 0)}
-                                    </td>
-                                    <td className="px-6 py-4 text-sm text-gray-700">Дона</td>
-                                </tr>
-                            </tfoot>
-                        </table>
                     </div>
                 </div>
 
-                {/* Executors */}
-                {orderData.executors && orderData.executors.length > 0 && (
-                    <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
-                        <div className="bg-gradient-to-r from-indigo-600 to-blue-600 p-6 text-white">
-                            <h2 className="text-2xl font-bold flex items-center gap-2">
-                                <CheckCircle className="w-6 h-6" />
-                                Ижрочилар
-                            </h2>
-                        </div>
 
-                        <div className="p-6 space-y-4">
-                            {orderData.executors.map((executor, index) => (
-                                <div key={index} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-200">
-                                    <div className="flex items-center gap-4">
-                                        <div className="w-12 h-12 bg-indigo-100 rounded-full flex items-center justify-center">
-                                            <User className="w-6 h-6 text-indigo-600" />
-                                        </div>
-                                        <div>
-                                            <p className="font-semibold text-gray-900">{executor.executor?.name}</p>
-                                            <p className="text-sm text-gray-600 flex items-center gap-2 mt-1">
-                                                <Clock className="w-4 h-4" />
-                                                {executor.confirmation_date ? formatDate(executor.confirmation_date) : 'Тасдиқланмаган'}
-                                            </p>
-                                        </div>
-                                    </div>
-                                    <div className={`px-4 py-2 rounded-full text-sm font-semibold ${getStatusColor(executor.status?.name)}`}>
-                                        {executor.status?.name}
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                )}
             </div>
         </div>
     );
