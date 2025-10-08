@@ -5,9 +5,9 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Button } from '@/components/UI/button';
 // import { Popover, PopoverContent, PopoverTrigger } from '@/components/UI/popover';
 import { Input } from '@/components/UI/input';
-import { Plus, RefreshCw, Calendar as Search, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, CheckCircle, XCircle, Clock } from 'lucide-react';
+import { Plus, RefreshCw, Search, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react';
 import { axiosAPI } from '@/services/axiosAPI';
-import { useAppDispatch, useAppSelector } from '@/store/hooks/hooks';
+import { useAppDispatch } from '@/store/hooks/hooks';
 // import { setWarehouseTransfers } from '@/store/transferSlice/transferSlice';
 import { Outlet, useNavigate, useParams } from 'react-router-dom';
 // import { SearchOutlined } from '@ant-design/icons';
@@ -42,7 +42,9 @@ type FilterStatus = 'all' | 'approved' | 'approved_not_accepted' | 'not_approved
 const DistrictOrder: React.FC = () => {
     const [data, setData] = useState<DocumentInfo[]>([]);
     const [filteredData, setFilteredData] = useState<DocumentInfo[]>([]);
-    const [mockData, setMockData] = useState<DocumentInfo[]>([]);
+    // const [mockData, setMockData] = useState<DocumentInfo[]>([]);
+    const [statusFilter, setStatusFilter] = useState<FilterStatus>('not_approved');
+
 
     // Pagination state
     const [currentPage, setCurrentPage] = useState(1);
@@ -54,7 +56,6 @@ const DistrictOrder: React.FC = () => {
     // order type
     const [orderType, setOrderType] = useState<"outgoing" | "incoming">("outgoing")
 
-    const [statusFilter, setStatusFilter] = useState<FilterStatus>('not_approved');
     // const [fromDate, setFromDate] = useState<Date | undefined>(undefined);
     // const [toDate, setToDate] = useState<Date | undefined>(undefined);
     // const [isFromDateOpen, setIsFromDateOpen] = useState(false);
@@ -62,16 +63,24 @@ const DistrictOrder: React.FC = () => {
 
     // Create Transfer modal state
     const [isCreateFormModalOpen, setIsCreateFormModalOpen] = useState(false);
-    const [totalItems, setTotalItems] = useState(0);
+    const [totalItems, setTotalItems] = useState<{
+        approved: number;
+        cancelled: 0;
+        count: number;
+        limit: number;
+        offset: number;
+        results: DocumentInfo;
+        unapproved: number;
+        unseen: number;
+    } | null>(null);
 
-    const [searchValue, setSearchValue] = useState("");
 
     // Redux
     const dispatch = useAppDispatch()
-    const { warehouse_transfers } = useAppSelector(state => state.transferSlice)
+    // const { warehouse_transfers } = useAppSelector(state => state.transferSlice)
 
     // Calculate pagination
-    const totalPages = Math.ceil(totalItems / itemsPerPage);
+    const totalPages = Math.ceil(totalItems?.count! / itemsPerPage);
     const startIndex = (currentPage - 1) * itemsPerPage;
     const endIndex = startIndex + itemsPerPage;
 
@@ -199,16 +208,44 @@ const DistrictOrder: React.FC = () => {
         try {
             const response = await axiosAPI.get(`district-orders/list/?limit=${itemsPerPage}&offset=${(currentPage - 1) * itemsPerPage}&type_document_for_filter=${orderType === "outgoing" ? encodeURIComponent("Тумандан") : encodeURIComponent("Вилоятдан")}`);
             setFilteredData(response.data.results);
-            setMockData(response.data.results);
-            setTotalItems(response.data.count);
+            setData(response.data.results);
+            setTotalItems(response.data);
         } catch (error) {
             console.error('Error fetching warehouse transfers:', error);
         }
     };
 
+    // Qidiruv funksiyasi
+    const handleSearch = (value: string) => {
+        setSearchTerm(value);
+        const lower = value.toLowerCase();
+
+        const filtered = filteredData.filter((item) =>
+            Object.values(item).some(
+                (val) =>
+                    val &&
+                    val.toString().toLowerCase().includes(lower)
+            )
+        );
+
+        setFilteredData(filtered);
+    };
+
+    // Ctrl + F bosilganda inputga focus berish
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.ctrlKey && e.key.toLowerCase() === "f") {
+                e.preventDefault(); // brauzer qidiruvini to‘xtatadi
+                searchInputRef.current?.focus(); // inputga fokus beradi
+            }
+        };
+        document.addEventListener("keydown", handleKeyDown);
+        return () => document.removeEventListener("keydown", handleKeyDown);
+    }, []);
+
     const handleDocumentClick = (id: string) => {
         navigate("order-details/" + id);
-      };
+    };
 
     useEffect(() => {
         getDistrictOrderList();
@@ -232,24 +269,61 @@ const DistrictOrder: React.FC = () => {
         }
 
         // 🔸 Search qo‘llanadi
-        if (searchValue.trim() !== "") {
-            const query = searchValue.toLowerCase();
-            filtered = filtered.filter(
-                (item) =>
-                    item.exit_number?.toLowerCase().includes(query) ||
-                    item.reception_number?.toLowerCase().includes(query) ||
-                    item.from_district?.toLowerCase().includes(query) ||
-                    item.to_region?.toLowerCase().includes(query) ||
-                    item.application_status_district?.toLowerCase().includes(query) ||
-                    item.from_region?.toLowerCase().includes(query) ||
-                    item.to_district?.toLowerCase().includes(query)
+        if (searchTerm.trim() !== "") {
+            const query = searchTerm.toLowerCase();
+            filtered = filtered.filter(item =>
+                Object.values(item).some(val =>
+                    val && val.toString().toLowerCase().includes(query)
+                )
             );
         }
 
+
         setFilteredData(filtered);
         setCurrentPage(1);
-    }, [orderType, searchValue, data]);
+    }, [orderType, searchTerm]);
 
+    const handleStatusFilter = (status: FilterStatus) => {
+        setStatusFilter(status);
+
+        let filtered = data;
+
+        switch (status) {
+            case 'approved': // ✅ Tasdiqlangan
+                filtered = data.filter(item => item.is_approved === true && item.application_status_district !== "Bekor qilingan");
+                break;
+            case 'not_approved': // ❌ Tasdiqlanmagan
+                filtered = data.filter(item => item.is_approved === false);
+                break;
+            case 'approved_not_accepted': // 🕓 Ko‘rilmagan
+                filtered = data.filter(item => item.is_seen === false && item.application_status_district !== "Bekor qilingan");
+                break;
+            case 'Canceled': // 🚫 Bekor qilingan
+                filtered = data.filter(item => item.application_status_district === "Bekor qilingan");
+                break;
+            default:
+                filtered = data; // 🔁 Barchasi
+        }
+
+        setFilteredData(filtered);
+    };
+
+
+    // 🔹 Row ranglari
+    const getRowStyling = (item: DocumentInfo) => {
+        const base = "border-b border-slate-100 cursor-pointer transition-all duration-200";
+
+        if (item.application_status_district === "Bekor qilingan") {
+            return `${base} bg-slate-200 hover:bg-slate-300`;
+        } else if (item.is_seen === false) {
+            return `${base} bg-amber-50 hover:bg-amber-100`; // Ko‘rilmagan
+        } else if (item.is_approved === true) {
+            return `${base} bg-emerald-50 hover:bg-emerald-100`; // Tasdiqlangan
+        } else if (item.is_approved === false) {
+            return `${base} bg-red-50 hover:bg-red-100`; // Tasdiqlanmagan
+        }
+        return `${base} bg-white hover:bg-slate-50`; // Default
+    };
 
     // Pagination handlers
     const goToFirstPage = () => setCurrentPage(1);
@@ -257,48 +331,6 @@ const DistrictOrder: React.FC = () => {
     const goToPreviousPage = () => setCurrentPage(Math.max(1, currentPage - 1));
     const goToNextPage = () => setCurrentPage(Math.min(totalPages, currentPage + 1));
     const goToPage = (page: number) => setCurrentPage(page);
-
-    // Get row styling based on status - with left border indicator
-    // const getRowStyling = (isApproved: boolean, isAccepted: boolean) => {
-    //     const baseStyles = "border-b border-slate-100 cursor-pointer transition-all duration-200 bg-white hover:bg-slate-50";
-
-    //     if (isApproved && isAccepted) {
-    //         // Green - Approved and Accepted
-    //         return `${baseStyles} border-l-4 border-l-emerald-500`;
-    //     } else if (isApproved && !isAccepted) {
-    //         // Yellow - Approved but not Accepted
-    //         return `${baseStyles} border-l-4 border-l-amber-500`;
-    //     } else {
-    //         // Red - Not Approved
-    //         return `${baseStyles} border-l-4 border-l-red-500`;
-    //     }
-    // };
-
-    // Get document number styling and icon based on status
-    const getDocumentStyling = (isApproved: boolean, isAccepted: boolean) => {
-        if (isApproved && isAccepted) {
-            // Green - Approved and Accepted
-            return {
-                color: 'text-emerald-600 hover:text-emerald-700',
-                icon: CheckCircle,
-                iconColor: 'text-emerald-500'
-            };
-        } else if (isApproved && !isAccepted) {
-            // Yellow - Approved but not Accepted
-            return {
-                color: 'text-amber-600 hover:text-amber-700',
-                icon: Clock,
-                iconColor: 'text-amber-500'
-            };
-        } else {
-            // Red - Not Approved
-            return {
-                color: 'text-red-600 hover:text-red-700',
-                icon: XCircle,
-                iconColor: 'text-red-500'
-            };
-        }
-    };
 
     // Generate page numbers for pagination
     const getPageNumbers = () => {
@@ -337,11 +369,14 @@ const DistrictOrder: React.FC = () => {
     }, []);
 
     // Get counts for each status
+
+    // 🔹 Har bir status uchun sonlarni hisoblash
     const statusCounts = {
-        all: mockData.length,
-        approved: mockData.filter(item => item.is_approved && item.is_accepted).length,
-        approved_not_accepted: mockData.filter(item => item.is_approved && !item.is_accepted).length,
-        not_approved: mockData.filter(item => !item.is_approved).length,
+        all: totalItems?.count,
+        approved: totalItems?.approved,
+        not_approved: totalItems?.unapproved,
+        approved_not_accepted: totalItems?.unseen,
+        Canceled: totalItems?.cancelled,
     };
 
     return (
@@ -359,32 +394,33 @@ const DistrictOrder: React.FC = () => {
                             <h1 className='text-2xl text-black pb-4'>Tumanlar bo'yicha buyurtma</h1>
                             <div className="flex items-center justify-between gap-20">
                                 {/* Status Filter Tabs - Left Side */}
-                                <div className="flex gap-2">
+                                <div className="flex gap-2 flex-wrap">
+                                    {/* Barchasi */}
                                     <button
                                         onClick={() => handleStatusFilter('all')}
-                                        className={`flex items-center space-x-1 px-2 py-1 rounded-md transition-all duration-300 font-medium text-sm ${statusFilter === 'all'
+                                        className={`flex items-center space-x-1 px-3 py-1.5 rounded-md text-sm font-medium transition-all duration-200 ${statusFilter === 'all'
                                             ? 'bg-slate-100 text-slate-900 shadow-sm'
-                                            : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+                                            : 'text-slate-600 hover:bg-slate-50'
                                             }`}
                                     >
                                         <span>Barchasi</span>
                                         <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${statusFilter === 'all'
-                                            ? 'bg-slate-200 text-slate-700'
+                                            ? 'bg-slate-200 text-slate-800'
                                             : 'bg-slate-100 text-slate-600'
                                             }`}>
                                             {statusCounts.all}
                                         </span>
                                     </button>
 
-                                    {/* Green - Approved and Accepted */}
+                                    {/* Tasdiqlangan */}
                                     <button
                                         onClick={() => handleStatusFilter('approved')}
-                                        className={`flex items-center space-x-1 px-2 py-1 rounded-md transition-all duration-300 font-medium text-sm ${statusFilter === 'approved_accepted'
+                                        className={`flex items-center space-x-1 px-3 py-1.5 rounded-md text-sm font-medium transition-all duration-200 ${statusFilter === 'approved'
                                             ? 'bg-emerald-50 text-emerald-800 shadow-sm border border-emerald-200'
                                             : 'text-slate-600 hover:text-emerald-700 hover:bg-emerald-50'
                                             }`}
                                     >
-                                        <span>Tasdiqlangan</span>  v
+                                        <span>Tasdiqlangan</span>
                                         <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${statusFilter === 'approved'
                                             ? 'bg-emerald-100 text-emerald-700'
                                             : 'bg-slate-100 text-slate-600'
@@ -393,10 +429,10 @@ const DistrictOrder: React.FC = () => {
                                         </span>
                                     </button>
 
-                                    {/* Red - Not Approved */}
+                                    {/* Tasdiqlanmagan */}
                                     <button
                                         onClick={() => handleStatusFilter('not_approved')}
-                                        className={`flex items-center space-x-1 px-2 py-1 rounded-md transition-all duration-300 font-medium text-sm ${statusFilter === 'not_approved'
+                                        className={`flex items-center space-x-1 px-3 py-1.5 rounded-md text-sm font-medium transition-all duration-200 ${statusFilter === 'not_approved'
                                             ? 'bg-red-50 text-red-800 shadow-sm border border-red-200'
                                             : 'text-slate-600 hover:text-red-700 hover:bg-red-50'
                                             }`}
@@ -410,36 +446,37 @@ const DistrictOrder: React.FC = () => {
                                         </span>
                                     </button>
 
-                                    <button
-                                        onClick={() => handleStatusFilter('Canceled')}
-                                        className={`flex items-center space-x-1 px-2 py-1 rounded-md transition-all duration-300 font-medium text-sm ${statusFilter === 'approved_accepted'
-                                            ? 'bg-emerald-50 text-emerald-800 shadow-sm border border-emerald-200'
-                                            : 'text-slate-600 hover:text-emerald-700 hover:bg-emerald-50'
-                                            }`}
-                                    >
-                                        <span>Bekor qilingan</span>
-                                        <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${statusFilter === 'Canceled'
-                                            ? 'bg-amber-50 text-amber-800 shadow-sm border border-amber-200'
-                                            : 'text-slate-600 hover:text-amber-700 hover:bg-amber-50'
-                                            }`}>
-                                            {statusCounts.Canceled}
-                                        </span>
-                                    </button>
-
-                                    {/* Yellow - Approved but not Accepted */}
+                                    {/* Ko‘rilmagan */}
                                     <button
                                         onClick={() => handleStatusFilter('approved_not_accepted')}
-                                        className={`flex items-center space-x-1 px-2 py-1 rounded-md transition-all duration-300 font-medium text-sm ${statusFilter === 'approved_not_accepted'
+                                        className={`flex items-center space-x-1 px-3 py-1.5 rounded-md text-sm font-medium transition-all duration-200 ${statusFilter === 'approved_not_accepted'
                                             ? 'bg-amber-50 text-amber-800 shadow-sm border border-amber-200'
                                             : 'text-slate-600 hover:text-amber-700 hover:bg-amber-50'
                                             }`}
                                     >
-                                        <span>Kurilmagan</span>
+                                        <span>Ko'rilmagan</span>
                                         <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${statusFilter === 'approved_not_accepted'
                                             ? 'bg-amber-100 text-amber-700'
                                             : 'bg-slate-100 text-slate-600'
                                             }`}>
                                             {statusCounts.approved_not_accepted}
+                                        </span>
+                                    </button>
+
+                                    {/* Bekor qilingan */}
+                                    <button
+                                        onClick={() => handleStatusFilter('Canceled')}
+                                        className={`flex items-center space-x-1 px-3 py-1.5 rounded-md text-sm font-medium transition-all duration-200 ${statusFilter === 'Canceled'
+                                            ? 'bg-slate-200 text-slate-900 shadow-sm border border-slate-300'
+                                            : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+                                            }`}
+                                    >
+                                        <span>Bekor qilingan</span>
+                                        <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${statusFilter === 'Canceled'
+                                            ? 'bg-slate-300 text-slate-900'
+                                            : 'bg-slate-100 text-slate-600'
+                                            }`}>
+                                            {statusCounts.Canceled}
                                         </span>
                                     </button>
                                 </div>
@@ -480,10 +517,13 @@ const DistrictOrder: React.FC = () => {
                             </Button>
                         </div>
                         <div className="relative">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4" />
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4" />
                             <Input
                                 type="text"
                                 placeholder="Qidirish (Ctrl+F)"
+                                ref={searchInputRef}
+                                value={searchTerm}
+                                onChange={(e) => handleSearch(e.target.value)}
                                 className="w-64 h-8 pl-9 text-sm border-slate-200"
                             />
                         </div>
@@ -522,14 +562,11 @@ const DistrictOrder: React.FC = () => {
                                 </TableHeader>
                                 <TableBody>
                                     {filteredData.map((item, index) => {
-                                        const documentStyle = getDocumentStyling(item.is_approved, item.is_accepted);
-                                        const StatusIcon = documentStyle.icon;
-
                                         return (
                                             <TableRow
                                                 key={`${index}`}
-                                                // className={getRowStyling(item.is_approved, item.is_accepted)}
                                                 onClick={() => handleDocumentClick(item.id)}
+                                                className={getRowStyling(item)}
                                             >
                                                 <TableCell className="py-3 px-4">{item.exit_number}</TableCell>
                                                 <TableCell className="py-3 px-4">{item.exit_date}</TableCell>
@@ -551,11 +588,11 @@ const DistrictOrder: React.FC = () => {
                             <div className="flex items-center justify-between">
                                 <div className="flex items-center gap-2">
                                     <span className="text-sm text-slate-600">
-                                        Jami: <span className="font-medium text-slate-900">{totalItems}</span> ta transfer
+                                        Jami: <span className="font-medium text-slate-900">{totalItems?.count}</span> ta transfer
                                     </span>
                                     <span className="text-slate-300">|</span>
                                     <span className="text-sm text-slate-600">
-                                        Ko'rsatilmoqda: <span className="font-medium text-slate-900">{startIndex + 1}</span>-<span className="font-medium text-slate-900">{Math.min(endIndex, totalItems)}</span>
+                                        Ko'rsatilmoqda: <span className="font-medium text-slate-900">{startIndex + 1}</span>-<span className="font-medium text-slate-900">{Math.min(endIndex, totalItems?.count!)}</span>
                                     </span>
                                 </div>
 
