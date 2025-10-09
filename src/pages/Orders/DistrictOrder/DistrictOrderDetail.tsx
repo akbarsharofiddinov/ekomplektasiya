@@ -144,7 +144,7 @@ const DistrictOrderDetail: React.FC = () => {
     if (!orderData) {
         return (
             <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
-                <div className="text-red-600 text-xl">Маълумот топилмади</div>
+                <div className="text-red-600 text-xl">Malumotlar topilmadi</div>
             </div>
         );
     }

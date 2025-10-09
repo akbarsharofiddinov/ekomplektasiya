@@ -39,12 +39,9 @@ interface DocumentInfo {
 
 type FilterStatus = 'all' | 'approved' | 'approved_not_accepted' | 'not_approved' | "Canceled";
 
-const RegionOrder: React.FC = () => {
-  const [data, setData] = useState<DocumentInfo[]>([]);
-  // const [data] = useState<DocumentInfo[]>([]);
+const RepublicOrder: React.FC = () => {
+  const [data] = useState<DocumentInfo[]>([]);
   const [filteredData, setFilteredData] = useState<DocumentInfo[]>([]);
-  const [searchTerm, setSearchTerm] = useState("");
-  const searchInputRef = React.useRef<HTMLInputElement>(null);
 
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
@@ -77,6 +74,7 @@ const RegionOrder: React.FC = () => {
     results: [],
   });
 
+  const [searchValue] = useState("");
 
   // Redux
   const dispatch = useAppDispatch()
@@ -91,9 +89,8 @@ const RegionOrder: React.FC = () => {
   // API Requests
   const getRegionOrdersList = async () => {
     try {
-      const response = await axiosAPI.get(`region-orders/list/?limit=${itemsPerPage}&offset=${(currentPage - 1) * itemsPerPage}&type_document_for_filter=${orderType === "outgoing" ? encodeURIComponent("Вилоятдан") : encodeURIComponent("Тумандан")}`);
+      const response = await axiosAPI.get(`republic-orders/list/?limit=${itemsPerPage}&offset=${(currentPage - 1) * itemsPerPage}&type_document_for_filter=${orderType === "outgoing" ? encodeURIComponent("Вилоятга") : encodeURIComponent("Вилоятдан")}`);
       setFilteredData(response.data.results);
-      setData(response.data.results);
       setTotalItems(response.data);
     } catch (error) {
       console.error('Error fetching warehouse transfers:', error);
@@ -109,39 +106,29 @@ const RegionOrder: React.FC = () => {
   }, [orderType, currentPage]);
 
 
-
-  // Filter function
-  useEffect(() => {
-    const filtered = data.filter((item) =>
-      Object.values(item).some((val) =>
-        String(val).toLowerCase().includes(searchTerm.toLowerCase())
-      )
-    );
-    setFilteredData(filtered);
-  }, [searchTerm, data]);
-
-
   const navigate = useNavigate();
   const { id } = useParams()
 
+  // 🔹 ViewMode bo‘yicha filter
   useEffect(() => {
-    let filtered = [...data];
-
-    // 🔹 Order type bo‘yicha filter
+    let filtered = data;
     if (orderType === "outgoing") {
-      filtered = filtered.filter(item => item.type_document_for_filter === "Вилоятдан");
+      filtered = data.filter(
+        (item) => item.type_document_for_filter === "Вилоятга"
+      );
     } else {
-      filtered = filtered.filter(item => item.type_document_for_filter === "Тумандан");
+      filtered = data.filter(
+        (item) => item.type_document_for_filter === "Вилоятдан"
+      );
     }
 
-
     // 🔸 Search qo‘llanadi
-    if (searchTerm.trim() !== "") {
-      const query = searchTerm.toLowerCase();
+    if (searchValue.trim() !== "") {
+      const query = searchValue.toLowerCase();
       filtered = filtered.filter(
-        item =>
-          item.reception_number?.toLowerCase().includes(query) ||
+        (item) =>
           item.exit_number?.toLowerCase().includes(query) ||
+          item.reception_number?.toLowerCase().includes(query) ||
           item.from_district?.toLowerCase().includes(query) ||
           item.to_region?.toLowerCase().includes(query) ||
           item.application_status_district?.toLowerCase().includes(query) ||
@@ -149,19 +136,10 @@ const RegionOrder: React.FC = () => {
           item.to_district?.toLowerCase().includes(query)
       );
     }
-    setFilteredData(filtered);
-  }, [orderType, searchTerm, data]);
 
-  useEffect(() => {
-    const handleCtrlF = (event: KeyboardEvent) => {
-      if (event.ctrlKey && event.key.toLowerCase() === 'f') {
-        event.preventDefault();
-        searchInputRef.current?.focus();
-      }
-    };
-    window.addEventListener('keydown', handleCtrlF);
-    return () => window.removeEventListener('keydown', handleCtrlF);
-  }, []);
+    setFilteredData(filtered);
+    setCurrentPage(1);
+  }, [orderType, searchValue, data]);
 
 
   // Pagination handlers
@@ -226,7 +204,7 @@ const RegionOrder: React.FC = () => {
           {/* Professional Status Filter with Action Buttons */}
           <div className="animate-in slide-in-from-top-4 fade-in duration-600">
             <div className="rounded-lg">
-              <h1 className='text-2xl text-black pb-4'>Viloyatlar bo'yicha buyurtma</h1>
+              <h1 className='text-2xl text-black pb-4'>Respublika bo'yicha buyurtma</h1>
               <div className="flex items-center justify-between gap-20">
                 {/* Status Filter Tabs - Left Side */}
                 <div className="flex gap-2">
@@ -347,9 +325,6 @@ const RegionOrder: React.FC = () => {
               <Input
                 type="text"
                 placeholder="Qidirish (Ctrl+F)"
-                ref={searchInputRef}
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-64 h-8 pl-9 text-sm border-slate-200"
               />
             </div>
@@ -364,11 +339,10 @@ const RegionOrder: React.FC = () => {
                     <>
                       <TableHead>{orderType === "outgoing" ? "Chiqish" : "Kirish"} №</TableHead>
                       <TableHead>{orderType === "outgoing" ? "Chiqish" : "Kirish"} sanasi</TableHead>
-                      <TableHead>Tuman{orderType === "outgoing" ? "ga" : "dan"}</TableHead>
-                      <TableHead>Bo'limdan yuboruvchi</TableHead>
-                      <TableHead>{orderType === "outgoing" ? "Viloyatdan" : "Tumandan"} jo'natuvchi</TableHead>
-                      <TableHead>{orderType === "outgoing" ? "Tumanda" : "Viloyatda"} qabul qiluvchi</TableHead>
-                      <TableHead>Viloyat buyurtma holati</TableHead>
+                      <TableHead>Viloyat{orderType === "outgoing" ? "ga" : "dan"}</TableHead>
+                      <TableHead>{orderType === "outgoing" ? "Respublikadan" : "Viloyatdan"} jo'natuvchi</TableHead>
+                      <TableHead>{orderType === "outgoing" ? "Viloyatda" : "Respublikadan"} qabul qiluvchi</TableHead>
+                      <TableHead>Buyurtma holati</TableHead>
                       <TableHead>Tasdiqlangan sana</TableHead>
                     </>
                   </TableRow>
@@ -386,7 +360,7 @@ const RegionOrder: React.FC = () => {
                       >
                         <TableCell className="py-3 px-4">{item.exit_number}</TableCell>
                         <TableCell className="py-3 px-4">
-                          {new Date(item.exit_date)
+                        {new Date(item.exit_date)
                             .toLocaleString('uz-UZ', {
                               day: '2-digit',
                               month: '2-digit',
@@ -396,11 +370,10 @@ const RegionOrder: React.FC = () => {
                             })
                             .replace(',', '. ')}
                         </TableCell>
-                        <TableCell className="text-slate-700 py-3 px-4">{item.application_status_district}</TableCell>
-                        <TableCell className="text-slate-700 py-3 px-4">{item.from_district}</TableCell>
-                        <TableCell className="text-slate-700 py-3 px-4">{item.to_region}</TableCell>
-                        <TableCell className="py-3 px-4">{item.sender_from_district}</TableCell>
-                        <TableCell className="text-slate-700 py-3 px-4">{item.recipient_region}</TableCell>
+                        <TableCell className="text-slate-700 py-3 px-4">{item.from_region}</TableCell>
+                        <TableCell className="text-slate-700 py-3 px-4">{item.sender_from_region}</TableCell>
+                        <TableCell className="text-slate-700 py-3 px-4">{item.recipient_republic}</TableCell>
+                        <TableCell className="py-3 px-4">{item.application_status_republic}</TableCell>
                         <TableCell className="text-slate-700 py-3 px-4">{item.confirmation_date}</TableCell>
                       </TableRow>
                     );
@@ -487,4 +460,4 @@ const RegionOrder: React.FC = () => {
   );
 }
 
-export default RegionOrder;
+export default RepublicOrder;

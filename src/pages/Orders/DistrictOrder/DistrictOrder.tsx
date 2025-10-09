@@ -204,6 +204,8 @@ const DistrictOrder: React.FC = () => {
 
 
     // API Requests
+
+
     const getDistrictOrderList = async () => {
         try {
             const response = await axiosAPI.get(`district-orders/list/?limit=${itemsPerPage}&offset=${(currentPage - 1) * itemsPerPage}&type_document_for_filter=${orderType === "outgoing" ? encodeURIComponent("Тумандан") : encodeURIComponent("Вилоятдан")}`);
@@ -569,7 +571,17 @@ const DistrictOrder: React.FC = () => {
                                                 className={getRowStyling(item)}
                                             >
                                                 <TableCell className="py-3 px-4">{item.exit_number}</TableCell>
-                                                <TableCell className="py-3 px-4">{item.exit_date}</TableCell>
+                                                <TableCell className="py-3 px-4">
+                                                    {new Date(item.exit_date)
+                                                        .toLocaleString('uz-UZ', {
+                                                            day: '2-digit',
+                                                            month: '2-digit',
+                                                            year: 'numeric',
+                                                            hour: '2-digit',
+                                                            minute: '2-digit',
+                                                        })
+                                                        .replace(',', '. ')}
+                                                </TableCell>
                                                 <TableCell className="text-slate-700 py-3 px-4">{item.application_status_district}</TableCell>
                                                 <TableCell className="text-slate-700 py-3 px-4">{item.from_district}</TableCell>
                                                 <TableCell className="text-slate-700 py-3 px-4">{item.to_region}</TableCell>
