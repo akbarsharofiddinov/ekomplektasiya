@@ -60,8 +60,8 @@ interface OrderDetail {
   executors: Executor[];
 }
 
-const RegionOrderDetail: React.FC = () => {
-  const [regionData, setRegionData] = useState<OrderDetail | null>(null);
+const RepublicOrderDetail: React.FC = () => {
+  const [orderData, setOrderData] = useState<OrderDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [documentTypes, setDocumentTypes] = useState<IdName[]>([]);
   const [documentFormData, setDocumentFormData] = useState<{
@@ -75,8 +75,8 @@ const RegionOrderDetail: React.FC = () => {
 
   const fetchOrderDetail = async () => {
     try {
-      const response = await axiosAPI.get(`region-orders/detail/${id}`);
-      setRegionData(response.data[0]);
+      const response = await axiosAPI.get(`republic-orders/detail/${id}`);
+      setOrderData(response.data[0]);
     } catch (error) {
       console.log(error)
     } finally {
@@ -106,10 +106,10 @@ const RegionOrderDetail: React.FC = () => {
     );
   }
 
-  if (!regionData) {
+  if (!orderData) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
-        <div className="text-red-600 text-xl">Маълумот топилмади</div>
+        <div className="text-red-600 text-xl">Malumotlar topilmadi</div>
       </div>
     );
   }
@@ -122,32 +122,32 @@ const RegionOrderDetail: React.FC = () => {
           <div className="flex items-center justify-between p-4">
             <div className="text-center border-gray-200">
               <p className="text-xs text-gray-500 uppercase font-semibold mb-2">Chiqish</p>
-              <p className="text-md font-semibold text-gray-800">{regionData.exit_number}</p>
+              <p className="text-md font-semibold text-gray-800">{orderData.exit_number}</p>
             </div>
 
             <div className="text-center border-gray-200">
               <p className="text-xs text-gray-500 uppercase font-semibold mb-2">Chiqish Sana</p>
               <p className="text-md font-semibold text-gray-800">
-                {new Date(regionData.exit_date)
-                  .toLocaleString('uz-UZ', {
-                    day: '2-digit',
-                    month: '2-digit',
-                    year: 'numeric',
-                    hour: '2-digit',
-                    minute: '2-digit',
-                  })
-                  .replace(',', '. ')}
+              {new Date(orderData.exit_date)
+                            .toLocaleString('uz-UZ', {
+                              day: '2-digit',
+                              month: '2-digit',
+                              year: 'numeric',
+                              hour: '2-digit',
+                              minute: '2-digit',
+                            })
+                            .replace(',', '. ')}
               </p>
             </div>
 
-            <div className="text-center border-gray-200">
-              <p className="text-xs text-gray-500 uppercase font-semibold mb-2">Viloyat</p>
-              <p className="text-md font-semibold text-gray-800">{regionData.to_region?.name}</p>
+            <div className="text-center">
+              <p className="text-xs text-gray-500 uppercase font-semibold mb-2">Viloyatdan</p>
+              <p className="text-md font-semibold text-gray-800">{orderData.from_region?.name}</p>
             </div>
 
             <div className="text-center border-gray-200">
-              <p className="text-xs text-gray-500 uppercase font-semibold mb-2">Viloyatdan qabul qiluvchi</p>
-              <p className="text-md font-semibold text-gray-800">{regionData.sender_from_region?.name}</p>
+              <p className="text-xs text-gray-500 uppercase font-semibold mb-2">Respublikada qabul qiluvchi</p>
+              <p className="text-md font-semibold text-gray-800">{orderData.sender_from_region?.name}</p>
             </div>
 
           </div>
@@ -190,87 +190,26 @@ const RegionOrderDetail: React.FC = () => {
                     <thead className="bg-gray-50 border-b-2">
                       <tr>
                         <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">№</th>
-                        <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Viloyat</th>
-                        <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Buyurtma turi</th>
-                        <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Tovar nomi</th>
+                        <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">tovar nomi</th>
                         <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Tovar turi</th>
                         <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Model</th>
                         <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">O'lcham</th>
                         <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">O'lchov birligi</th>
                         <th className="px-6 py-4 text-right text-sm font-semibold text-gray-700">Soni</th>
-                        <th className="px-6 py-4 text-right text-sm font-semibold text-gray-700">Soni Tumandan</th>
-                        <th className="px-6 py-4 text-right text-sm font-semibold text-gray-700">Soni Sotuvdan</th>
                         <th className="px-6 py-4 text-right text-sm font-semibold text-gray-700">Buyurtma bo'yicha izoh</th>
                       </tr>
                     </thead>
                     <tbody className=" bg-[#f2f2f2b6]">
-                      {regionData.products?.map((product, index) => (
+                      {orderData.products?.map((product, index) => (
                         <tr key={index} className="hover:bg-indigo-50 transition-colors">
                           <td className="px-6 py-4 text-sm text-gray-900 font-medium">{product.row_number}</td>
-                          <td className="px-6 py-4 text-sm text-gray-900 font-medium"></td>
-                          <td className="px-6 py-4 text-sm text-gray-900 font-medium">{product.order_type?.name}</td>
                           <td className="px-6 py-4 text-sm text-gray-900">{product.product?.name}</td>
                           <td className="px-6 py-4 text-sm text-gray-900">{product.product_type?.name}</td>
                           <td className="px-6 py-4 text-sm text-gray-900 font-medium">{product.model?.name}</td>
                           <td className="px-6 py-4 text-sm text-gray-700">{product.size?.name}</td>
                           <td className="px-6 py-4 text-sm text-gray-700">{product.unit?.name}</td>
                           <td className="px-6 py-4 text-sm text-gray-900 text-right font-bold">{product.quantity}</td>
-                          <th className="px-6 py-4 text-right text-sm font-semibold text-gray-700"></th>
-                          <th className="px-6 py-4 text-right text-sm font-semibold text-gray-700"></th>
                           <td className="px-6 py-4 text-sm text-gray-900 text-right font-bold">{product.description}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-
-            </AccordionDetails>
-          </Accordion>
-        </div>
-
-        <div>
-          <Accordion defaultExpanded>
-            <AccordionSummary
-              expandIcon={<ExpandMoreIcon />}
-              aria-controls="panel1a-content"
-            >
-              <Typography fontSize={"20px"} fontWeight={600} color="#0f172b">Bekor qilingan tovarlar ruyhati</Typography>
-            </AccordionSummary>
-            <AccordionDetails>
-
-
-              <div className="bg-white rounded-xl mb-6 overflow-hidden">
-                <div className="overflow-x-auto">
-                  <table className="w-full">
-                    <thead className="bg-gray-50 border-b-2">
-                      <tr>
-                        <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">№</th>
-                        <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Buyurtma turi</th>
-                        <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Tovar nomi</th>
-                        <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Tovar turi</th>
-                        <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Model</th>
-                        <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">O'lcham</th>
-                        <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">O'lchov birligi</th>
-                        <th className="px-6 py-4 text-right text-sm font-semibold text-gray-700">Soni</th>
-                        <th className="px-6 py-4 text-right text-sm font-semibold text-gray-700">Bekor qilish xolati</th>
-                        <th className="px-6 py-4 text-right text-sm font-semibold text-gray-700">Bekor qilish jujjati</th>
-                      </tr>
-                    </thead>
-                    <tbody className=" bg-[#f2f2f2b6]">
-                      {regionData.cancelled_products?.map((cancelledproduct, index) => (
-                        <tr key={index} className="hover:bg-indigo-50 transition-colors">
-                          <td className="px-6 py-4 text-sm text-gray-900 font-medium">{cancelledproduct.row_number}</td>
-                          <td className="px-6 py-4 text-sm text-gray-900 font-medium">{cancelledproduct.order_type?.name}</td>
-                          <td className="px-6 py-4 text-sm text-gray-900">{cancelledproduct.product?.name}</td>
-                          <td className="px-6 py-4 text-sm text-gray-900">{cancelledproduct.product_type?.name}</td>
-                          <td className="px-6 py-4 text-sm text-gray-900 font-medium">{cancelledproduct.model?.name}</td>
-                          <td className="px-6 py-4 text-sm text-gray-700">{cancelledproduct.size?.name}</td>
-                          <td className="px-6 py-4 text-sm text-gray-700">{cancelledproduct.unit?.name}</td>
-                          <td className="px-6 py-4 text-sm text-gray-900 text-right font-bold">{cancelledproduct.quantity}</td>
-                          <th className="px-6 py-4 text-right text-sm font-semibold text-gray-700"></th>
-                          <th className="px-6 py-4 text-right text-sm font-semibold text-gray-700"></th>
-                          <td className="px-6 py-4 text-sm text-gray-900 text-right font-bold">{cancelledproduct.description}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -323,21 +262,79 @@ const RegionOrderDetail: React.FC = () => {
                         <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">№</th>
                         <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Xabar xolati</th>
                         <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Bajaruvchi xodim</th>
-                        <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Xujjat turi</th>
                         <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Lavozim</th>
                         <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Javob turi</th>
-                        <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Izox</th>
+                        <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Izoh qoldiring</th>
                       </tr>
                     </thead>
                     <tbody className=" bg-[#f2f2f2b6]">
-                      {regionData.executors?.map((executor, index) => (
+                      {orderData.executors?.map((executor, index) => (
                         <tr key={index} className="hover:bg-indigo-50 transition-colors">
                           <td className="px-6 py-4 text-sm text-gray-900"></td>
-                          <td className="px-6 py-4 text-sm text-gray-900">{executor.status?.name}</td>
-                          <td className="px-6 py-4 text-sm text-gray-900 font-medium">{executor.executor?.name}</td>
-                          <td className="px-6 py-4 text-sm text-gray-900">{executor.executor_type?.name}</td>
-                          <td className="px-6 py-4 text-sm text-gray-900">{executor.position?.name}</td>
-                          <td className="px-6 py-4 text-sm text-gray-700">{executor.comment}</td>
+                          <td className="px-6 py-4 text-sm text-gray-900"></td>
+                          <td className="px-6 py-4 text-sm text-gray-900 font-medium"></td>
+                          <td className="px-6 py-4 text-sm text-gray-900"></td>
+                          <td className="px-6 py-4 text-sm text-gray-900"></td>
+                          <td className="px-6 py-4 text-sm text-gray-700"></td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+            </AccordionDetails>
+          </Accordion>
+        </div>
+        
+        <div>
+          <Accordion defaultExpanded>
+            <AccordionSummary
+              expandIcon={<ExpandMoreIcon />}
+              aria-controls="panel1a-content"
+            >
+              <Typography fontSize={"20px"} fontWeight={600} color="#0f172b">Usti xat quyuvchi xodimlar</Typography>
+            </AccordionSummary>
+            <AccordionDetails>
+
+
+              <div className="bg-transparent rounded-md p-2 flex justify-between mb-6">
+                <div className='flex items-center gap-3'>
+                  <Button className='cursor-pointer'>
+                    <Plus></Plus>
+                    Kiritish
+                  </Button>
+                  <Button className='cursor-pointer'>
+                    Yuborish
+                  </Button>
+                </div>
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4" />
+                  <Input
+                    type="text"
+                    placeholder="Qidirish (Ctrl+F)"
+                    className="w-64 h-9 pl-9 text-sm border-slate-200 bg-white"
+                  />
+                </div>
+              </div>
+
+
+              <div className="bg-white rounded-xl mb-6 overflow-hidden">
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead className="bg-gray-50 border-b-2">
+                      <tr>
+                        <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">№</th>
+                        <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Xabar xolati</th>
+                        <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Xodim</th>
+                        <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Sana</th>
+                      </tr>
+                    </thead>
+                    <tbody className=" bg-[#f2f2f2b6]">
+                      {orderData.executors?.map((executor, index) => (
+                        <tr key={index} className="hover:bg-indigo-50 transition-colors">
+                          <td className="px-6 py-4 text-sm text-gray-900"></td>
+                          <td className="px-6 py-4 text-sm text-gray-900"></td>
                           <td className="px-6 py-4 text-sm text-gray-900 font-medium"></td>
                         </tr>
                       ))}
@@ -350,10 +347,75 @@ const RegionOrderDetail: React.FC = () => {
           </Accordion>
         </div>
 
+        <div>
+          <Accordion defaultExpanded>
+            <AccordionSummary
+              expandIcon={<ExpandMoreIcon />}
+              aria-controls="panel1a-content"
+            >
+              <Typography fontSize={"20px"} fontWeight={600} color="#0f172b">Ijrochilar ruyxati</Typography>
+            </AccordionSummary>
+            <AccordionDetails>
+
+
+              <div className="bg-transparent rounded-md p-2 flex justify-between mb-6">
+                <div className='flex items-center gap-3'>
+                  <Button className='cursor-pointer'>
+                    <Plus></Plus>
+                    Kiritish
+                  </Button>
+                  <Button className='cursor-pointer'>
+                    Yuborish
+                  </Button>
+                </div>
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4" />
+                  <Input
+                    type="text"
+                    placeholder="Qidirish (Ctrl+F)"
+                    className="w-64 h-9 pl-9 text-sm border-slate-200 bg-white"
+                  />
+                </div>
+              </div>
+
+
+              <div className="bg-white rounded-xl mb-6 overflow-hidden">
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead className="bg-gray-50 border-b-2">
+                      <tr>
+                        <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">№</th>
+                        <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Xabar xolati</th>
+                        <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Bajaruvchi xodim</th>
+                        <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Lavozim</th>
+                        <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Usti xat biriktiruvchi xodim</th>
+                        <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Bajarilish muddati</th>
+                        <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Status obzor</th>
+                      </tr>
+                    </thead>
+                    <tbody className=" bg-[#f2f2f2b6]">
+                      {orderData.executors?.map((executor, index) => (
+                        <tr key={index} className="hover:bg-indigo-50 transition-colors">
+                          <td className="px-6 py-4 text-sm text-gray-900"></td>
+                          <td className="px-6 py-4 text-sm text-gray-900"></td>
+                          <td className="px-6 py-4 text-sm text-gray-900 font-medium"></td>
+                          <td className="px-6 py-4 text-sm text-gray-900"></td>
+                          <td className="px-6 py-4 text-sm text-gray-900"></td>
+                          <td className="px-6 py-4 text-sm text-gray-700"></td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+            </AccordionDetails>
+          </Accordion>
+        </div>
 
       </div>
     </div>
   );
 };
 
-export default RegionOrderDetail;
+export default RepublicOrderDetail;

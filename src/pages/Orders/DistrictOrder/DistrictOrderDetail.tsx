@@ -109,7 +109,7 @@ const DistrictOrderDetail: React.FC = () => {
     if (!orderData) {
         return (
             <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
-                <div className="text-red-600 text-xl">Маълумот топилмади</div>
+                <div className="text-red-600 text-xl">Malumotlar topilmadi</div>
             </div>
         );
     }
@@ -127,7 +127,15 @@ const DistrictOrderDetail: React.FC = () => {
 
                         <div className="text-center border-gray-200">
                             <p className="text-xs text-gray-500 uppercase font-semibold mb-2">Chiqish Sana</p>
-                            <p className="text-md font-semibold text-gray-800">{orderData.exit_date}</p>
+                            <p className="text-md font-semibold text-gray-800">{new Date(orderData.exit_date)
+                                .toLocaleString('uz-UZ', {
+                                    day: '2-digit',
+                                    month: '2-digit',
+                                    year: 'numeric',
+                                    hour: '2-digit',
+                                    minute: '2-digit',
+                                })
+                                .replace(',', '. ')}</p>
                         </div>
 
                         <div className="text-center border-gray-200">
@@ -288,38 +296,7 @@ const DistrictOrderDetail: React.FC = () => {
                 </div>
 
                 {/* File upload modal */}
-                <div className='fixed inset-0 z-50 flex items-center justify-center bg-black/20 backdrop-blur-md'>
-                    {/* Modal content */}
-                    <div className='bg-white p-4 shadow-lg rounded-lg min-w-[500px]'>
-                        {/* top */}
-                        <div className='flex items-center justify-between'>
-                            <h2>Hujjat biriktirish oynasi</h2>
-                            <button><EllipsisVertical /></button>
-                        </div>
 
-                        {/* Form */}
-                        <div>
-                            {/* Document types select */}
-                            <Select
-                                value={documentFormData?.selectedDocumentType || undefined}
-                                placeholder="Hujjat turini tanlang"
-                                className='w-full'
-                                onChange={value => setDocumentFormData(prev => ({ ...prev!, selectedDocumentType: value }))}
-                                options={documentTypes.map((documentType) => ({
-                                    value: documentType.id,
-                                    label: documentType.name
-                                }))} />
-
-                            {/* File Input */}
-                            <div>
-                                <label htmlFor="file">File yuklang</label>
-                                <input type="file" name="file" id="file" onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                                    console.log(e.target.files![0])
-                                }} />
-                            </div>
-                        </div>
-                    </div>
-                </div>
 
 
             </div>
