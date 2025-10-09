@@ -112,7 +112,6 @@ const ProductInputForm: React.FC<IProductInputFormProps> = ({
 
   // Handle create product input form submit
   const handleCreateProductInput = async (data: any) => {
-    console.log(data)
     if (data.region && data.warehouse && data.counterparty && data.type_goods && data.responsible_person) {
       if (data.products.length === 0) {
         toast.error("Iltimos kamida bitta tovar qo'shing");
@@ -138,7 +137,6 @@ const ProductInputForm: React.FC<IProductInputFormProps> = ({
     handleCreateProductInput(formData);
   };
 
-  console.log(formData)
 
   // API Requests
   // Get regions

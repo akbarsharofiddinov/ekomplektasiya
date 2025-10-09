@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
+/* eslint-disable react-hooks/exhaustive-deps */
+import React, { useState, useEffect, useCallback } from 'react';
 // import { FileText, User, MapPin, Calendar, Package, CheckCircle, Clock } from 'lucide-react';
-import { EllipsisVertical, Plus, Search } from 'lucide-react';
+import { FilePlus2, Plus, Search } from 'lucide-react';
 import { Input } from '@/components/UI/input';
-import { Button } from '@/components/UI/button';
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 
 import { axiosAPI } from '@/services/axiosAPI';
@@ -11,7 +11,9 @@ import Accordion from '@mui/material/Accordion';
 import AccordionSummary from '@mui/material/AccordionSummary';
 import Typography from '@mui/material/Typography';
 import AccordionDetails from '@mui/material/AccordionDetails';
-import { Select } from 'antd';
+import { Button, Select } from 'antd';
+import TextArea from 'antd/es/input/TextArea';
+import FileDropZone from '@/components/FileDropZone';
 
 
 interface IdName {
@@ -63,6 +65,8 @@ interface OrderDetail {
 const DistrictOrderDetail: React.FC = () => {
     const [orderData, setOrderData] = useState<OrderDetail | null>(null);
     const [loading, setLoading] = useState(true);
+    const [fileUploadModal, setFileUploadModal] = useState(false);
+    const [file, setFile] = useState<File | null>(null);
     const [documentTypes, setDocumentTypes] = useState<IdName[]>([]);
     const [documentFormData, setDocumentFormData] = useState<{
         selectedDocumentType: string;
@@ -73,7 +77,7 @@ const DistrictOrderDetail: React.FC = () => {
 
     const { id } = useParams();
 
-    const fetchOrderDetail = async () => {
+    const fetchOrderDetail = useCallback(async () => {
         try {
             const response = await axiosAPI.get(`district-orders/detail/${id}`);
             setOrderData(response.data[0]);
@@ -82,7 +86,7 @@ const DistrictOrderDetail: React.FC = () => {
         } finally {
             setLoading(false)
         }
-    }
+    }, [id]);
 
     const fetchDocumentTypesList = async () => {
         try {
@@ -94,9 +98,40 @@ const DistrictOrderDetail: React.FC = () => {
     }
 
     useEffect(() => {
+        if (file) {
+            setDocumentFormData(prev => ({ ...prev!, filename: file.name, extension: file.name.split('.').pop()! }))
+            console.log(documentFormData)
+        }
+
+    }, [file, documentFormData?.filename, documentFormData?.extension]);
+
+    // Handle file attach
+    const handleFileAttach = async () => {
+        // Params
+        const params = {
+            id: orderData?.id,
+            file_name: documentFormData?.filename,
+            extension: documentFormData?.extension,
+            file_type: "ЗаявкаДокументПоРайон"
+        }
+        try {
+            const arrayBuffer = await file?.arrayBuffer();
+            const binary = new Uint8Array(arrayBuffer!);
+            console.log(binary)
+            // const response = await axiosAPI.post(`files/create/`, arrayBuffer, {
+            //     params,
+            //     headers: { 'Content-Type': 'application/octet-stream' }
+            // })
+            // console.log(response)
+        } catch (error) {
+            console.log(error)
+        }
+    };
+
+    useEffect(() => {
         fetchOrderDetail();
         fetchDocumentTypesList();
-    }, []);
+    }, [fetchOrderDetail]);
 
     if (loading) {
         return (
@@ -127,7 +162,7 @@ const DistrictOrderDetail: React.FC = () => {
 
                         <div className="text-center border-gray-200">
                             <p className="text-xs text-gray-500 uppercase font-semibold mb-2">Chiqish Sana</p>
-                            <p className="text-md font-semibold text-gray-800">{orderData.exit_date}</p>
+                            <p className="text-md font-semibold text-gray-800">{orderData.exit_date.split("T").join(" ")}</p>
                         </div>
 
                         <div className="text-center border-gray-200">
@@ -287,41 +322,54 @@ const DistrictOrderDetail: React.FC = () => {
                     </Accordion>
                 </div>
 
-                {/* File upload modal */}
-                <div className='fixed inset-0 z-50 flex items-center justify-center bg-black/20 backdrop-blur-md'>
-                    {/* Modal content */}
-                    <div className='bg-white p-4 shadow-lg rounded-lg min-w-[500px]'>
-                        {/* top */}
-                        <div className='flex items-center justify-between'>
-                            <h2>Hujjat biriktirish oynasi</h2>
-                            <button><EllipsisVertical /></button>
-                        </div>
-
-                        {/* Form */}
-                        <div>
-                            {/* Document types select */}
-                            <Select
-                                value={documentFormData?.selectedDocumentType || undefined}
-                                placeholder="Hujjat turini tanlang"
-                                className='w-full'
-                                onChange={value => setDocumentFormData(prev => ({ ...prev!, selectedDocumentType: value }))}
-                                options={documentTypes.map((documentType) => ({
-                                    value: documentType.id,
-                                    label: documentType.name
-                                }))} />
-
-                            {/* File Input */}
-                            <div>
-                                <label htmlFor="file">File yuklang</label>
-                                <input type="file" name="file" id="file" onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                                    console.log(e.target.files![0])
-                                }} />
-                            </div>
-                        </div>
+                {/* Attach document */}
+                <div className='flex items-center justify-center gap-10'>
+                    {/* File */}
+                    <div>
+                        <button className='flex items-center gap-2 cursor-pointer text-sm bg-blue-500 px-4 py-2 rounded-md text-white font-medium mb-2' onClick={() => setFileUploadModal(true)}>
+                            <span><FilePlus2 /></span>
+                            Hujjat biriktirish
+                        </button>
                     </div>
+                    <TextArea style={{ width: "600px" }} />
                 </div>
 
+                {fileUploadModal && (
+                    <div className="fixed inset-0 bg-black/20 bg-opacity-50 flex items-center justify-center z-50" onClick={() => setFileUploadModal(false)}>
+                        <div className="bg-white rounded-lg p-6 w-96 flex flex-col" onClick={(e) => e.stopPropagation()}>
+                            {/* Top */}
+                            <div className='flex items-center justify-between mb-4 pb-2 border-b'>
+                                <h2 className="text-xl font-semibold">Hujjat biriktirish</h2>
+                                <button className='text-2xl' onClick={() => setFileUploadModal(false)}>&times;</button>
+                            </div>
+                            <div className="mb-4">
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Hujjat turi</label>
+                                <Select
+                                    style={{ width: '100%' }}
+                                    placeholder="Hujjat turini tanlang"
+                                    onChange={(value) => {
+                                        console.log(value)
+                                        // setDocumentFormData(prev => ({ ...prev!, selectedDocumentType: value }))
+                                    }}
+                                    options={documentTypes.map(docType => ({ value: docType.id, label: docType.name }))}
+                                />
+                            </div>
+                            <div className="mb-4">
+                                <FileDropZone file={file} setFile={setFile} />
+                            </div>
 
+                            <Button
+                                className="bg-gray-100 p-2 rounded-lg text-sm cursor-pointer hover:bg-blue-400 hover:text-white ml-auto"
+                                onClick={() => {
+                                    setFileUploadModal(false);
+                                    handleFileAttach()
+                                }}
+                                disabled={!file && !documentFormData?.selectedDocumentType}>
+                                Yuklash
+                            </Button>
+                        </div>
+                    </div>
+                )}
             </div>
         </div>
     );
