@@ -314,13 +314,13 @@ const DistrictOrder: React.FC = () => {
         const base = "border-b border-slate-100 cursor-pointer transition-all duration-200";
 
         if (item.application_status_district === "Bekor qilingan") {
-            return `${base} bg-slate-200 hover:bg-slate-300`;
+            return `${base}`;
         } else if (item.is_seen === false) {
-            return `${base} bg-amber-50 hover:bg-amber-100`; // Ko‘rilmagan
+            return `${base} `; // Ko‘rilmagan
         } else if (item.is_approved === true) {
-            return `${base} bg-emerald-50 hover:bg-emerald-100`; // Tasdiqlangan
+            return `${base} `; // Tasdiqlangan
         } else if (item.is_approved === false) {
-            return `${base} bg-red-50 hover:bg-red-100`; // Tasdiqlanmagan
+            return `${base} `; // Tasdiqlanmagan
         }
         return `${base} bg-white hover:bg-slate-50`; // Default
     };
