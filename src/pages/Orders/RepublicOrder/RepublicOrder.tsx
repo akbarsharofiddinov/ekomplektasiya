@@ -372,8 +372,8 @@ const RepublicOrder: React.FC = () => {
                         </TableCell>
                         <TableCell className="text-slate-700 py-3 px-4">{item.from_region}</TableCell>
                         <TableCell className="text-slate-700 py-3 px-4">{item.sender_from_region}</TableCell>
-                        <TableCell className="text-slate-700 py-3 px-4">{item.recipient_republic}</TableCell>
-                        <TableCell className="py-3 px-4">{item.application_status_republic}</TableCell>
+                        {/* <TableCell className="text-slate-700 py-3 px-4">{item.recipient_republic}</TableCell> */}
+                        {/* <TableCell className="py-3 px-4">{item.application_status_republic}</TableCell> */}
                         <TableCell className="text-slate-700 py-3 px-4">{item.confirmation_date}</TableCell>
                       </TableRow>
                     );
@@ -384,7 +384,7 @@ const RepublicOrder: React.FC = () => {
 
             {/* Enhanced Professional Pagination */}
             <div className="border-t border-slate-100 px-6 py-4 bg-slate-50/50">
-              <div className="flex items-center justify-between">
+              <div className="flex justify-between">
                 <div className="flex items-center gap-2">
                   <span className="text-sm text-slate-600">
                     Jami: <span className="font-medium text-slate-900">{totalItems.count}</span> ta transfer

@@ -1,6 +1,7 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 import React, { useState, useEffect } from 'react';
 // import { FileText, User, MapPin, Calendar, Package, CheckCircle, Clock } from 'lucide-react';
-import { EllipsisVertical, Plus, Search } from 'lucide-react';
+import { Plus, Search } from 'lucide-react';
 import { Input } from '@/components/UI/input';
 import { Button } from '@/components/UI/button';
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
@@ -11,8 +12,6 @@ import Accordion from '@mui/material/Accordion';
 import AccordionSummary from '@mui/material/AccordionSummary';
 import Typography from '@mui/material/Typography';
 import AccordionDetails from '@mui/material/AccordionDetails';
-import { Select } from 'antd';
-
 
 interface IdName {
   id: string;
@@ -64,12 +63,13 @@ const RepublicOrderDetail: React.FC = () => {
   const [orderData, setOrderData] = useState<OrderDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [documentTypes, setDocumentTypes] = useState<IdName[]>([]);
-  const [documentFormData, setDocumentFormData] = useState<{
-    selectedDocumentType: string;
-    filename: string;
-    extension: string;
-    fileBinary: string;
-  }>();
+  console.log(documentTypes)
+  // const [documentFormData, setDocumentFormData] = useState<{
+  //   selectedDocumentType: string;
+  //   filename: string;
+  //   extension: string;
+  //   fileBinary: string;
+  // }>();
 
   const { id } = useParams();
 
@@ -268,7 +268,7 @@ const RepublicOrderDetail: React.FC = () => {
                       </tr>
                     </thead>
                     <tbody className=" bg-[#f2f2f2b6]">
-                      {orderData.executors?.map((executor, index) => (
+                      {/* {orderData.executors?.map((executor, index) => (
                         <tr key={index} className="hover:bg-indigo-50 transition-colors">
                           <td className="px-6 py-4 text-sm text-gray-900"></td>
                           <td className="px-6 py-4 text-sm text-gray-900"></td>
@@ -277,7 +277,10 @@ const RepublicOrderDetail: React.FC = () => {
                           <td className="px-6 py-4 text-sm text-gray-900"></td>
                           <td className="px-6 py-4 text-sm text-gray-700"></td>
                         </tr>
-                      ))}
+                      ))} */}
+                      <tr>
+                        <td></td>
+                      </tr>
                     </tbody>
                   </table>
                 </div>
@@ -331,13 +334,16 @@ const RepublicOrderDetail: React.FC = () => {
                       </tr>
                     </thead>
                     <tbody className=" bg-[#f2f2f2b6]">
-                      {orderData.executors?.map((executor, index) => (
+                      {/* {orderData.executors?.map((executor, index) => (
                         <tr key={index} className="hover:bg-indigo-50 transition-colors">
                           <td className="px-6 py-4 text-sm text-gray-900"></td>
                           <td className="px-6 py-4 text-sm text-gray-900"></td>
                           <td className="px-6 py-4 text-sm text-gray-900 font-medium"></td>
                         </tr>
-                      ))}
+                      ))} */}
+                      <tr>
+                        <td></td>
+                      </tr>
                     </tbody>
                   </table>
                 </div>
@@ -394,7 +400,7 @@ const RepublicOrderDetail: React.FC = () => {
                       </tr>
                     </thead>
                     <tbody className=" bg-[#f2f2f2b6]">
-                      {orderData.executors?.map((executor, index) => (
+                      {/* {orderData.executors?.map((executor, index) => (
                         <tr key={index} className="hover:bg-indigo-50 transition-colors">
                           <td className="px-6 py-4 text-sm text-gray-900"></td>
                           <td className="px-6 py-4 text-sm text-gray-900"></td>
@@ -403,7 +409,10 @@ const RepublicOrderDetail: React.FC = () => {
                           <td className="px-6 py-4 text-sm text-gray-900"></td>
                           <td className="px-6 py-4 text-sm text-gray-700"></td>
                         </tr>
-                      ))}
+                      ))} */}
+                      <tr>
+                        <td></td>
+                      </tr>
                     </tbody>
                   </table>
                 </div>

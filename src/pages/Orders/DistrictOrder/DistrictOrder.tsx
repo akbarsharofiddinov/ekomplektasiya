@@ -35,8 +35,6 @@ interface DocumentInfo {
     recipient_district: string;
 }
 
-
-
 type FilterStatus = 'all' | 'approved' | 'approved_not_accepted' | 'not_approved' | "Canceled";
 
 const DistrictOrder: React.FC = () => {
@@ -62,7 +60,7 @@ const DistrictOrder: React.FC = () => {
     // const [isToDateOpen, setIsToDateOpen] = useState(false);
 
     // Create Transfer modal state
-    const [isCreateFormModalOpen, setIsCreateFormModalOpen] = useState(false);
+    const [isCreateFormModalOpen] = useState(false);
     const [totalItems, setTotalItems] = useState<{
         approved: number;
         cancelled: 0;
@@ -80,7 +78,7 @@ const DistrictOrder: React.FC = () => {
     // const { warehouse_transfers } = useAppSelector(state => state.transferSlice)
 
     // Calculate pagination
-    const totalPages = Math.ceil(totalItems?.count! / itemsPerPage);
+    const totalPages = Math.ceil(totalItems!.count / itemsPerPage);
     const startIndex = (currentPage - 1) * itemsPerPage;
     const endIndex = startIndex + itemsPerPage;
 
@@ -604,7 +602,7 @@ const DistrictOrder: React.FC = () => {
                                     </span>
                                     <span className="text-slate-300">|</span>
                                     <span className="text-sm text-slate-600">
-                                        Ko'rsatilmoqda: <span className="font-medium text-slate-900">{startIndex + 1}</span>-<span className="font-medium text-slate-900">{Math.min(endIndex, totalItems?.count!)}</span>
+                                        Ko'rsatilmoqda: <span className="font-medium text-slate-900">{startIndex + 1}</span>-<span className="font-medium text-slate-900">{Math.min(endIndex, totalItems!.count!)}</span>
                                     </span>
                                 </div>
 

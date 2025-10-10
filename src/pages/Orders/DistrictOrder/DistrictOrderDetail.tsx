@@ -117,12 +117,11 @@ const DistrictOrderDetail: React.FC = () => {
         try {
             const arrayBuffer = await file?.arrayBuffer();
             const binary = new Uint8Array(arrayBuffer!);
-            console.log(binary)
-            // const response = await axiosAPI.post(`files/create/`, arrayBuffer, {
-            //     params,
-            //     headers: { 'Content-Type': 'application/octet-stream' }
-            // })
-            // console.log(response)
+            const response = await axiosAPI.post(`district-orders/files/create`, binary, {
+                params,
+                headers: { 'Content-Type': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' }
+            })
+            console.log(response)
         } catch (error) {
             console.log(error)
         }

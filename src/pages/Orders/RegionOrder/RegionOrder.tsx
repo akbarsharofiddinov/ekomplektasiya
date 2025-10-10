@@ -46,6 +46,7 @@ const RegionOrder: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const searchInputRef = React.useRef<HTMLInputElement>(null);
 
+
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
@@ -56,7 +57,7 @@ const RegionOrder: React.FC = () => {
   // order type
   const [orderType, setOrderType] = useState<"outgoing" | "incoming">("outgoing")
 
-  const [statusFilter] = useState<FilterStatus>('not_approved');
+  const [statusFilter, setStatusFilter] = useState<FilterStatus>('not_approved');
   // const [fromDate, setFromDate] = useState<Date | undefined>(undefined);
   // const [toDate, setToDate] = useState<Date | undefined>(undefined);
   // const [isFromDateOpen, setIsFromDateOpen] = useState(false);
@@ -190,6 +191,31 @@ const RegionOrder: React.FC = () => {
     return pages;
   };
 
+  const handleStatusFilter = (status: FilterStatus) => {
+    setStatusFilter(status);
+
+    let filtered = data;
+
+    switch (status) {
+      case 'approved': // ✅ Tasdiqlangan
+        filtered = data.filter(item => item.is_approved === true && item.application_status_district !== "Bekor qilingan");
+        break;
+      case 'not_approved': // ❌ Tasdiqlanmagan
+        filtered = data.filter(item => item.is_approved === false);
+        break;
+      case 'approved_not_accepted': // 🕓 Ko‘rilmagan
+        filtered = data.filter(item => item.is_seen === false && item.application_status_district !== "Bekor qilingan");
+        break;
+      case 'Canceled': // 🚫 Bekor qilingan
+        filtered = data.filter(item => item.application_status_district === "Bekor qilingan");
+        break;
+      default:
+        filtered = data; // 🔁 Barchasi
+    }
+
+    setFilteredData(filtered);
+  };
+
   // API Requests
   // Get regions
   const getRegionsList = React.useCallback(async () => {
@@ -229,17 +255,17 @@ const RegionOrder: React.FC = () => {
               <h1 className='text-2xl text-black pb-4'>Viloyatlar bo'yicha buyurtma</h1>
               <div className="flex items-center justify-between gap-20">
                 {/* Status Filter Tabs - Left Side */}
-                <div className="flex gap-2">
+                <div className="flex flex-wrap gap-2">
                   <button
-                    // onClick={() => handleStatusFilter('all')}
-                    className={`flex items-center space-x-1 rounded-md transition-all duration-300 font-medium text-sm ${statusFilter === 'all'
-                      ? 'bg-slate-100 text-slate-900'
-                      : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+                    onClick={() => handleStatusFilter('all')}
+                    className={`flex items-center space-x-1 px-3 py-1.5 rounded-md text-sm font-medium transition-all duration-200 ${statusFilter === 'all'
+                      ? 'bg-slate-100 text-slate-900 shadow-sm'
+                      : 'text-slate-600 hover:bg-slate-50'
                       }`}
                   >
                     <span>Barchasi</span>
-                    <span className={`px-2 py-0.5 text-xs font-medium ${statusFilter === 'all'
-                      ? 'bg-slate-200 text-slate-700'
+                    <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${statusFilter === 'all'
+                      ? 'bg-slate-200 text-slate-800'
                       : 'bg-slate-100 text-slate-600'
                       }`}>
                       {statusCounts.all}
@@ -248,12 +274,14 @@ const RegionOrder: React.FC = () => {
 
                   {/* Green - Approved and Accepted */}
                   <button
-                    // onClick={() => handleStatusFilter('approved')}
-                    className={`flex items-center space-x-1 rounded-md transition-all duration-300 font-medium text-sm text-slate-600 hover:text-emerald-700 hover:bg-emerald-50
+                    onClick={() => handleStatusFilter('approved')}
+                    className={`flex items-center space-x-1 px-3 py-1.5 rounded-md text-sm font-medium transition-all duration-200 ${statusFilter === 'approved'
+                      ? 'bg-emerald-50 text-emerald-800 shadow-sm border border-emerald-200'
+                      : 'text-slate-600 hover:text-emerald-700 hover:bg-emerald-50'
                       }`}
                   >
                     <span>Tasdiqlangan</span>
-                    <span className={`text-xs font-medium ${statusFilter === 'approved'
+                    <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${statusFilter === 'approved'
                       ? 'bg-emerald-100 text-emerald-700'
                       : 'bg-slate-100 text-slate-600'
                       }`}>
@@ -263,14 +291,14 @@ const RegionOrder: React.FC = () => {
 
                   {/* Red - Not Approved */}
                   <button
-                    // onClick={() => handleStatusFilter('not_approved')}
-                    className={`flex items-center space-x-1 px-2 py-1 rounded-md transition-all duration-300 font-medium text-sm ${statusFilter === 'not_approved'
+                    onClick={() => handleStatusFilter('not_approved')}
+                    className={`flex items-center space-x-1 px-3 py-1.5 rounded-md text-sm font-medium transition-all duration-200 ${statusFilter === 'not_approved'
                       ? 'bg-red-50 text-red-800 shadow-sm border border-red-200'
                       : 'text-slate-600 hover:text-red-700 hover:bg-red-50'
                       }`}
                   >
                     <span>Tasdiqlanmagan</span>
-                    <span className={`px-2 py-0.5 text-xs font-medium ${statusFilter === 'not_approved'
+                    <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${statusFilter === 'not_approved'
                       ? 'bg-red-100 text-red-700'
                       : 'bg-slate-100 text-slate-600'
                       }`}>
@@ -279,14 +307,16 @@ const RegionOrder: React.FC = () => {
                   </button>
 
                   <button
-                    // onClick={() => handleStatusFilter('Canceled')}
-                    className={`flex items-center space-x-1 px-2 py-1 rounded-md transition-all duration-300 font-medium text-sm text-slate-600 hover:text-emerald-700 hover:bg-emerald-50
+                    onClick={() => handleStatusFilter('Canceled')}
+                    className={`flex items-center space-x-1 px-3 py-1.5 rounded-md text-sm font-medium transition-all duration-200 ${statusFilter === 'Canceled'
+                      ? 'bg-slate-200 text-slate-900 shadow-sm border border-slate-300'
+                      : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
                       }`}
                   >
                     <span>Bekor qilingan</span>
-                    <span className={`px-2 py-0.5 text-xs font-medium ${statusFilter === 'Canceled'
-                      ? 'bg-amber-50 text-amber-800 shadow-sm border border-amber-200'
-                      : 'text-slate-600 hover:text-amber-700 hover:bg-amber-50'
+                    <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${statusFilter === 'Canceled'
+                      ? 'bg-slate-300 text-slate-900'
+                      : 'bg-slate-100 text-slate-600'
                       }`}>
                       {/* {statusCounts.Canceled} */}
                     </span>
@@ -294,14 +324,14 @@ const RegionOrder: React.FC = () => {
 
                   {/* Yellow - Approved but not Accepted */}
                   <button
-                    // onClick={() => handleStatusFilter('approved_not_accepted')}
-                    className={`flex items-center space-x-1 px-2 py-1 rounded-md transition-all duration-300 font-medium text-sm ${statusFilter === 'approved_not_accepted'
+                    onClick={() => handleStatusFilter('approved_not_accepted')}
+                    className={`flex items-center space-x-1 px-3 py-1.5 rounded-md text-sm font-medium transition-all duration-200 ${statusFilter === 'approved_not_accepted'
                       ? 'bg-amber-50 text-amber-800 shadow-sm border border-amber-200'
                       : 'text-slate-600 hover:text-amber-700 hover:bg-amber-50'
                       }`}
                   >
                     <span>Kurilmagan</span>
-                    <span className={`px-2 py-0.5 text-xs font-medium ${statusFilter === 'approved_not_accepted'
+                    <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${statusFilter === 'approved_not_accepted'
                       ? 'bg-amber-100 text-amber-700'
                       : 'bg-slate-100 text-slate-600'
                       }`}>

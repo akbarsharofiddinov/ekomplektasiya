@@ -21,7 +21,6 @@ import toast from 'react-hot-toast';
 import { motion } from "framer-motion";
 import { Modal } from "antd";
 
-
 interface FilterData {
   start_date: string;
   end_date: string;

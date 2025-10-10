@@ -1,6 +1,6 @@
 import React from 'react'
 
-function DistricOrderForm() {
+const DistricOrderForm: React.FC = () => {
   return (
     <div>DistricOrderForm</div>
   )
