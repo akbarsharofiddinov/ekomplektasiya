@@ -95,7 +95,7 @@ const ProductOutDetailPage: React.FC = () => {
   const { id: documentNumber } = useParams();
 
   const [selectedItems, setSelectedItems] = useState<string[]>([]);
-  setSelectedItems([]); // selectedItems faqat o'qish uchun
+
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
@@ -427,8 +427,6 @@ const ProductOutDetailPage: React.FC = () => {
   }, [responsiblePersons, documentData?.responsible_person]);
 
   useEffect(() => {
-    if (!selectedRemaindersList.length || !documentData) return;
-
     // Map ProductRemainder objects to ProductItem objects
     const mappedProducts: ProductItem[] = selectedRemaindersList.map((remainder, index) => ({
       row_number: index + 1,
@@ -448,9 +446,6 @@ const ProductOutDetailPage: React.FC = () => {
     setDocumentData(prev => prev ? { ...prev, products: mappedProducts } : prev);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedRemaindersList.length]);
-
-  console.log(documentData);
-
 
   return (
     <>

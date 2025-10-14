@@ -18,7 +18,25 @@ type FilterStatus = 'all' | 'approved_accepted' | 'approved_not_accepted' | 'not
 
 const WarehouseTransfer: React.FC = () => {
   const [filteredData, setFilteredData] = useState<Transfer[]>([]);
-  const [mockData, setMockData] = useState<Transfer[]>([]);
+  const [mockData, setMockData] = useState<{
+    approved: number;
+    count: number;
+    count_accepted: number;
+    count_approval: number;
+    limit: number;
+    offset: number;
+    unapproved: number;
+    results: Transfer[];
+  }>({
+    approved: 0,
+    count: 0,
+    count_accepted: 0,
+    count_approval: 0,
+    limit: 0,
+    offset: 0,
+    unapproved: 0,
+    results: [],
+  });
   const searchInputRef = useRef<HTMLInputElement>(null);
   const [statusFilter, setStatusFilter] = useState<FilterStatus>('not_approved');
   // const [fromDate, setFromDate] = useState<Date | undefined>(undefined);
@@ -244,7 +262,7 @@ const WarehouseTransfer: React.FC = () => {
       const response = await axiosAPI.get(`transfers/list/?limit=${itemsPerPage}&offset=${(currentPage - 1) * itemsPerPage}`);
       dispatch(setWarehouseTransfers(response.data.results));
       setFilteredData(response.data.results);
-      setMockData(response.data.results);
+      setMockData(response.data);
       setTotalItems(response.data.count);
     } catch (error) {
       console.error('Error fetching warehouse transfers:', error);
@@ -357,10 +375,10 @@ const WarehouseTransfer: React.FC = () => {
 
   // Get counts for each status
   const statusCounts = {
-    all: mockData.length,
-    approved_accepted: mockData.filter(item => item.is_approved && item.is_accepted).length,
-    approved_not_accepted: mockData.filter(item => item.is_approved && !item.is_accepted).length,
-    not_approved: mockData.filter(item => !item.is_approved).length,
+    all: mockData.count,
+    approved_accepted: mockData.count_accepted,
+    approved_not_accepted: mockData.count_approval,
+    not_approved: mockData.unapproved,
   };
 
   return (

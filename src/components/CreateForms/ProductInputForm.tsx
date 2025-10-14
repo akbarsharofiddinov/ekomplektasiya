@@ -737,7 +737,7 @@ const ProductInputForm: React.FC<IProductInputFormProps> = ({
                       </TableCell>
 
                       {/* Quantity */}
-                      <TableCell className="text-slate-700 font-medium p-3">
+                      <TableCell className="text-slate-700 font-medium p-3 w-[100px]">
                         <Input
                           type="number"
                           placeholder="Soni"
