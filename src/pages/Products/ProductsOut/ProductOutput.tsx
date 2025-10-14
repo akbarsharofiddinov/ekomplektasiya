@@ -562,9 +562,6 @@ const ProductOutput: React.FC = () => {
                           <TableHead className="text-slate-700 font-semibold py-2 px-3 text-left transition-colors duration-300">
                             Ombor
                           </TableHead>
-                          {/* <TableHead className="text-slate-700 font-semibold py-2 px-3 text-left transition-colors duration-300">
-                  Tumanlar
-                </TableHead> */}
                           <TableHead className="text-slate-700 font-semibold py-2 px-3 text-left transition-colors duration-300">
                             Tovar holati
                           </TableHead>

@@ -56,7 +56,11 @@ const routes = createBrowserRouter([
           {
             path: "order-details/:id",
             element: <DistrictOrderDetail />
-          }
+          },
+          {
+            path: "order-details/:id",
+            element: <DistrictOrderDetail />
+          },
         ]
       },
       {

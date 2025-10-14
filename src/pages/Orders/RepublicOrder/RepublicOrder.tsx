@@ -401,7 +401,7 @@ const RepublicOrder: React.FC = () => {
                     size="sm"
                     onClick={goToFirstPage}
                     disabled={currentPage === 1}
-                    className="h-8 w-8 p-0 border-slate-300 text-slate-600 hover:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+                    className="h-8 w-8 p-0 border-slate-300 text-slate-600 hover:bg-[#1E56A0]/70 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
                   >
                     <ChevronsLeft className="w-4 h-4" />
                   </Button>
@@ -411,7 +411,7 @@ const RepublicOrder: React.FC = () => {
                     size="sm"
                     onClick={goToPreviousPage}
                     disabled={currentPage === 1}
-                    className="h-8 w-8 p-0 border-slate-300 text-slate-600 hover:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+                    className="h-8 w-8 p-0 border-slate-300 text-slate-600 hover:bg-[#1E56A0]/70 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
                   >
                     <ChevronLeft className="w-4 h-4" />
                   </Button>
@@ -424,7 +424,7 @@ const RepublicOrder: React.FC = () => {
                       onClick={() => goToPage(pageNum)}
                       className={`h-8 w-8 p-0 transition-all duration-200 ${currentPage === pageNum
                         ? 'bg-[#1E56A0] text-white hover:bg-[#1E56A0]/90 shadow-sm'
-                        : 'border-slate-300 text-slate-600 hover:bg-slate-100'
+                        : 'border-slate-300 text-slate-600 hover:bg-[#1E56A0]/70'
                         }`}
                     >
                       {pageNum}
@@ -436,7 +436,7 @@ const RepublicOrder: React.FC = () => {
                     size="sm"
                     onClick={goToNextPage}
                     disabled={currentPage === totalPages}
-                    className="h-8 w-8 p-0 border-slate-300 text-slate-600 hover:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+                    className="h-8 w-8 p-0 border-slate-300 text-slate-600 hover:bg-[#1E56A0]/70 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
                   >
                     <ChevronRight className="w-4 h-4" />
                   </Button>
@@ -446,7 +446,7 @@ const RepublicOrder: React.FC = () => {
                     size="sm"
                     onClick={goToLastPage}
                     disabled={currentPage === totalPages}
-                    className="h-8 w-8 p-0 border-slate-300 text-slate-600 hover:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+                    className="h-8 w-8 p-0 border-slate-300 text-slate-600 hover:bg-[#1E56A0]/70 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
                   >
                     <ChevronsRight className="w-4 h-4" />
                   </Button>
