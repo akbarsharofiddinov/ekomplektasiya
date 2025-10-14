@@ -8,6 +8,10 @@ import { Input } from '@/components/UI/input';
 import { Plus, RefreshCw, Search, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react';
 import { axiosAPI } from '@/services/axiosAPI';
 import { useAppDispatch } from '@/store/hooks/hooks';
+import {
+    CheckCircle,
+    XCircle,
+} from "lucide-react";
 // import { setWarehouseTransfers } from '@/store/transferSlice/transferSlice';
 import { Outlet, useNavigate, useParams } from 'react-router-dom';
 // import { SearchOutlined } from '@ant-design/icons';
@@ -42,7 +46,7 @@ const DistrictOrder: React.FC = () => {
     const [filteredData, setFilteredData] = useState<DocumentInfo[]>([]);
     // const [mockData, setMockData] = useState<DocumentInfo[]>([]);
     const [statusFilter, setStatusFilter] = useState<FilterStatus>('not_approved');
-
+    const [loading, setLoading] = useState(false);
 
     // Pagination state
     const [currentPage, setCurrentPage] = useState(1);
@@ -75,8 +79,6 @@ const DistrictOrder: React.FC = () => {
 
     // Redux
     const dispatch = useAppDispatch()
-    // const { warehouse_transfers } = useAppSelector(state => state.transferSlice)
-
     // Calculate pagination
     const totalPages = Math.ceil((totalItems?.count ?? 0) / itemsPerPage);
     const startIndex = (currentPage - 1) * itemsPerPage;
@@ -213,6 +215,12 @@ const DistrictOrder: React.FC = () => {
         } catch (error) {
             console.error('Error fetching warehouse transfers:', error);
         }
+    };
+
+    const handleRefresh = async () => {
+        setLoading(true);
+        await getDistrictOrderList();
+        setLoading(false);
     };
 
     // Qidiruv funksiyasi
@@ -368,6 +376,23 @@ const DistrictOrder: React.FC = () => {
         getRegionsList();
     }, []);
 
+    // Get document number styling and icon based on status
+    const getDocumentStyling = (status: boolean) => {
+        if (status) {
+            return {
+                color: "text-emerald-600 hover:text-emerald-700",
+                icon: CheckCircle,
+                iconColor: "text-emerald-500",
+            };
+        } else {
+            return {
+                color: "text-red-600 hover:text-red-700",
+                icon: XCircle,
+                iconColor: "text-red-500",
+            };
+        }
+    };
+
     // Get counts for each status
 
     // 🔹 Har bir status uchun sonlarni hisoblash
@@ -508,13 +533,19 @@ const DistrictOrder: React.FC = () => {
                                 Yaratish
                             </Button>
 
-                            <Button className='cursor-pointer'>
-                                <RefreshCw></RefreshCw>
-                                Yangilash
+                            <Button
+                                className='cursor-pointer'
+                                onClick={handleRefresh}
+                                disabled={loading}
+                            >
+                                {loading ? (
+                                    <RefreshCw className="animate-spin w-4 h-4 mr-2" />
+                                ) : (
+                                    <RefreshCw className="w-4 h-4 mr-2" />
+                                )}
+                                {loading ? "Yangilanmoqda..." : "Yangilash"}
                             </Button>
-                            <Button className='cursor-pointer'>
-                                Buyurtma xolati
-                            </Button>
+                          
                         </div>
                         <div className="relative">
                             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4" />
@@ -562,23 +593,30 @@ const DistrictOrder: React.FC = () => {
                                 </TableHeader>
                                 <TableBody>
                                     {filteredData.map((item, index) => {
+                                        const documentStyle = getDocumentStyling(
+                                            item.is_approved
+                                        );
+                                        const StatusIcon = documentStyle.icon;
                                         return (
                                             <TableRow
                                                 key={`${index}`}
                                                 onClick={() => handleDocumentClick(item.id)}
                                                 className={getRowStyling(item)}
                                             >
-                                                <TableCell className="py-3 px-4">{item.exit_number}</TableCell>
                                                 <TableCell className="py-3 px-4">
-                                                    {new Date(item.exit_date)
-                                                        .toLocaleString('uz-UZ', {
-                                                            day: '2-digit',
-                                                            month: '2-digit',
-                                                            year: 'numeric',
-                                                            hour: '2-digit',
-                                                            minute: '2-digit',
-                                                        })
-                                                        .replace(',', '. ')}
+                                                    <div className="flex items-center gap-2">
+                                                        <StatusIcon
+                                                            className={`w-5 h-5 ${documentStyle.iconColor} transition-all duration-200`}
+                                                        />
+                                                        <span
+                                                            className={`font-bold hover:underline transition-all duration-300 cursor-pointer ${documentStyle.color}`}
+                                                        >
+                                                            {item.exit_number}
+                                                        </span>
+                                                    </div>
+                                                </TableCell>
+                                                <TableCell className="py-3 px-4">
+                                                    {item.exit_date.split("T").join("  ")}
                                                 </TableCell>
                                                 <TableCell className="text-slate-700 py-3 px-4">{item.application_status_district}</TableCell>
                                                 <TableCell className="text-slate-700 py-3 px-4">{item.from_district}</TableCell>
@@ -598,7 +636,7 @@ const DistrictOrder: React.FC = () => {
                             <div className="flex items-center justify-between">
                                 <div className="flex items-center gap-2">
                                     <span className="text-sm text-slate-600">
-                                        Jami: <span className="font-medium text-slate-900">{totalItems?.count}</span> ta transfer
+                                        Jami: <span className="font-medium text-slate-900">{totalItems?.count}</span> ta Buyurtma
                                     </span>
                                     <span className="text-slate-300">|</span>
                                     <span className="text-sm text-slate-600">
@@ -612,7 +650,7 @@ const DistrictOrder: React.FC = () => {
                                         size="sm"
                                         onClick={goToFirstPage}
                                         disabled={currentPage === 1}
-                                        className="h-8 w-8 p-0 border-slate-300 text-slate-600 hover:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+                                        className="h-8 w-8 p-0 border-slate-300 text-slate-600 hover:bg-[#1E56A0]/70 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
                                     >
                                         <ChevronsLeft className="w-4 h-4" />
                                     </Button>
@@ -622,7 +660,7 @@ const DistrictOrder: React.FC = () => {
                                         size="sm"
                                         onClick={goToPreviousPage}
                                         disabled={currentPage === 1}
-                                        className="h-8 w-8 p-0 border-slate-300 text-slate-600 hover:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+                                        className="h-8 w-8 p-0 border-slate-300 text-slate-600 hover:bg-[#1E56A0]/70 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
                                     >
                                         <ChevronLeft className="w-4 h-4" />
                                     </Button>
@@ -635,7 +673,7 @@ const DistrictOrder: React.FC = () => {
                                             onClick={() => goToPage(pageNum)}
                                             className={`h-8 w-8 p-0 transition-all duration-200 ${currentPage === pageNum
                                                 ? 'bg-[#1E56A0] text-white hover:bg-[#1E56A0]/90 shadow-sm'
-                                                : 'border-slate-300 text-slate-600 hover:bg-slate-100'
+                                                : 'border-slate-300 text-slate-600 hover:bg-[#1E56A0]/70'
                                                 }`}
                                         >
                                             {pageNum}
@@ -647,7 +685,7 @@ const DistrictOrder: React.FC = () => {
                                         size="sm"
                                         onClick={goToNextPage}
                                         disabled={currentPage === totalPages}
-                                        className="h-8 w-8 p-0 border-slate-300 text-slate-600 hover:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+                                        className="h-8 w-8 p-0 border-slate-300 text-slate-600 hover:bg-[#1E56A0]/70 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
                                     >
                                         <ChevronRight className="w-4 h-4" />
                                     </Button>
@@ -657,7 +695,7 @@ const DistrictOrder: React.FC = () => {
                                         size="sm"
                                         onClick={goToLastPage}
                                         disabled={currentPage === totalPages}
-                                        className="h-8 w-8 p-0 border-slate-300 text-slate-600 hover:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+                                        className="h-8 w-8 p-0 border-slate-300 text-slate-600 hover:bg-[#1E56A0]/70 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
                                     >
                                         <ChevronsRight className="w-4 h-4" />
                                     </Button>

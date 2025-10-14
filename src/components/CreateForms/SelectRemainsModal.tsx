@@ -2,8 +2,8 @@ import React, { useEffect } from 'react'
 
 interface SelectRemainsModalProps {
   remainders: ProductRemainder[];
-  setSelectedRemaindersList: React.Dispatch<React.SetStateAction<ProductRemainder[]>>;
-  selectedRemaindersList: ProductRemainder[];
+  setSelectedRemaindersList?: React.Dispatch<React.SetStateAction<ProductRemainder[]>>;
+  selectedRemaindersList?: ProductRemainder[];
   onClose: () => void;
 }
 
@@ -52,7 +52,7 @@ const SelectRemainsModal: React.FC<SelectRemainsModalProps> = ({
 
   const isSelected = (remainder: ProductRemainder) => {
     const key = getRemainderKey(remainder);
-    return selectedRemaindersList.some((item) => getRemainderKey(item) === key);
+    return selectedRemaindersList?.some((item) => getRemainderKey(item) === key);
   };
 
   const handleSelectAll = (checked: boolean) => {
@@ -60,13 +60,13 @@ const SelectRemainsModal: React.FC<SelectRemainsModalProps> = ({
       // Add only filtered remainders that aren't already selected
       const newSelections = filteredRemainders.filter((remainder) => {
         const key = getRemainderKey(remainder);
-        return !selectedRemaindersList.some((selected) => getRemainderKey(selected) === key);
+        return !selectedRemaindersList?.some((selected) => getRemainderKey(selected) === key);
       });
-      setSelectedRemaindersList(prev => [...prev, ...newSelections]);
+      setSelectedRemaindersList!(prev => [...prev, ...newSelections]);
     } else {
       // Remove only filtered remainders from selection
       const filteredKeys = filteredRemainders.map((r) => getRemainderKey(r));
-      setSelectedRemaindersList(prev =>
+      setSelectedRemaindersList!(prev =>
         prev.filter((item) => !filteredKeys.includes(getRemainderKey(item)))
       );
     }
@@ -78,7 +78,7 @@ const SelectRemainsModal: React.FC<SelectRemainsModalProps> = ({
 
   const isAllSelected = filteredRemainders.length > 0 &&
     filteredRemainders.every((remainder) => isSelected(remainder));
-  const isIndeterminate = selectedRemaindersList.length > 0 &&
+  const isIndeterminate = selectedRemaindersList && selectedRemaindersList.length > 0 &&
     !isAllSelected &&
     filteredRemainders.some((remainder) => isSelected(remainder));
 
@@ -107,7 +107,7 @@ const SelectRemainsModal: React.FC<SelectRemainsModalProps> = ({
               </h2>
             </div>
             <p className='text-sm text-gray-600 pt-1'>
-              Tanlanganlar: {selectedRemaindersList.length} / Filtrlangan: {filteredRemainders.length} / Jami: {remainders.length}
+              Tanlanganlar: {selectedRemaindersList?.length} / Filtrlangan: {filteredRemainders.length} / Jami: {remainders.length}
             </p>
           </div>
 
@@ -135,17 +135,19 @@ const SelectRemainsModal: React.FC<SelectRemainsModalProps> = ({
               <table className='min-w-full border border-gray-200 rounded-lg'>
                 <thead className='bg-gray-50'>
                   <tr>
-                    <th className='px-4 py-3 text-left'>
-                      <input
-                        type='checkbox'
-                        checked={isAllSelected}
-                        ref={(input) => {
-                          if (input) input.indeterminate = isIndeterminate;
-                        }}
-                        onChange={(e) => handleSelectAll(e.target.checked)}
-                        className='rounded border-gray-300 size-4'
-                      />
-                    </th>
+                    {setSelectedRemaindersList && (
+                      <th className='px-4 py-3 text-left'>
+                        <input
+                          type='checkbox'
+                          checked={isAllSelected}
+                          ref={(input) => {
+                            if (input) input.indeterminate = isIndeterminate ?? false;
+                          }}
+                          onChange={(e) => handleSelectAll(e.target.checked)}
+                          className='rounded border-gray-300 size-4'
+                        />
+                      </th>
+                    )}
                     <th className='px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
                       Shtrix kod
                     </th>
@@ -176,23 +178,25 @@ const SelectRemainsModal: React.FC<SelectRemainsModalProps> = ({
                         key={`${getRemainderKey(remainder)}-${index}`}
                         className={`hover:bg-gray-50 ${isSelected(remainder) ? 'bg-blue-50' : ''}`}
                       >
-                        <td className='px-4 py-3'>
-                          <input
-                            type='checkbox'
-                            checked={isSelected(remainder)}
-                            onChange={(e) => {
-                              if (e.target.checked) {
-                                setSelectedRemaindersList((prev) => [...prev, remainder]);
-                              } else {
-                                const key = getRemainderKey(remainder);
-                                setSelectedRemaindersList((prev) =>
-                                  prev.filter((item) => getRemainderKey(item) !== key)
-                                );
-                              }
-                            }}
-                            className='rounded border-gray-300 size-4'
-                          />
-                        </td>
+                        {setSelectedRemaindersList && (
+                          <td className='px-4 py-3'>
+                            <input
+                              type='checkbox'
+                              checked={isSelected(remainder)}
+                              onChange={(e) => {
+                                if (e.target.checked) {
+                                  setSelectedRemaindersList!((prev) => [...prev, remainder]);
+                                } else {
+                                  const key = getRemainderKey(remainder);
+                                  setSelectedRemaindersList!((prev) =>
+                                    prev.filter((item) => getRemainderKey(item) !== key)
+                                  );
+                                }
+                              }}
+                              className='rounded border-gray-300 size-4'
+                            />
+                          </td>
+                        )}
                         <td className='px-4 py-3 text-sm font-medium text-gray-900'>
                           {remainder.bar_code || '—'}
                         </td>
@@ -256,7 +260,7 @@ const SelectRemainsModal: React.FC<SelectRemainsModalProps> = ({
           {/* Footer */}
           <div className='p-6 border-t bg-gray-50 flex justify-between items-center'>
             <div className='text-sm text-gray-600'>
-              {selectedRemaindersList.length} tanlangan qoldiq(lar)
+              {selectedRemaindersList?.length} tanlangan qoldiq(lar)
               {searchTerm && ` | ${filteredRemainders.length} ta filtrlangan`}
             </div>
             <div className='flex gap-3'>
@@ -266,15 +270,17 @@ const SelectRemainsModal: React.FC<SelectRemainsModalProps> = ({
               >
                 Yopish
               </button>
-              <button
-                onClick={() => {
-                  onClose();
-                }}
-                className='px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors'
-                disabled={selectedRemaindersList.length === 0}
-              >
-                Tanlash ({selectedRemaindersList.length})
-              </button>
+              {setSelectedRemaindersList && (
+                <button
+                  onClick={() => {
+                    onClose();
+                  }}
+                  className='px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors'
+                  disabled={selectedRemaindersList?.length === 0}
+                >
+                  Tanlash ({selectedRemaindersList?.length})
+                </button>
+              )}
             </div>
           </div>
         </div>

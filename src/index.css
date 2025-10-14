@@ -237,7 +237,8 @@ body {
 /* custom.css */
 
 .ant-checkbox-checked .ant-checkbox-inner {
-  background-color: #2563eb !important; /* bg-blue-600 */
+  background-color: #2563eb !important;
+  /* bg-blue-600 */
   border-color: #2563eb !important;
 }
 
@@ -246,7 +247,8 @@ body {
 }
 
 .ant-checkbox-inner {
-  border-color: #00000042 !important; /* border-gray-600 */
+  border-color: #00000042 !important;
+  /* border-gray-600 */
 }
 
 .ant-switch {
@@ -273,4 +275,13 @@ body {
 
 .MuiPaper-root {
   box-shadow: none !important;
+}
+
+.MuiAccordionSummary-content {
+  margin-right: 0px !important;
+  align-items: center !important;
+}
+
+.MuiAccordionSummary-expandIconWrapper {
+  margin-left: 0px !important;
 }
