@@ -1,9 +1,9 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable react-hooks/exhaustive-deps */
 import React, { useState, useEffect, useCallback } from 'react';
-import { FilePlus2, Plus, Search } from 'lucide-react';
+import { Plus, Search } from 'lucide-react';
 import { Input } from '@/components/UI/input';
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
-import { SaveOutlined } from '@ant-design/icons';
 
 import { axiosAPI } from '@/services/axiosAPI';
 import { useParams } from 'react-router-dom';
@@ -11,15 +11,17 @@ import Accordion from '@mui/material/Accordion';
 import AccordionSummary from '@mui/material/AccordionSummary';
 import Typography from '@mui/material/Typography';
 import AccordionDetails from '@mui/material/AccordionDetails';
-import { Button, Modal, Select } from 'antd';
-import TextArea from 'antd/es/input/TextArea';
-import FileDropZone from '@/components/FileDropZone';
+import { Button, Modal } from 'antd';
 import {
   EyeOutlined, DownloadOutlined, FilePdfOutlined, FileWordOutlined, FileExcelOutlined, FileImageOutlined, FileTextOutlined,
 } from "@ant-design/icons";
 import SelectRemainsModal from '@/components/CreateForms/SelectRemainsModal';
 import { toast } from 'react-toastify';
 import { useAppSelector } from '@/store/hooks/hooks';
+
+import FilePreviewModal from "@/components/files/FilePreviewModal";
+import { arrayBufferToFile, inferMimeFromExt } from "@/utils/file_preview";
+
 
 
 interface IdName {
@@ -80,12 +82,11 @@ interface FileData {
 const DistrictOrderSigning: React.FC = () => {
   const [orderData, setOrderData] = useState<OrderDetail | null>(null);
   const [loading, setLoading] = useState(true);
-  const [fileUploadModal, setFileUploadModal] = useState(false);
   const [file, setFile] = useState<File | null>(null);
   const [documentTypes, setDocumentTypes] = useState<IdName[]>([]);
   const [viewMode, setViewMode] = useState<'orders' | 'letters' | 'files'>('orders');
   const [files, setFiles] = useState<FileData[]>([]);
-  const [selectedFile, setSelectedFile] = useState<FileData | null>(null);
+  const [selectedFile, setSelectedFile] = useState<string>("");
   const [remainders, setRemainders] = useState<ProductRemainder[]>([]);
   const [showRemainders, setShowRemainders] = useState(false);
   const [open, setOpen] = useState(false);
@@ -96,8 +97,54 @@ const DistrictOrderSigning: React.FC = () => {
     fileBinary: string;
   }>();
 
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [previewFile, setPreviewFile] = useState<File | null>(null);
+  const [selectedFileMeta, setSelectedFileMeta] = useState<FileData | null>(null);
+
   const { id } = useParams();
   const { currentUserInfo } = useAppSelector(state => state.info)
+
+  const handleView = async (f: FileData) => {
+    try {
+      setSelectedFileMeta(f);
+      const res = await axiosAPI.get(`district-orders/${id}/file/${f.raw_number}`, {
+        responseType: "arraybuffer",
+      });
+
+      const suggestedName =
+        f.file_name || `${orderData?.exit_number || "file"}-${f.raw_number}.${f.extension}`;
+      const mime = inferMimeFromExt(suggestedName) || inferMimeFromExt(f.extension) || "application/octet-stream";
+
+      const fileObj = arrayBufferToFile(res.data, suggestedName, mime);
+      setPreviewFile(fileObj);
+      setPreviewOpen(true);
+    } catch (e) {
+      console.error(e);
+      toast("Faylni ochib bo‘lmadi", { type: "error" });
+    }
+  };
+
+
+  const handleDownloadFile = async (f: FileData) => {
+    try {
+      const res = await axiosAPI.get(`district-orders/${id}/file/${f.raw_number}`, {
+        responseType: "blob",
+      });
+      const blob = res.data as Blob;
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = f.file_name || `${orderData?.exit_number || "file"}-${f.raw_number}.${f.extension}`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } catch (e) {
+      console.error(e);
+      toast("Yuklab olishda xatolik", { type: "error" });
+    }
+  };
+
 
   const handleCancel = () => {
     setOpen(false);
@@ -231,7 +278,7 @@ const DistrictOrderSigning: React.FC = () => {
   };
 
   // 📁 Fayl turiga qarab icon va rang qaytaruvchi funksiya
-  const getFileIcon = (fileName) => {
+  const getFileIcon = (fileName: any) => {
     const ext = fileName.split(".").pop().toLowerCase();
 
     switch (ext) {
@@ -280,6 +327,7 @@ const DistrictOrderSigning: React.FC = () => {
 
   return (
     <>
+
       <div className="min-h-screen py-2 px-2 bg-white">
         <div className="max-w-8xl mx-auto bg-white">
           {/* 🔹 Yuqoridagi text-style navigation */}
@@ -500,19 +548,21 @@ const DistrictOrderSigning: React.FC = () => {
                         {/* 🔸 Action tugmalar */}
                         <div className="flex justify-end gap-3 mt-auto">
                           <button
-                            onClick={() => setSelectedFile(file)}
+                            onClick={() => handleView(file)}
                             className="p-2 rounded-md text-gray-600 hover:text-purple-700 hover:bg-gray-100 transition"
-                            title="Ko‘rish"
+                            title="Ko'rish"
                           >
                             <EyeOutlined className="text-lg" />
                           </button>
+
                           <button
-                            onClick={() => handleDownload(file)}
+                            onClick={() => handleDownloadFile(file)}
                             className="p-2 rounded-md text-gray-600 hover:text-purple-700 hover:bg-gray-100 transition"
                             title="Yuklab olish"
                           >
                             <DownloadOutlined className="text-lg" />
                           </button>
+
                         </div>
                       </div>
                     );
@@ -523,36 +573,21 @@ const DistrictOrderSigning: React.FC = () => {
                   Hozircha fayllar mavjud emas.
                 </p>
               )}
-
-              {/* 🟣 PDF modal */}
-              {selectedFile && (
-                <div
-                  className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50"
-                  onClick={() => setSelectedFile(null)}
-                >
-                  <div
-                    className="bg-white w-11/12 h-[90vh] rounded-xl overflow-hidden shadow-xl flex flex-col"
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    <iframe
-                      src={`https://ekomplektasiya.uz/ekomplektasiya_backend/hs/district-orders/${id}/file/${file.raw_number}`}
-                      title="PDF Viewer"
-                      className="flex-1 border-none"
-                    />
-                    <button
-                      onClick={() => setSelectedFile(null)}
-                      className="bg-purple-600 hover:bg-purple-700 text-white py-2 font-medium"
-                    >
-                      Yopish
-                    </button>
-                  </div>
-                </div>
-              )}
             </div>
           )}
 
         </div>
       </div>
+
+      {/* 🟣 PDF modal */}
+      {selectedFileMeta && (
+        <FilePreviewModal
+          open={previewOpen}
+          file={previewFile}
+          onClose={() => { setPreviewOpen(false); setPreviewFile(null); }}
+          onDownload={() => { if (selectedFileMeta) handleDownloadFile(selectedFileMeta); }}
+        />
+      )}
 
       {
         showRemainders && (
