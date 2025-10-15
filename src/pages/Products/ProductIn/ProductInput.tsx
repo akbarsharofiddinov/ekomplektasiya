@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 import React, { useCallback, useEffect, useState, useRef } from "react";
 import {
   Table,
@@ -134,14 +135,6 @@ const ProductInput: React.FC = () => {
   const applyFilters = (statusVal: FilterStatus) => {
     let filtered = mockData;
 
-    // Apply search filter
-    // if (searchVal.trim() !== "") {
-    //   filtered = filtered.filter((item) =>
-    //     Object.values(item).some((field) =>
-    //       field.toString().toLowerCase().includes(searchVal.toLowerCase())
-    //     )
-    //   );
-    // }
 
     // Apply status filter
     if (statusVal !== "all") {
@@ -152,30 +145,7 @@ const ProductInput: React.FC = () => {
       );
     }
 
-
-
-
-
-    // Apply date range filter
-    // if (fromDate && toDate) {
-    //   filtered = filtered.filter((item) => {
-    //     const itemDate = new Date(item.date);
-    //     return itemDate >= fromDate && itemDate <= toDate;
-    //   });
-    // } else if (fromDate) {
-    //   filtered = filtered.filter((item) => {
-    //     const itemDate = new Date(item.date);
-    //     return itemDate >= fromDate;
-    //   });
-    // } else if (toDate) {
-    //   filtered = filtered.filter((item) => {
-    //     const itemDate = new Date(item.date);
-    //     return itemDate <= toDate;
-    //   });
-    // }
-
     setFilteredData(filtered);
-    // Don't reset currentPage here if we're just filtering - only reset for status changes
   };
 
   // Generate PDF for printing
@@ -428,7 +398,7 @@ const ProductInput: React.FC = () => {
     if (mockData.length > 0) {
       applyFilters(statusFilter);
     }
-  }, [mockData]);
+  }, [mockData, statusFilter]);
 
   useEffect(() => {
     handleStatusFilter("rejected");
@@ -580,7 +550,7 @@ const ProductInput: React.FC = () => {
                       }
                       `}</style>
                       </Button>
-                      
+
                       <Button
                         variant="outline"
                         size="sm"

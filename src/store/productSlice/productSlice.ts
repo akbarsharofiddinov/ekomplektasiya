@@ -1,18 +1,72 @@
 import { createSlice } from "@reduxjs/toolkit";
 
 interface ProductState {
-  products: IProductList[];
-  product_types: IDimension[];
-  product_models: IDimension[];
-  product_sizes: IDimension[];
+  products: {
+    count: number;
+    offset: number;
+    limit: number;
+    results: IProductList[];
+  };
+  product_types: {
+    count: number;
+    offset: number;
+    limit: number;
+    results: IDimension[];
+  };
+  product_models: {
+    count: number;
+    offset: number;
+    limit: number;
+    results: IDimension[];
+  };
+  product_sizes: {
+    count: number;
+    offset: number;
+    limit: number;
+    results: IDimension[];
+  };
+  product_units: {
+    count: number;
+    offset: number;
+    limit: number;
+    results: IDimension[];
+  };
+  order_types: IDimension[];
   inputsList: ProductInputData[];
 }
 
 const initialState: ProductState = {
-  products: [],
-  product_types: [],
-  product_models: [],
-  product_sizes: [],
+  products: {
+    count: 0,
+    offset: 0,
+    limit: 200,
+    results: [],
+  },
+  product_types: {
+    count: 0,
+    offset: 0,
+    limit: 200,
+    results: [],
+  },
+  product_models: {
+    count: 0,
+    offset: 0,
+    limit: 200,
+    results: [],
+  },
+  product_sizes: {
+    count: 0,
+    offset: 0,
+    limit: 200,
+    results: [],
+  },
+  product_units: {
+    count: 0,
+    offset: 0,
+    limit: 200,
+    results: [],
+  },
+  order_types: [],
   inputsList: [],
 };
 
@@ -34,6 +88,14 @@ const productSlice = createSlice({
 
     setProductSizes(state, action) {
       state.product_sizes = action.payload;
+    },
+
+    setProductUnits(state, action) {
+      state.product_units = action.payload;
+    },
+
+    setOrderTypes(state, action) {
+      state.order_types = action.payload;
     },
 
     setInputList(state, action) {
