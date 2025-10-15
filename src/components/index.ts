@@ -8,3 +8,5 @@ export { default as ProductInputForm } from "./CreateForms/ProductInputForm";
 export { default as ProductOutputForm } from "./CreateForms/ProductOutputForm";
 export { default as CounterPartyForm } from "./CreateForms/CounterPartyForm";
 export { default as WarehouseTransferForm } from "./CreateForms/WarehouseTransform/WarehouseTransferForm";
+export { default as DistrictOrderForm } from "./CreateForms/DistrictOrderForm/DistrictOrderForm";
+export { default as RegionOrderForm } from "./CreateForms/RegionOrderForm/RegionOrderForm";

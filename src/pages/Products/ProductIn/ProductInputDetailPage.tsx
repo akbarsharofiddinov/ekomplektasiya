@@ -1110,27 +1110,6 @@ const ProductInputDetailPage: React.FC = () => {
                           </Select>
                         </TableCell>
 
-                        {/* <TableCell className="p-3 text-center">
-                          <Select
-                            disabled={documentData?.is_approved}
-                            value={item.product_type?.name || ""}
-                            placeholder="Tovar turini tanlang"
-                            className="min-w-[150px]"
-                            onChange={(value: string) =>
-                              updateProductField(index, (p) => {
-                                p.product_type = { id: value, name: "" };
-                                return p;
-                              })
-                            }
-                          >
-                            {product_types.map((type) => (
-                              <Select.Option key={type.id} value={type.id}>
-                                {type.name}
-                              </Select.Option>
-                            ))}
-                          </Select>
-                        </TableCell> */}
-
                         {/* Model */}
                         <TableCell className="p-3 text-center">
                           <Select
@@ -1180,50 +1159,6 @@ const ProductInputDetailPage: React.FC = () => {
                             ))}
                           </Select>
                         </TableCell>
-
-
-                        {/* <TableCell className="p-3 text-center">
-                          <Select
-                            disabled={documentData?.is_approved}
-                            value={item.model?.name || ""}
-                            placeholder="Model tanlang"
-                            className="min-w-[150px]"
-                            onChange={(value: string) =>
-                              updateProductField(index, (p) => {
-                                p.model = { id: value, name: "" };
-                                return p;
-                              })
-                            }
-                          >
-                            {product_models.map((model) => (
-                              <Select.Option key={model.id} value={model.id}>
-                                {model.name}
-                              </Select.Option>
-                            ))}
-                          </Select>
-                        </TableCell>
-
-
-                        <TableCell className="p-3 text-center">
-                          <Select
-                            disabled={documentData?.is_approved}
-                            value={item.size?.name || ""}
-                            placeholder="O‘lcham"
-                            className="min-w-[120px]"
-                            onChange={(value: string) =>
-                              updateProductField(index, (p) => {
-                                p.size = { id: value, name: "" };
-                                return p;
-                              })
-                            }
-                          >
-                            {product_sizes.map((size) => (
-                              <Select.Option key={size.id} value={size.id}>
-                                {size.name}
-                              </Select.Option>
-                            ))}
-                          </Select>
-                        </TableCell> */}
 
                         {/* Date party */}
                         <TableCell className="p-3 text-center">

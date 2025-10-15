@@ -10,9 +10,8 @@ import { axiosAPI } from '@/services/axiosAPI';
 import { useAppDispatch, useAppSelector } from '@/store/hooks/hooks';
 import { setWarehouseTransfers } from '@/store/transferSlice/transferSlice';
 import { WarehouseTransferForm } from '@/components';
-import { Outlet, useNavigate, useParams } from 'react-router-dom';
+import { Outlet, useNavigate, useParams, useSearchParams  } from 'react-router-dom';
 import { setRegions } from '@/store/infoSlice/infoSlice';
-
 
 type FilterStatus = 'all' | 'approved_accepted' | 'approved_not_accepted' | 'not_approved';
 
@@ -38,11 +37,9 @@ const WarehouseTransfer: React.FC = () => {
     results: [],
   });
   const searchInputRef = useRef<HTMLInputElement>(null);
+
+  // ⬇️ DEFAULT: Tasdiqlanmagan
   const [statusFilter, setStatusFilter] = useState<FilterStatus>('not_approved');
-  // const [fromDate, setFromDate] = useState<Date | undefined>(undefined);
-  // const [toDate, setToDate] = useState<Date | undefined>(undefined);
-  // const [isFromDateOpen, setIsFromDateOpen] = useState(false);
-  // const [isToDateOpen, setIsToDateOpen] = useState(false);
 
   // Create Transfer modal state
   const [isCreateFormModalOpen, setIsCreateFormModalOpen] = useState(false);
@@ -97,7 +94,6 @@ const WarehouseTransfer: React.FC = () => {
     setFilteredData(filtered);
   };
 
-
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 14;
@@ -111,11 +107,10 @@ const WarehouseTransfer: React.FC = () => {
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
 
-  // Apply filters (search + status + date range)
+  // Apply filters (status only — search alohida handleSearch’da)
   const applyFilters = (statusVal: FilterStatus) => {
     let filtered = warehouse_transfers;
 
-    // Apply status filter
     if (statusVal !== 'all') {
       filtered = filtered.filter(item => {
         switch (statusVal) {
@@ -131,13 +126,11 @@ const WarehouseTransfer: React.FC = () => {
       });
     }
 
-    // }
-
     setFilteredData(filtered);
-    setCurrentPage(1); // Reset to first page when filtering
+    setCurrentPage(1);
   };
 
-  // Generate PDF for printing
+  // Print
   const handlePrintPDF = () => {
     const printWindow = window.open('', '_blank');
     if (!printWindow) return;
@@ -149,53 +142,14 @@ const WarehouseTransfer: React.FC = () => {
         <title>Ombordan Omborga Transfer Hisoboti</title>
         <meta charset="utf-8">
         <style>
-          body { 
-            font-family: Arial, sans-serif; 
-            margin: 20px; 
-            color: #333;
-          }
-          .header {
-            text-align: center;
-            margin-bottom: 30px;
-            border-bottom: 2px solid #1E56A0;
-            padding-bottom: 15px;
-          }
-          .header h1 {
-            color: #1E56A0;
-            margin: 0;
-            font-size: 24px;
-          }
-          .date-range {
-            margin: 15px 0;
-            padding: 10px;
-            background-color: #f8f9fa;
-            border-radius: 5px;
-          }
-          table { 
-            width: 100%; 
-            border-collapse: collapse; 
-            margin-top: 20px;
-            font-size: 11px;
-          }
-          th, td { 
-            border: 1px solid #ddd; 
-            padding: 6px; 
-            text-align: left;
-          }
-          th { 
-            background-color: #1E56A0; 
-            color: white;
-            font-weight: bold;
-          }
-          tr:nth-child(even) { 
-            background-color: #f9f9f9; 
-          }
-          .footer {
-            margin-top: 30px;
-            text-align: center;
-            font-size: 10px;
-            color: #666;
-          }
+          body { font-family: Arial, sans-serif; margin: 20px; color: #333; }
+          .header { text-align: center; margin-bottom: 30px; border-bottom: 2px solid #1E56A0; padding-bottom: 15px; }
+          .header h1 { color: #1E56A0; margin: 0; font-size: 24px; }
+          table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 11px; }
+          th, td { border: 1px solid #ddd; padding: 6px; text-align: left; }
+          th { background-color: #1E56A0; color: white; font-weight: bold; }
+          tr:nth-child(even) { background-color: #f9f9f9; }
+          .footer { margin-top: 30px; text-align: center; font-size: 10px; color: #666; }
           .status-approved-accepted { color: #10b981; font-weight: bold; }
           .status-approved-not-accepted { color: #f59e0b; font-weight: bold; }
           .status-not-approved { color: #ef4444; font-weight: bold; }
@@ -206,7 +160,6 @@ const WarehouseTransfer: React.FC = () => {
           <h1>E-KOMPLEKTATSIYA</h1>
           <h2>Ombordan Omborga Transfer Hisoboti</h2>
         </div>
-        
         <table>
           <thead>
             <tr>
@@ -241,7 +194,6 @@ const WarehouseTransfer: React.FC = () => {
             `).join('')}
           </tbody>
         </table>
-        
         <div class="footer">
           <p>Jami: ${filteredData.length} ta transfer</p>
           <p>Chop etilgan: ${new Date().toLocaleDateString('uz-UZ')} ${new Date().toLocaleTimeString('uz-UZ')}</p>
@@ -255,13 +207,12 @@ const WarehouseTransfer: React.FC = () => {
     printWindow.print();
   };
 
-
   // API Requests
   const getWarehouseTransfers = async () => {
     try {
       const response = await axiosAPI.get(`transfers/list/?limit=${itemsPerPage}&offset=${(currentPage - 1) * itemsPerPage}`);
       dispatch(setWarehouseTransfers(response.data.results));
-      setFilteredData(response.data.results);
+      // ❗ filteredData'ni bu yerda to'g'ridan-to'g'ri set qilmaymiz — quyidagi effect filterlaydi
       setMockData(response.data);
       setTotalItems(response.data.count);
     } catch (error) {
@@ -273,11 +224,15 @@ const WarehouseTransfer: React.FC = () => {
     getWarehouseTransfers();
   }, [currentPage]);
 
-  // Filter data based on status
+  // Status o'zgarsa yoki ro'yxat yangilansa — avtomatik filter qo'llanadi
+  useEffect(() => {
+    applyFilters(statusFilter);
+  }, [statusFilter, warehouse_transfers]);
+
+  // Filter data based on status (button click)
   const handleStatusFilter = (status: FilterStatus) => {
     setStatusFilter(status);
-    setCurrentPage(1); // Reset to first page on status change
-    applyFilters(status);
+    setCurrentPage(1);
   };
 
   const navigate = useNavigate();
@@ -285,7 +240,6 @@ const WarehouseTransfer: React.FC = () => {
 
   const handleDocumentClick = (documentNumber: string) => {
     navigate(`details/${documentNumber}`)
-    // Bu yerda detail view ochish logikasi bo'ladi
   };
 
   // Pagination handlers
@@ -300,13 +254,10 @@ const WarehouseTransfer: React.FC = () => {
     const baseStyles = "border-b border-slate-100 cursor-pointer transition-all duration-200 bg-white hover:bg-slate-50";
 
     if (isApproved && isAccepted) {
-      // Green - Approved and Accepted
       return `${baseStyles} border-l-4 border-l-emerald-500`;
     } else if (isApproved && !isAccepted) {
-      // Yellow - Approved but not Accepted
       return `${baseStyles} border-l-4 border-l-amber-500`;
     } else {
-      // Red - Not Approved
       return `${baseStyles} border-l-4 border-l-red-500`;
     }
   };
@@ -314,21 +265,18 @@ const WarehouseTransfer: React.FC = () => {
   // Get document number styling and icon based on status
   const getDocumentStyling = (isApproved: boolean, isAccepted: boolean) => {
     if (isApproved && isAccepted) {
-      // Green - Approved and Accepted
       return {
         color: 'text-emerald-600 hover:text-emerald-700',
         icon: CheckCircle,
         iconColor: 'text-emerald-500'
       };
     } else if (isApproved && !isAccepted) {
-      // Yellow - Approved but not Accepted
       return {
         color: 'text-amber-600 hover:text-amber-700',
         icon: Clock,
         iconColor: 'text-amber-500'
       };
     } else {
-      // Red - Not Approved
       return {
         color: 'text-red-600 hover:text-red-700',
         icon: XCircle,
@@ -344,7 +292,6 @@ const WarehouseTransfer: React.FC = () => {
     let startPage = Math.max(1, currentPage - 2);
     const endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
 
-    // Adjust start page if we're near the end
     if (endPage - startPage < maxVisiblePages - 1) {
       startPage = Math.max(1, endPage - maxVisiblePages + 1);
     }
@@ -356,8 +303,7 @@ const WarehouseTransfer: React.FC = () => {
     return pages;
   };
 
-  // API Requests
-  // Get regions
+  // Regions
   const getRegionsList = React.useCallback(async () => {
     try {
       const response = await axiosAPI.get("regions/list/?order_by=2");
@@ -373,13 +319,29 @@ const WarehouseTransfer: React.FC = () => {
     getRegionsList();
   }, []);
 
-  // Get counts for each status
+  // Statuslar soni
   const statusCounts = {
     all: mockData.count,
     approved_accepted: mockData.count_accepted,
     approved_not_accepted: mockData.count_approval,
     not_approved: mockData.unapproved,
   };
+
+  // ⬇️ URL bilan sinxronlash (default tab = not_approved)
+  const [searchParams, setSearchParams] = useSearchParams();
+  useEffect(() => {
+    if (!searchParams.get("tab")) {
+      const p = new URLSearchParams(searchParams);
+      p.set("tab", "not_approved");
+      setSearchParams(p, { replace: true });
+    }
+  }, []);
+  useEffect(() => {
+    const tab = (searchParams.get("tab") as FilterStatus) || "not_approved";
+    if (tab !== statusFilter) setStatusFilter(tab);
+  }, [searchParams]);
+
+  const activeTab = searchParams.get("tab") ?? "not_approved"; // (agar kerak bo'lsa ishlatasiz)
 
   return (
     <>
@@ -397,8 +359,9 @@ const WarehouseTransfer: React.FC = () => {
               <div className="flex items-center justify-between">
                 {/* Status Filter Tabs - Left Side */}
                 <div className="flex gap-1">
+
                   <button
-                    onClick={() => handleStatusFilter('all')}
+                    onClick={() => setStatusFilter('all')}
                     className={`flex items-center space-x-2 px-4 py-2.5 rounded-md transition-all duration-300 font-medium text-sm ${statusFilter === 'all'
                       ? 'bg-slate-100 text-slate-900 shadow-sm'
                       : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
@@ -415,7 +378,7 @@ const WarehouseTransfer: React.FC = () => {
 
                   {/* Green - Approved and Accepted */}
                   <button
-                    onClick={() => handleStatusFilter('approved_accepted')}
+                    onClick={() => setStatusFilter('approved_accepted')}
                     className={`flex items-center space-x-2 px-4 py-2.5 rounded-md transition-all duration-300 font-medium text-sm ${statusFilter === 'approved_accepted'
                       ? 'bg-emerald-50 text-emerald-800 shadow-sm border border-emerald-200'
                       : 'text-slate-600 hover:text-emerald-700 hover:bg-emerald-50'
@@ -432,7 +395,7 @@ const WarehouseTransfer: React.FC = () => {
 
                   {/* Yellow - Approved but not Accepted */}
                   <button
-                    onClick={() => handleStatusFilter('approved_not_accepted')}
+                    onClick={() => setStatusFilter('approved_not_accepted')}
                     className={`flex items-center space-x-2 px-4 py-2.5 rounded-md transition-all duration-300 font-medium text-sm ${statusFilter === 'approved_not_accepted'
                       ? 'bg-amber-50 text-amber-800 shadow-sm border border-amber-200'
                       : 'text-slate-600 hover:text-amber-700 hover:bg-amber-50'
@@ -449,7 +412,7 @@ const WarehouseTransfer: React.FC = () => {
 
                   {/* Red - Not Approved */}
                   <button
-                    onClick={() => handleStatusFilter('not_approved')}
+                    onClick={() => setStatusFilter('not_approved')}
                     className={`flex items-center space-x-2 px-4 py-2.5 rounded-md transition-all duration-300 font-medium text-sm ${statusFilter === 'not_approved'
                       ? 'bg-red-50 text-red-800 shadow-sm border border-red-200'
                       : 'text-slate-600 hover:text-red-700 hover:bg-red-50'
@@ -571,7 +534,7 @@ const WarehouseTransfer: React.FC = () => {
               </Table>
             </div>
 
-            {/* Enhanced Professional Pagination */}
+            {/* Pagination */}
             <div className="border-t border-slate-100 px-6 py-4 bg-slate-50/50">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">

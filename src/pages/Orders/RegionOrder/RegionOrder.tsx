@@ -1,4 +1,3 @@
-/* eslint-disable react-hooks/exhaustive-deps */
 import React, { useEffect, useMemo, useState, useCallback } from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/UI/table';
 import { Button } from '@/components/UI/button';
@@ -12,7 +11,9 @@ import { axiosAPI } from '@/services/axiosAPI';
 import { useAppDispatch, useAppSelector } from '@/store/hooks/hooks';
 import { Outlet, useNavigate, useParams } from 'react-router-dom';
 import { setRegions } from '@/store/infoSlice/infoSlice';
-import { Select, Tag } from 'antd';
+import { message, Select, Tag } from 'antd';
+import { RegionOrderForm } from '@/components';
+import { setOrderTypes, setProductModels, setProductSizes, setProductTypes, setProductUnits } from '@/store/productSlice/productSlice';
 
 interface DocumentInfo {
   id: string;
@@ -60,25 +61,20 @@ const RegionOrder: React.FC = () => {
   const [data, setData] = useState<DocumentInfo[]>([]);
   const [filteredData, setFilteredData] = useState<DocumentInfo[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
-  const searchInputRef = React.useRef<HTMLInputElement>(null);
-
   const [districts, setDistricts] = useState<DistrictFilter[]>([]);
   const [selectedDistrict, setSelectedDistrict] = useState<string>('');
   const [loading, setLoading] = useState(false);
   const [loadingRef, setLoadingRef] = useState(false);
-
   const [currentPage, setCurrentPage] = useState(1);
-
   const [orderType, setOrderType] = useState<'outgoing' | 'incoming'>('outgoing');
-  const [statusFilter, setStatusFilter] = useState<FilterStatus>('not_approved');
-
+  const [statusFilter, setStatusFilter] = useState<FilterStatus>('all');
+  const [isCreateFormModalOpen, setIsCreateFormModalOpen] = useState(false);
   const [totalItems, setTotalItems] = useState<{ count: number; limit: number; offset: number; results: DocumentInfo[] }>({
     count: 0,
     limit: itemsPerPage,
     offset: 0,
     results: [],
   });
-
   // FIX: statusCounts endi backenddan to‘g‘ridan-to‘g‘ri olinadi
   const [statusCounts, setStatusCounts] = useState<{
     all: number;
@@ -93,6 +89,7 @@ const RegionOrder: React.FC = () => {
     Canceled: 0,
     approved_not_accepted: 0,
   });
+  const searchInputRef = React.useRef<HTMLInputElement>(null);
 
   const dispatch = useAppDispatch();
   const { currentUserInfo } = useAppSelector((state) => state.info);
@@ -108,8 +105,6 @@ const RegionOrder: React.FC = () => {
     try {
       setLoading(true);
 
-      const offset = (currentPage - 1) * itemsPerPage;
-
       const params = new URLSearchParams({
         limit: String(itemsPerPage),
         offset: String((currentPage - 1) * itemsPerPage),
@@ -119,20 +114,8 @@ const RegionOrder: React.FC = () => {
       // FIX: tumanni faqat queryga qo‘shamiz (local filter emas)
       if (selectedDistrict) params.append('from_district', selectedDistrict);
 
-
-
       const response = await axiosAPI.get<RegionOrdersResponse>(`region-orders/list/?${params.toString()}`);
       const res = response.data;
-
-      console.log('[PAGE]', { currentPage, itemsPerPage, offset, note: 'requesting page data' });
-      console.log('[REQ]', `/region-orders/list/?${params.toString()}`);
-
-      console.log('[RES]', {
-        count: res?.count,
-        resultsLen: res?.results?.length,
-        firstId: res?.results?.[0]?.id,
-        lastId: res?.results?.[res?.results?.length - 1]?.id,
-      });
 
       setDistricts(res.filter_by_districts ?? []);
       setData(res.results ?? []);
@@ -297,6 +280,36 @@ const RegionOrder: React.FC = () => {
     getRegionsList();
   }, [getRegionsList]);
 
+  // Dictlarni yuklash
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        const [orderTypeRes, productTypeRes, sizeRes, unitRes, modelRes] =
+          await Promise.all([
+            axiosAPI.get("/enumerations/order_types"),
+            axiosAPI.get("/product_types/list", { params: { limit: 200 } }),
+            axiosAPI.get("/sizes/list"),
+            axiosAPI.get("/units/list"),
+            axiosAPI.get("/models/list", { params: { limit: 200 } }), // <— model mustaqil
+          ]);
+
+        if (!mounted) return;
+        dispatch(setOrderTypes(orderTypeRes.data))
+        dispatch(setProductTypes(productTypeRes.data))
+        dispatch(setProductSizes(sizeRes.data))
+        dispatch(setProductUnits(unitRes.data))
+        dispatch(setProductModels(modelRes.data))
+      } catch (err) {
+        console.error(err);
+        message.error("Ma’lumotlarni yuklashda xatolik!");
+      }
+    })();
+    return () => {
+      mounted = false;
+    };
+  }, [dispatch]);
+
   const { Option } = Select;
 
   // FIX: tumanni tanlash faqat query holatini o‘zgartiradi
@@ -307,7 +320,12 @@ const RegionOrder: React.FC = () => {
 
   return (
     <>
-      {id ? (
+
+      {isCreateFormModalOpen ? (
+        <>
+          <RegionOrderForm setIsCreateFormModalOpen={setIsCreateFormModalOpen} />
+        </>
+      ) : id ? (
         <Outlet />
       ) : (
         <div className="bg-white shadow-md p-4 rounded-md space-y-4 animate-in fade-in duration-700">
@@ -456,7 +474,7 @@ const RegionOrder: React.FC = () => {
           {/* Actions & search */}
           <div className="bg-white py-3 flex justify-between">
             <div className="flex items-center gap-3">
-              <Button className="cursor-pointer">
+              <Button className="cursor-pointer" onClick={() => setIsCreateFormModalOpen(true)}>
                 <Plus />
                 Yaratish
               </Button>
