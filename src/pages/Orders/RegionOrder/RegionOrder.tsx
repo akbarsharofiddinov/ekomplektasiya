@@ -520,7 +520,6 @@ const RegionOrder: React.FC = () => {
                 <TableBody>
                   {filteredData.length === 0 ? (
                     <TableRow>
-<<<<<<< HEAD
                        <TableCell
                           colSpan={8}
                           className="text-center font-semibold text-xl py-6 text-gray-900"
@@ -539,11 +538,6 @@ const RegionOrder: React.FC = () => {
                             "Hujjatlar mavjud emas"
                           )}
                         </TableCell>
-=======
-                      <TableCell colSpan={8} className="text-center font-semibold text-xl py-6 text-gray-900">
-                        {selectedDistrict ? `${selectedDistrict} tumanida hujjat mavjud emas ?` : 'Hujjatlar mavjud emas'}
-                      </TableCell>
->>>>>>> e8c568d73e2d2ec9fe4e38ed61ad7c7843291fed
                     </TableRow>
                   ) : (
                     filteredData.map((item, index) => {
