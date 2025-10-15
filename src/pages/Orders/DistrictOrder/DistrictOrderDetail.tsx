@@ -385,38 +385,40 @@ const DistrictOrderDetail: React.FC = () => {
                                                 </div>
 
 
-                                                <div className="bg-white rounded-xl mb-6 overflow-hidden">
-                                                    <div className="overflow-x-auto">
-                                                        <table className="w-full">
-                                                            <thead className="bg-gray-50 border-b-2">
-                                                                <tr>
-                                                                    <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">№</th>
-                                                                    <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Buyurtma nomi</th>
-                                                                    <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Model</th>
-                                                                    <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Buyurtma turi</th>
-                                                                    <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">O'lcham</th>
-                                                                    <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">O'lchov birligi</th>
-                                                                    <th className="px-6 py-4 text-right text-sm font-semibold text-gray-700">Soni</th>
-                                                                    <th className="px-6 py-4 text-right text-sm font-semibold text-gray-700">Buyurtma bo'yicha izoh</th>
-                                                                </tr>
-                                                            </thead>
-                                                            <tbody className=" bg-[#f2f2f2b6]">
-                                                                {orderData.products?.map((product, index) => (
-                                                                    <tr key={index} className="hover:bg-indigo-50 transition-colors">
-                                                                        <td className="px-6 py-4 text-sm text-gray-900 font-medium">{product.row_number}</td>
-                                                                        <td className="px-6 py-4 text-sm text-gray-900">{product.product?.name}</td>
-                                                                        <td className="px-6 py-4 text-sm text-gray-900 font-medium">{product.model?.name}</td>
-                                                                        <td className="px-6 py-4 text-sm text-gray-900">{product.product_type?.name}</td>
-                                                                        <td className="px-6 py-4 text-sm text-gray-700">{product.size?.name}</td>
-                                                                        <td className="px-6 py-4 text-sm text-gray-700">{product.unit?.name}</td>
-                                                                        <td className="px-6 py-4 text-sm text-gray-900 text-right font-bold">{product.quantity}</td>
-                                                                        <td className="px-6 py-4 text-sm text-gray-900 text-right font-bold">{product.description}</td>
-                                                                    </tr>
-                                                                ))}
-                                                            </tbody>
-                                                        </table>
-                                                    </div>
-                                                </div>
+                                        <div className="bg-white rounded-xl mb-6 overflow-hidden">
+                                            <div className="overflow-x-auto">
+                                                <table className="w-full">
+                                                    <thead className="bg-gray-50 border-b-2">
+                                                        <tr>
+                                                            <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">№</th>
+                                                            <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Buyurtma turi</th>
+                                                            <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Tovar</th>
+                                                            <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Tovar turi</th>
+                                                            <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Model</th>
+                                                            <th className="px-6 py-4 text-right text-sm font-semibold text-gray-700">O'lcham</th>
+                                                            <th className="px-6 py-4 text-right text-sm font-semibold text-gray-700">O'lchov birligi</th>
+                                                            <th className="px-6 py-4 text-right text-sm font-semibold text-gray-700">Soni</th>
+                                                            <th className="px-6 py-4 text-right text-sm font-semibold text-gray-700">Izoh</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody className=" bg-[#f2f2f2b6]">
+                                                        {orderData.products?.map((product, index) => (
+                                                            <tr key={index} className="hover:bg-indigo-50 transition-colors">
+                                                                <td className="px-6 py-4 text-sm text-gray-900 font-medium">{product.row_number}</td>
+                                                                <td className="px-6 py-4 text-sm text-gray-900">{product.order_type.name}</td>
+                                                                <td className="px-6 py-4 text-sm text-gray-900 font-medium">{product.product.name}</td>
+                                                                <td className="px-6 py-4 text-sm text-gray-900">{product.product_type.name}</td>
+                                                                <td className="px-6 py-4 text-sm text-gray-700">{product.model.name}</td>
+                                                                <td className="px-6 py-4 text-sm text-gray-700">{product.size.name}</td>
+                                                                <td className="px-6 py-4 text-sm text-gray-900 text-right font-bold">{product.unit.name}</td>
+                                                                <td className="px-6 py-4 text-sm text-gray-900 text-right font-bold">{product.quantity}</td>
+                                                                <td className="px-6 py-4 text-sm text-gray-900 text-right font-bold">{product.description}</td>
+                                                            </tr>
+                                                        ))}
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
 
                                             </AccordionDetails>
                                         </Accordion>

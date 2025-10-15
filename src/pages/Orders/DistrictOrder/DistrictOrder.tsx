@@ -17,6 +17,7 @@ import { Outlet, useNavigate, useParams } from 'react-router-dom';
 // import { SearchOutlined } from '@ant-design/icons';
 import { setRegions } from '@/store/infoSlice/infoSlice';
 import { Select } from 'antd';
+import { DistrictOrderForm } from '@/components';
 
 interface DocumentInfo {
     id: string;
@@ -58,13 +59,8 @@ const DistrictOrder: React.FC = () => {
     // order type
     const [orderType, setOrderType] = useState<"outgoing" | "incoming">("outgoing")
 
-    // const [fromDate, setFromDate] = useState<Date | undefined>(undefined);
-    // const [toDate, setToDate] = useState<Date | undefined>(undefined);
-    // const [isFromDateOpen, setIsFromDateOpen] = useState(false);
-    // const [isToDateOpen, setIsToDateOpen] = useState(false);
-
     // Create Transfer modal state
-    const [isCreateFormModalOpen] = useState(false);
+    const [isCreateFormModalOpen, setIsCreateFormModalOpen] = useState(false);
     const [totalItems, setTotalItems] = useState<{
         approved: number;
         cancelled: 0;
@@ -83,127 +79,6 @@ const DistrictOrder: React.FC = () => {
     const totalPages = Math.ceil((totalItems?.count ?? 0) / itemsPerPage);
     const startIndex = (currentPage - 1) * itemsPerPage;
     const endIndex = startIndex + itemsPerPage;
-
-    // Generate PDF for printing
-    //     const handlePrintPDF = () => {
-    //         const printWindow = window.open('', '_blank');
-    //         if (!printWindow) return;
-
-    //         const htmlContent = `
-    //     <!DOCTYPE html>
-    //     <html>
-    //       <head>
-    //         <title>Ombordan Omborga Transfer Hisoboti</title>
-    //         <meta charset="utf-8">
-    //         <style>
-    //           body { 
-    //             font-family: Arial, sans-serif; 
-    //             margin: 20px; 
-    //             color: #333;
-    //           }
-    //           .header {
-    //             text-align: center;
-    //             margin-bottom: 30px;
-    //             border-bottom: 2px solid #1E56A0;
-    //             padding-bottom: 15px;
-    //           }
-    //           .header h1 {
-    //             color: #1E56A0;
-    //             margin: 0;
-    //             font-size: 24px;
-    //           }
-    //           .date-range {
-    //             margin: 15px 0;
-    //             padding: 10px;
-    //             background-color: #f8f9fa;
-    //             border-radius: 5px;
-    //           }
-    //           table { 
-    //             width: 100%; 
-    //             border-collapse: collapse; 
-    //             margin-top: 20px;
-    //             font-size: 11px;
-    //           }
-    //           th, td { 
-    //             border: 1px solid #ddd; 
-    //             padding: 6px; 
-    //             text-align: left;
-    //           }
-    //           th { 
-    //             background-color: #1E56A0; 
-    //             color: white;
-    //             font-weight: bold;
-    //           }
-    //           tr:nth-child(even) { 
-    //             background-color: #f9f9f9; 
-    //           }
-    //           .footer {
-    //             margin-top: 30px;
-    //             text-align: center;
-    //             font-size: 10px;
-    //             color: #666;
-    //           }
-    //           .status-approved-accepted { color: #10b981; font-weight: bold; }
-    //           .status-approved-not-accepted { color: #f59e0b; font-weight: bold; }
-    //           .status-not-approved { color: #ef4444; font-weight: bold; }
-    //         </style>
-    //       </head>
-    //       <body>
-    //         <div class="header">
-    //           <h1>E-KOMPLEKTATSIYA</h1>
-    //           <h2>Ombordan Omborga Transfer Hisoboti</h2>
-    //         </div>
-
-    //         <table>
-    //           <thead>
-    //             <tr>
-    //               <th>№</th>
-    //               <th>Hujjat №</th>
-    //               <th>Sana</th>
-    //               <th>Yuboruvchi ombor</th>
-    //               <th>Qabul qiluvchi ombor</th>
-    //               <th>Transfer turi</th>
-    //               <th>Holat</th>
-    //               <th>Foydalanuvchi</th>
-    //               <th>M.J.Sh</th>
-    //             </tr>
-    //           </thead>
-    //           <tbody>
-    //             ${filteredData.map((item, index) => `
-    //               <tr>
-    //                 <td>${index + 1}</td>
-    //                 <td>${item.number}</td>
-    //                 <td>${item.date.split('T').join(" ")}</td>
-    //                 <td>${item.from_responsible_person}</td>
-    //                 <td>${item.to_responsible_person}</td>
-    //                 <td>${item.transfer_type}</td>
-    //                 <td class="status-${item.is_approved && item.is_accepted ? 'approved-accepted' :
-    //                 item.is_approved && !item.is_accepted ? 'approved-not-accepted' : 'not-approved'}">
-    //                   ${item.is_approved && item.is_accepted ? 'Tasdiqlangan va Qabul qilingan' :
-    //                 item.is_approved && !item.is_accepted ? 'Tasdiqlangan, Kutilmoqda' : 'Tasdiqlanmagan'}
-    //                 </td>
-    //                 <td>${item.user}</td>
-    //                 <td>${item.to_responsible_person}</td>
-    //               </tr>
-    //             `).join('')}
-    //           </tbody>
-    //         </table>
-
-    //         <div class="footer">
-    //           <p>Jami: ${filteredData.length} ta transfer</p>
-    //           <p>Chop etilgan: ${new Date().toLocaleDateString('uz-UZ')} ${new Date().toLocaleTimeString('uz-UZ')}</p>
-    //         </div>
-    //       </body>
-    //     </html>
-    //   `;
-
-    //         printWindow.document.write(htmlContent);
-    //         printWindow.document.close();
-    //         printWindow.print();
-    //     };
-
-
-    // API Requests
 
 
     const getDistrictOrderList = async () => {
@@ -408,6 +283,7 @@ const DistrictOrder: React.FC = () => {
         <>
             {isCreateFormModalOpen ? (
                 <>
+                    <DistrictOrderForm />
                 </>
             ) : id ? (
                 <Outlet />
@@ -528,8 +404,8 @@ const DistrictOrder: React.FC = () => {
                     </div>
                     <div className="bg-white rounded-lg border border-slate-200 p-3 shadow-md flex justify-between">
                         <div className='flex items-center gap-3'>
-                            <Button className='cursor-pointer'>
-                                <Plus></Plus>
+                            <Button className='cursor-pointer' onClick={() => setIsCreateFormModalOpen(true)}>
+                                <Plus />
                                 Yaratish
                             </Button>
 
@@ -545,7 +421,7 @@ const DistrictOrder: React.FC = () => {
                                 )}
                                 {loading ? "Yangilanmoqda..." : "Yangilash"}
                             </Button>
-                          
+
                         </div>
                         <div className="relative">
                             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4" />
