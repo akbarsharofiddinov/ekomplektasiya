@@ -456,28 +456,32 @@ const RegionOrderDetail: React.FC = () => {
                   </div>
 
 
-                  <div className="bg-white rounded-xl mb-6 overflow-hidden">
+                  <div className="bg-white rounded-xl border border-gray-200 overflow-y-auto mb-4">
                     <div className="overflow-x-auto">
-                      <table className="w-full">
-                        <thead className="bg-gray-50 border-b-2">
-                          <tr>
-                            <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">№</th>
-                            <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Buyurtma turi</th>
-                            <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Tovar nomi</th>
-                            <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Tovar turi</th>
-                            <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Model</th>
-                            <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">O'lcham</th>
-                            <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">O'lchov birligi</th>
-                            <th className="px-6 py-4 text-right text-sm font-semibold text-gray-700">Soni</th>
-                            <th className="px-6 py-4 text-right text-sm font-semibold text-gray-700">Soni Tumandan</th>
-                            <th className="px-6 py-4 text-right text-sm font-semibold text-gray-700">Soni Sotuvdan</th>
-                            <th className="px-6 py-4 text-right text-sm font-semibold text-gray-700">Buyurtma bo'yicha izoh</th>
+                      <table className="w-full caption-bottom text-sm">
+                        <thead className="[&_tr]:border-b bg-gradient-to-r from-slate-100 via-blue-50 to-purple-50">
+                          <tr className=" data-[state=selected]:bg-muted border-b transition-colors">
+                            <th className="px-3 py-2 text-center text-sm font-semibold text-gray-600">№</th>
+                            <th className="px-3 py-2 text-center text-sm font-semibold text-gray-600">Buyurtma turi</th>
+                            <th className="px-3 py-2 text-center text-sm font-semibold text-gray-600">Tovar nomi</th>
+                            <th className="px-3 py-2 text-center text-sm font-semibold text-gray-600">Tovar turi</th>
+                            <th className="px-3 py-2 text-center text-sm font-semibold text-gray-600">Model</th>
+                            <th className="px-3 py-2 text-center text-sm font-semibold text-gray-600">O'lcham</th>
+                            <th className="px-3 py-2 text-center text-sm font-semibold text-gray-600">O'lchov birligi</th>
+                            <th className="px-3 py-2 text-center text-sm font-semibold text-gray-600">Soni</th>
+                            <th className="px-3 py-2 text-center text-sm font-semibold text-gray-600">Soni Tumandan</th>
+                            <th className="px-3 py-2 text-center text-sm font-semibold text-gray-600">Soni Sotuvdan</th>
+                            <th className="px-3 py-2 text-center text-sm font-semibold text-gray-600">Buyurtma bo'yicha izoh</th>
                           </tr>
                         </thead>
-                        <tbody className=" bg-[#f2f2f2b6]">
+                        <tbody className="divide-y divide-gray-100">
                           {regionData.products?.map((product, index) => (
-                            <tr key={index} className="hover:bg-indigo-50 transition-colors">
-                              <td className="px-6 py-4 text-sm text-gray-900 font-medium">{product.row_number}</td>
+                            <tr key={index} className="hover:bg-gray-50 transition-all duration-200">
+                              <td className="px-6 py-4 text-sm text-gray-900 font-medium">
+                                <span className="inline-flex items-center justify-center w-8 h-8 rounded-xl bg-gradient-to-r from-purple-500 to-blue-500 text-white font-semibold text-sm">
+                                  {product.row_number}
+                                </span>
+                              </td>
                               <td className="px-6 py-4 text-sm text-gray-900 font-medium">{product.order_type?.name}</td>
                               <td className="px-6 py-4 text-sm text-gray-900">{product.product?.name}</td>
                               <td className="px-6 py-4 text-sm text-gray-900">{product.product_type?.name}</td>
@@ -510,26 +514,26 @@ const RegionOrderDetail: React.FC = () => {
                 <AccordionDetails>
 
 
-                  <div className="bg-white rounded-xl mb-6 overflow-hidden">
+                  <div className="bg-white rounded-xl border border-gray-200 overflow-y-auto mb-4">
                     <div className="overflow-x-auto">
-                      <table className="w-full">
-                        <thead className="bg-gray-50 border-b-2">
-                          <tr>
-                            <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">№</th>
-                            <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Buyurtma turi</th>
-                            <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Tovar nomi</th>
-                            <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Tovar turi</th>
-                            <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Model</th>
-                            <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">O'lcham</th>
-                            <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">O'lchov birligi</th>
-                            <th className="px-6 py-4 text-right text-sm font-semibold text-gray-700">Soni</th>
-                            <th className="px-6 py-4 text-right text-sm font-semibold text-gray-700">Bekor qilish xolati</th>
-                            <th className="px-6 py-4 text-right text-sm font-semibold text-gray-700">Bekor qilish jujjati</th>
+                      <table className="w-full caption-bottom text-sm">
+                        <thead className="[&_tr]:border-b bg-gradient-to-r from-slate-100 via-blue-50 to-purple-50">
+                          <tr className=" data-[state=selected]:bg-muted border-b transition-colors">
+                            <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600">№</th>
+                            <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600">Buyurtma turi</th>
+                            <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600">Tovar nomi</th>
+                            <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600">Tovar turi</th>
+                            <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600">Model</th>
+                            <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600">O'lcham</th>
+                            <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600">O'lchov birligi</th>
+                            <th className="px-6 py-4 text-right text-sm font-semibold text-gray-600">Soni</th>
+                            <th className="px-6 py-4 text-right text-sm font-semibold text-gray-600">Bekor qilish xolati</th>
+                            <th className="px-6 py-4 text-right text-sm font-semibold text-gray-600">Bekor qilish jujjati</th>
                           </tr>
                         </thead>
-                        <tbody className=" bg-[#f2f2f2b6]">
+                        <tbody className="divide-y divide-gray-100">
                           {/* {regionData.cancelled_products?.map((cancelledproduct, index) => (
-                        <tr key={index} className="hover:bg-indigo-50 transition-colors">
+                        <tr key={index} className="hover:bg-gray-50 transition-all duration-200">
                           <td className="px-6 py-4 text-sm text-gray-900 font-medium">{cancelledproduct.row_number}</td>
                           <td className="px-6 py-4 text-sm text-gray-900 font-medium">{cancelledproduct.order_type?.name}</td>
                           <td className="px-6 py-4 text-sm text-gray-900">{cancelledproduct.product?.name}</td>
@@ -587,23 +591,23 @@ const RegionOrderDetail: React.FC = () => {
                   </div>
 
 
-                  <div className="bg-white rounded-xl mb-6 overflow-hidden">
+                  <div className="bg-white rounded-xl border border-gray-200 overflow-y-auto mb-4">
                     <div className="overflow-x-auto">
-                      <table className="w-full">
-                        <thead className="bg-gray-50 border-b-2">
-                          <tr>
-                            <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">№</th>
-                            <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Xabar xolati</th>
-                            <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Bajaruvchi xodim</th>
-                            <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Xujjat turi</th>
-                            <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Lavozim</th>
-                            <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Javob turi</th>
-                            <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Izox</th>
+                      <table className="w-full caption-bottom text-sm">
+                        <thead className="[&_tr]:border-b bg-gradient-to-r from-slate-100 via-blue-50 to-purple-50">
+                          <tr className=" data-[state=selected]:bg-muted border-b transition-colors">
+                            <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600">№</th>
+                            <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600">Xabar xolati</th>
+                            <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600">Bajaruvchi xodim</th>
+                            <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600">Xujjat turi</th>
+                            <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600">Lavozim</th>
+                            <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600">Javob turi</th>
+                            <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600">Izox</th>
                           </tr>
                         </thead>
-                        <tbody className=" bg-[#f2f2f2b6]">
+                        <tbody className="divide-y divide-gray-100">
                           {regionData.executors?.map((executor, index) => (
-                            <tr key={index} className="hover:bg-indigo-50 transition-colors">
+                            <tr key={index} className="hover:bg-gray-50 transition-all duration-200">
                               <td className="px-6 py-4 text-sm text-gray-900">{executor?.row_number}</td>
                               <td className="px-6 py-4 text-sm text-gray-900">{executor.status_message?.name}</td>
                               <td className="px-6 py-4 text-sm text-gray-900 font-medium">{executor.executor?.name}</td>
@@ -623,18 +627,36 @@ const RegionOrderDetail: React.FC = () => {
             </div>
 
             {/* Attach document */}
-            <div className='flex items-center justify-center gap-10'>
-              {/* File */}
-              <div className='bg-blue-500 flex items-center justify-center p-3 rounded-lg'>
-                <button className='flex items-center gap-2 cursor-pointer text-lg px-4 py-2 rounded-md text-white font-medium mb-2' onClick={() => setFileUploadModal(true)}>
-                  <span><FilePlus2 /></span>
-                  Hujjat biriktirish
-                </button>
+            <div className='flex items-center justify-center gap-6 p-6'>
+              {/* File Upload Button */}
+              <button
+                onClick={() => setFileUploadModal(true)}
+                className='group relative bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white px-6 py-4 rounded-xl shadow-md hover:shadow-lg transition-all duration-300 flex items-center gap-3 font-medium cursor-pointer'
+              >
+                <div className='bg-white/20 p-2 rounded-lg group-hover:bg-white/30 transition-colors'>
+                  <FilePlus2 className='w-5 h-5' />
+                </div>
+                <span>Hujjat biriktirish</span>
+              </button>
+
+              {/* Text Area */}
+              <div className='flex-1 max-w-md'>
+                <TextArea
+                  placeholder='Qisqacha mazmun yozing...'
+                  className='rounded-xl border-2 border-gray-200 focus:border-blue-400 hover:border-gray-300 transition-colors shadow-sm'
+                  style={{ height: "120px" }}
+                />
               </div>
-              <TextArea style={{ width: "500px", height: "100px" }} placeholder='Qisqacha mazmun' />
-              <button className='bg-blue-500 text-white py-6 px-6 rounded-lg cursor-pointer'>
-                <SaveOutlined className='inline mr-3 text-lg' />
-                Saqlash
+
+              {/* Save Button */}
+              <button
+                className='group bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white px-8 py-4 rounded-xl shadow-md hover:shadow-lg transition-all duration-300 flex items-center gap-3 font-medium cursor-pointer'
+
+              >
+                <div className='bg-white/20 p-2 rounded-lg group-hover:bg-white/30 transition-colors'>
+                  <SaveOutlined className='text-xl' />
+                </div>
+                <span>Saqlash</span>
               </button>
             </div>
 
