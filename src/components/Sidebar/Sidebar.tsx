@@ -68,13 +68,7 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed }: SidebarProps) => {
           label: "Ombordan omborga",
           icon: ArrowRightLeft,
           type: "item",
-        },
-        {
-          id: "barcode-printing",
-          label: "Shtrix kod chop etish",
-          icon: Barcode,
-          type: "item",
-        },
+        }
       ]
     },
     {
