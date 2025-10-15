@@ -18,6 +18,9 @@ import SelectRemainsModal from '@/components/CreateForms/SelectRemainsModal';
 import {
     EyeOutlined, DownloadOutlined, FilePdfOutlined, FileWordOutlined, FileExcelOutlined, FileImageOutlined, FileTextOutlined,
 } from "@ant-design/icons";
+import { arrayBufferToFile, inferMimeFromExt } from "@/utils/file_preview";
+import { toast } from 'react-toastify';
+import FilePreviewModal from "@/components/files/FilePreviewModal";
 
 interface IdName {
   id: string;
@@ -43,27 +46,6 @@ interface Executor {
   confirmation_date: string;
 }
 
-// interface OrderDetail {
-//   id: string;
-//   exit_number: string;
-//   exit_date: string;
-//   type_document_for_filter: IdName;
-//   application_status_district: IdName;
-//   confirmation_date: string;
-//   is_approved: boolean;
-//   user: string;
-//   description: string;
-//   from_district: IdName;
-//   sender_from_district: IdName;
-//   to_region: IdName;
-//   recipient_region: IdName;
-//   from_region: IdName;
-//   sender_from_region: IdName;
-//   to_district: IdName;
-//   recipient_district: IdName;
-//   products: Product[];
-//   executors: Executor[];
-// }
 
 interface OrderDetail {
   id: string;
@@ -167,31 +149,11 @@ const RegionOrderDetail: React.FC = () => {
     fileBinary: string;
   }>();
   const [files, setFiles] = useState<FileData[]>([]);
-  const [selectedFile, setSelectedFile] = useState<FileData | null>(null);
   const { id } = useParams();
-  const [pdfUrl, setPdfUrl] = useState(null);
+  const [selectedFileMeta, setSelectedFileMeta] = useState<FileData | null>(null);
+  const [previewFile, setPreviewFile] = useState<File | null>(null);
+  const [previewOpen, setPreviewOpen] = useState(false);
   
-      useEffect(() => {
-          const fetchPDF = async () => {
-              try {
-              const response = await axiosAPI.get(
-                  `region-orders/${id}/file/${selectedFile?.raw_number}`,
-                  {
-                  responseType: 'blob', 
-                  }
-              );
-  
-              const url = URL.createObjectURL(response.data);
-              setPdfUrl(url);
-              } catch (error) {
-              console.error('PDF yuklanmadi:', error);
-              }
-          };
-  
-          if (id && selectedFile) {
-              fetchPDF();
-          }
-    }, [id, selectedFile]);
   const fetchOrderDetail = async () => {
     try {
       const response = await axiosAPI.get(`region-orders/detail/${id}`);
@@ -202,6 +164,46 @@ const RegionOrderDetail: React.FC = () => {
       setLoading(false)
     }
   }
+
+  const handleView = async (f: FileData) => {
+      try {
+        setSelectedFileMeta(f);
+        const res = await axiosAPI.get(`region-orders/${id}/file/${f.raw_number}`, {
+          responseType: "arraybuffer",
+        });
+  
+        const suggestedName =
+          f.file_name || `${regionData?.exit_number || "file"}-${f.raw_number}.${f.extension}`;
+        const mime = inferMimeFromExt(suggestedName) || inferMimeFromExt(f.extension) || "application/octet-stream";
+  
+        const fileObj = arrayBufferToFile(res.data, suggestedName, mime);
+        setPreviewFile(fileObj);
+        setPreviewOpen(true);
+      } catch (e) {
+        console.error(e);
+        toast("Faylni ochib bo‘lmadi", { type: "error" });
+      }
+  };
+
+  const handleDownloadFile = async (f: FileData) => {
+      try {
+        const res = await axiosAPI.get(`region-orders/${id}/file/${f.raw_number}`, {
+          responseType: "blob",
+        });
+        const blob = res.data as Blob;
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = f.file_name || `${regionData?.exit_number || "file"}-${f.raw_number}.${f.extension}`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+      } catch (e) {
+        console.error(e);
+        toast("Yuklab olishda xatolik", { type: "error" });
+      }
+    };
 
   useEffect(() => {
     if (file) {
@@ -223,7 +225,7 @@ const RegionOrderDetail: React.FC = () => {
     try {
       const arrayBuffer = await file?.arrayBuffer();
       const binary = new Uint8Array(arrayBuffer!);
-      const response = await axiosAPI.post(`district-orders/files/create`, binary, {
+      const response = await axiosAPI.post(`region-orders/files/create`, binary, {
         params,
         headers: { 'Content-Type': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' }
       })
@@ -822,14 +824,14 @@ const RegionOrderDetail: React.FC = () => {
                                   {/* 🔸 Action tugmalar */}
                                   <div className="flex justify-end gap-3 mt-auto">
                                       <button
-                                          onClick={() => setSelectedFile(file)}
+                                          onClick={() => handleView(file)}
                                           className="p-2 rounded-md text-gray-600 hover:text-purple-700 hover:bg-gray-100 transition"
                                           title="Ko‘rish"
                                       >
                                           <EyeOutlined className="text-lg" />
                                       </button>
                                       <button
-                                          onClick={() => handleDownload(file)}
+                                          onClick={() => handleDownloadFile(file)}
                                           className="p-2 rounded-md text-gray-600 hover:text-purple-700 hover:bg-gray-100 transition"
                                           title="Yuklab olish"
                                       >
@@ -845,31 +847,13 @@ const RegionOrderDetail: React.FC = () => {
                       Hozircha fayllar mavjud emas.
                   </p>
               )}
-              {/* 🟣 PDF modal */}
-              {selectedFile && (
-                  <div
-                      className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50"
-                      onClick={() => setSelectedFile(null)}
-                  >
-                      <div
-                          className="bg-white w-11/12 h-[90vh] rounded-xl overflow-hidden shadow-xl flex flex-col"
-                          onClick={(e) => e.stopPropagation()}
-                      >  
-                         {pdfUrl && (
-                                        <iframe
-                                            src={pdfUrl}
-                                            title="PDF Viewer"
-                                            className="flex-1 border-none w-full h-screen"
-                                        />
-                          )}
-                          <button
-                              onClick={() => setSelectedFile(null)}
-                              className="bg-purple-600 hover:bg-purple-700 text-white py-2 font-medium"
-                          >
-                              Yopish
-                          </button>
-                      </div>
-                  </div>
+              {selectedFileMeta && (
+                <FilePreviewModal
+                  open={previewOpen}
+                  file={previewFile}
+                  onClose={() => { setPreviewOpen(false); setPreviewFile(null); }}
+                  onDownload={() => { if (selectedFileMeta) handleDownloadFile(selectedFileMeta); }}
+                />
               )}
           </div>          
         )}

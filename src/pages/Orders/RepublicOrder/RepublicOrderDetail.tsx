@@ -15,6 +15,11 @@ import AccordionDetails from '@mui/material/AccordionDetails';
 import {
     EyeOutlined, DownloadOutlined, FilePdfOutlined, FileWordOutlined, FileExcelOutlined, FileImageOutlined, FileTextOutlined,
 } from "@ant-design/icons";
+import { arrayBufferToFile, inferMimeFromExt } from "@/utils/file_preview";
+import { toast } from 'react-toastify';
+import FilePreviewModal from "@/components/files/FilePreviewModal";
+
+
 interface IdName {
   id: string;
   name: string;
@@ -75,39 +80,54 @@ const RepublicOrderDetail: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [documentTypes, setDocumentTypes] = useState<IdName[]>([]);
   const [files, setFiles] = useState<FileData[]>([]);
-  const [selectedFile, setSelectedFile] = useState<FileData | null>(null);
-  const [pdfUrl, setPdfUrl] = useState(null);
   const { id } = useParams();
-  // const [documentFormData, setDocumentFormData] = useState<{
-  //   selectedDocumentType: string;
-  //   filename: string;
-  //   extension: string;
-  //   fileBinary: string;
-  // }>();
-  useEffect(() => {
-      const fetchPDF = async () => {
-          try {
-          const response = await axiosAPI.get(
-              `republic-orders/${id}/file/${selectedFile?.raw_number}`,
-              {
-              responseType: 'blob', 
-              }
-          );
-  
-          const url = URL.createObjectURL(response.data);
-          setPdfUrl(url);
-          } catch (error) {
-          console.error('PDF yuklanmadi:', error);
-          }
-      };
-  
-      if (id && selectedFile) {
-          fetchPDF();
-      }
-  }, [id, selectedFile]);
+  const [selectedFileMeta, setSelectedFileMeta] = useState<FileData | null>(null);
+  const [previewFile, setPreviewFile] = useState<File | null>(null);
+  const [previewOpen, setPreviewOpen] = useState(false);
+
   const [viewMode, setViewMode] = useState<'orders' | 'letters' | 'files'>('orders');
   
   
+  const handleView = async (f: FileData) => {
+        try {
+          setSelectedFileMeta(f);
+          const res = await axiosAPI.get(`republic-orders/${id}/file/${f.raw_number}`, {
+            responseType: "arraybuffer",
+          });
+    
+          const suggestedName =
+            f.file_name || `${orderData?.exit_number || "file"}-${f.raw_number}.${f.extension}`;
+          const mime = inferMimeFromExt(suggestedName) || inferMimeFromExt(f.extension) || "application/octet-stream";
+    
+          const fileObj = arrayBufferToFile(res.data, suggestedName, mime);
+          setPreviewFile(fileObj);
+          setPreviewOpen(true);
+        } catch (e) {
+          console.error(e);
+          toast("Faylni ochib bo‘lmadi", { type: "error" });
+        }
+    };
+  
+    const handleDownloadFile = async (f: FileData) => {
+        try {
+          const res = await axiosAPI.get(`republic-orders/${id}/file/${f.raw_number}`, {
+            responseType: "blob",
+          });
+          const blob = res.data as Blob;
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement("a");
+          a.href = url;
+          a.download = f.file_name || `${orderData?.exit_number || "file"}-${f.raw_number}.${f.extension}`;
+          document.body.appendChild(a);
+          a.click();
+          a.remove();
+          URL.revokeObjectURL(url);
+        } catch (e) {
+          console.error(e);
+          toast("Yuklab olishda xatolik", { type: "error" });
+        }
+  };
+
 
   const fetchOrderDetail = async () => {
     try {
@@ -188,27 +208,6 @@ const RepublicOrderDetail: React.FC = () => {
           }
   };
 
-  const handleDownload = async (file) => {
-          try {
-              const response = await axiosAPI.get(
-              `republic-orders/${id}/file/${file.file_name}`,
-              {
-                  responseType: "blob", // fayl sifatida olish uchun
-              }
-              );
-  
-              const blobUrl = URL.createObjectURL(response.data);
-              const link = document.createElement("a");
-              link.href = blobUrl;
-              link.setAttribute("download", file.file_name);
-              document.body.appendChild(link);
-              link.click();
-              link.remove();
-              URL.revokeObjectURL(blobUrl); // xotirani tozalash
-          } catch (error) {
-              console.error("Faylni yuklab olishda xato:", error);
-          }
-  };
   const formatDate = (iso: string): string => {
         const date = new Date(iso);
         return date.toLocaleString("uz-UZ", {
@@ -603,14 +602,14 @@ const RepublicOrderDetail: React.FC = () => {
                                     {/* 🔸 Action tugmalar */}
                                     <div className="flex justify-end gap-3 mt-auto">
                                         <button
-                                            onClick={() => setSelectedFile(file)}
+                                            onClick={() => handleView(file)}
                                             className="p-2 rounded-md text-gray-600 hover:text-purple-700 hover:bg-gray-100 transition"
                                             title="Ko‘rish"
                                         >
                                             <EyeOutlined className="text-lg" />
                                         </button>
                                         <button
-                                            onClick={() => handleDownload(file)}
+                                            onClick={() => handleDownloadFile(file)}
                                             className="p-2 rounded-md text-gray-600 hover:text-purple-700 hover:bg-gray-100 transition"
                                             title="Yuklab olish"
                                         >
@@ -627,30 +626,13 @@ const RepublicOrderDetail: React.FC = () => {
                     </p>
                 )}
                 {/* 🟣 PDF modal */}
-                {selectedFile && (
-                    <div
-                        className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50"
-                        onClick={() => setSelectedFile(null)}
-                    >
-                        <div
-                            className="bg-white w-11/12 h-[90vh] rounded-xl overflow-hidden shadow-xl flex flex-col"
-                            onClick={(e) => e.stopPropagation()}
-                        >  
-                            {pdfUrl && (
-                            <iframe
-                                src={pdfUrl}
-                                title="PDF Viewer"
-                                className="flex-1 border-none w-full h-screen"
-                            />
-                            )}
-                            <button
-                                onClick={() => setSelectedFile(null)}
-                                className="bg-purple-600 hover:bg-purple-700 text-white py-2 font-medium"
-                            >
-                                Yopish
-                            </button>
-                        </div>
-                    </div>
+                {selectedFileMeta && (
+                  <FilePreviewModal
+                    open={previewOpen}
+                    file={previewFile}
+                    onClose={() => { setPreviewOpen(false); setPreviewFile(null); }}
+                    onDownload={() => { if (selectedFileMeta) handleDownloadFile(selectedFileMeta); }}
+                  />
                 )}
             </div>
         )}
