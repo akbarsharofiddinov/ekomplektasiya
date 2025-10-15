@@ -4,3 +4,4 @@ declare module "mammoth";
 declare module "file-saver";
 declare module "react-quill";
 declare module "*.png"
+declare module "mammoth/mammoth.browser";

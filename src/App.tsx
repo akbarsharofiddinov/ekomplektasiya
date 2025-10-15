@@ -7,6 +7,7 @@ import { ToastContainer } from "react-toastify"
 import ProductMaterialsBalance from "./pages/Reports/ProductMaterialsBalance";
 import RepublicOrder from "./pages/Orders/RepublicOrder/RepublicOrder";
 import RepublicOrderDetail from "./pages/Orders/RepublicOrder/RepublicOrderDetail";
+import Profile from "./pages/Profile/Profile";
 // import CKEditorComponent from "./components/DocEditor/CKEditorComponent";
 // import TinyMCEComponent from "./components/DocEditor/TinyMCEComponent";
 
@@ -57,10 +58,6 @@ const routes = createBrowserRouter([
             path: "order-details/:id",
             element: <DistrictOrderDetail />
           },
-          {
-            path: "order-details/:id",
-            element: <DistrictOrderDetail />
-          },
         ]
       },
       {
@@ -90,6 +87,10 @@ const routes = createBrowserRouter([
       {
         path: 'product-materials-balance',
         element: <ProductMaterialsBalance />
+      },      
+      {
+        path: 'profile',
+        element: <Profile />
       },
     ],
   },
@@ -104,10 +105,9 @@ const App: React.FC = () => {
   return (
     <>
       <RouterProvider router={routes} />
+      {/* <Test /> */}
       <ToastContainer />
       <Toaster position="top-right" reverseOrder={false} />
-      {/* <TinyMCEComponent /> */}
-      {/* <CKEditorComponent/> */}
     </>
   );
 };

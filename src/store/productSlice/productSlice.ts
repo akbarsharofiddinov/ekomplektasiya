@@ -6,6 +6,8 @@ interface ProductState {
   product_models: IDimension[];
   product_sizes: IDimension[];
   inputsList: ProductInputData[];
+  product_units: IDimension[];
+  order_types: IDimension[];
 }
 
 const initialState: ProductState = {
@@ -14,6 +16,8 @@ const initialState: ProductState = {
   product_models: [],
   product_sizes: [],
   inputsList: [],
+  product_units: [],
+  order_types: [],
 };
 
 const productSlice = createSlice({
@@ -40,6 +44,14 @@ const productSlice = createSlice({
       state.inputsList = action.payload;
     },
 
+    setProductUnits(state, action) {
+      state.product_units = action.payload;
+    },
+
+    setOrderTypes(state, action) {
+      state.order_types = action.payload;
+    },
+
     // Remove from list by id
     removeFromListByID(state, action) {
       state.inputsList = state.inputsList.filter(
@@ -56,5 +68,7 @@ export const {
   setProductSizes,
   setInputList,
   removeFromListByID,
+  setProductUnits,
+  setOrderTypes,
 } = productSlice.actions;
 export default productSlice.reducer;
