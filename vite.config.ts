@@ -2,19 +2,18 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react-swc";
 import tailwindcss from "@tailwindcss/vite";
 import * as path from "path";
-import { nodePolyfills } from 'vite-plugin-node-polyfills';
+import { nodePolyfills } from "vite-plugin-node-polyfills";
 
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react(), tailwindcss(), nodePolyfills()],
   server: {
     proxy: {
-      "/api": {
+      // Brauzer localhost’ga uradi, Vite esa so‘rovni remote’ga uzatadi (CORS yo‘q)
+      "/Xujjatlar": {
         target: "https://ekomplektasiya.uz",
         changeOrigin: true,
-        secure: true,
-        rewrite: (path) =>
-          path.replace(/^\/api/, "/ekomplektasiya_backend"),
+        secure: false,
       },
     },
   },

@@ -268,8 +268,6 @@ const DistrictOrder: React.FC = () => {
         }
     };
 
-    // Get counts for each status
-
     // 🔹 Har bir status uchun sonlarni hisoblash
     const statusCounts = {
         all: totalItems?.count,
@@ -283,7 +281,7 @@ const DistrictOrder: React.FC = () => {
         <>
             {isCreateFormModalOpen ? (
                 <>
-                    <DistrictOrderForm />
+                    <DistrictOrderForm setIsCreateFormModalOpen={setIsCreateFormModalOpen} />
                 </>
             ) : id ? (
                 <Outlet />
