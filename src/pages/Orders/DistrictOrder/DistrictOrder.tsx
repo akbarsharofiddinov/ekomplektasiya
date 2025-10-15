@@ -16,8 +16,11 @@ import {
 import { Outlet, useNavigate, useParams } from 'react-router-dom';
 // import { SearchOutlined } from '@ant-design/icons';
 import { setRegions } from '@/store/infoSlice/infoSlice';
-import { Select } from 'antd';
+import { message, Select } from 'antd';
 import { DistrictOrderForm } from '@/components';
+import { setOrderTypes, setProductModels, setProductSizes, setProductTypes, setProductUnits } from '@/store/productSlice/productSlice';
+
+type ID = string
 
 interface DocumentInfo {
     id: string;
@@ -57,7 +60,7 @@ const DistrictOrder: React.FC = () => {
     const searchInputRef = useRef<HTMLInputElement>(null);
 
     // order type
-    const [orderType, setOrderType] = useState<"outgoing" | "incoming">("outgoing")
+    const [districtOrderType, setDistrictOrderType] = useState<"outgoing" | "incoming">("outgoing")
 
     // Create Transfer modal state
     const [isCreateFormModalOpen, setIsCreateFormModalOpen] = useState(false);
@@ -83,7 +86,7 @@ const DistrictOrder: React.FC = () => {
 
     const getDistrictOrderList = async () => {
         try {
-            const response = await axiosAPI.get(`district-orders/list/?limit=${itemsPerPage}&offset=${(currentPage - 1) * itemsPerPage}&type_document_for_filter=${orderType === "outgoing" ? encodeURIComponent("Тумандан") : encodeURIComponent("Вилоятдан")}`);
+            const response = await axiosAPI.get(`district-orders/list/?limit=${itemsPerPage}&offset=${(currentPage - 1) * itemsPerPage}&type_document_for_filter=${districtOrderType === "outgoing" ? encodeURIComponent("Тумандан") : encodeURIComponent("Вилоятдан")}`);
             setFilteredData(response.data.results);
             setData(response.data.results);
             setTotalItems(response.data);
@@ -130,9 +133,40 @@ const DistrictOrder: React.FC = () => {
         navigate("order-details/" + id);
     };
 
+
     useEffect(() => {
         getDistrictOrderList();
-    }, [orderType, currentPage]);
+    }, [districtOrderType, currentPage]);
+
+    // Dictlarni yuklash
+    useEffect(() => {
+        let mounted = true;
+        (async () => {
+            try {
+                const [orderTypeRes, productTypeRes, sizeRes, unitRes, modelRes] =
+                    await Promise.all([
+                        axiosAPI.get("/enumerations/order_types"),
+                        axiosAPI.get("/product_types/list", { params: { limit: 200 } }),
+                        axiosAPI.get("/sizes/list"),
+                        axiosAPI.get("/units/list"),
+                        axiosAPI.get("/models/list", { params: { limit: 200 } }), // <— model mustaqil
+                    ]);
+
+                if (!mounted) return;
+                dispatch(setProductTypes(productTypeRes.data));
+                dispatch(setProductSizes(sizeRes.data));
+                dispatch(setProductUnits(unitRes.data));
+                dispatch(setProductModels(modelRes.data));
+                dispatch(setOrderTypes(orderTypeRes.data));
+            } catch (err) {
+                console.error(err);
+                message.error("Ma’lumotlarni yuklashda xatolik!");
+            }
+        })();
+        return () => {
+            mounted = false;
+        };
+    }, []);
 
 
     const navigate = useNavigate();
@@ -141,7 +175,7 @@ const DistrictOrder: React.FC = () => {
     // 🔹 ViewMode bo‘yicha filter
     useEffect(() => {
         let filtered = data;
-        if (orderType === "outgoing") {
+        if (districtOrderType === "outgoing") {
             filtered = data.filter(
                 (item) => item.type_document_for_filter === "Тумандан"
             );
@@ -164,7 +198,7 @@ const DistrictOrder: React.FC = () => {
 
         setFilteredData(filtered);
         setCurrentPage(1);
-    }, [orderType, searchTerm]);
+    }, [districtOrderType, searchTerm]);
 
     const handleStatusFilter = (status: FilterStatus) => {
         setStatusFilter(status);
@@ -384,15 +418,15 @@ const DistrictOrder: React.FC = () => {
                                 <div className='w-[30%]'>
                                     <Select
                                         placeholder="tur"
-                                        value={orderType}
+                                        value={districtOrderType}
                                         className='w-full'
                                         options={[
                                             { value: 'outgoing', label: 'Chiquvchi xabarlar' },
                                             { value: 'incoming', label: 'Kiruvchi xabarlar' },
                                         ]}
                                         onChange={value => {
-                                            if (value === "incoming") setOrderType("incoming")
-                                            else setOrderType("outgoing")
+                                            if (value === "incoming") setDistrictOrderType("incoming")
+                                            else setDistrictOrderType("outgoing")
                                         }}
                                     />
                                 </div>
@@ -442,7 +476,7 @@ const DistrictOrder: React.FC = () => {
                             <Table>
                                 <TableHeader>
                                     <TableRow className="bg-slate-50 border-b border-slate-200">
-                                        {orderType === "outgoing" ? (
+                                        {districtOrderType === "outgoing" ? (
                                             <>
                                                 <TableHead>Chiqish №</TableHead>
                                                 <TableHead>Chiqish sanasi</TableHead>
