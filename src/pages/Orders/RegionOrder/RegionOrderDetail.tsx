@@ -15,7 +15,9 @@ import TextArea from 'antd/es/input/TextArea';
 import FileDropZone from '@/components/FileDropZone';
 import { SaveOutlined } from '@ant-design/icons';
 import SelectRemainsModal from '@/components/CreateForms/SelectRemainsModal';
-
+import {
+    EyeOutlined, DownloadOutlined, FilePdfOutlined, FileWordOutlined, FileExcelOutlined, FileImageOutlined, FileTextOutlined,
+} from "@ant-design/icons";
 
 interface IdName {
   id: string;
@@ -131,13 +133,18 @@ interface SimpleItem {
   name: string;
 }
 
-
-
-
 // 🔹 Turlar
 interface IdName {
   id: string;
   name: string;
+}
+
+interface FileData {
+    raw_number: string;
+    user: string;
+    file_name: string;
+    extension: string;
+    date: string;
 }
 
 const RegionOrderDetail: React.FC = () => {
@@ -159,9 +166,32 @@ const RegionOrderDetail: React.FC = () => {
     extension: string;
     fileBinary: string;
   }>();
-
+  const [files, setFiles] = useState<FileData[]>([]);
+  const [selectedFile, setSelectedFile] = useState<FileData | null>(null);
   const { id } = useParams();
-
+  const [pdfUrl, setPdfUrl] = useState(null);
+  
+      useEffect(() => {
+          const fetchPDF = async () => {
+              try {
+              const response = await axiosAPI.get(
+                  `region-orders/${id}/file/${selectedFile?.raw_number}`,
+                  {
+                  responseType: 'blob', 
+                  }
+              );
+  
+              const url = URL.createObjectURL(response.data);
+              setPdfUrl(url);
+              } catch (error) {
+              console.error('PDF yuklanmadi:', error);
+              }
+          };
+  
+          if (id && selectedFile) {
+              fetchPDF();
+          }
+    }, [id, selectedFile]);
   const fetchOrderDetail = async () => {
     try {
       const response = await axiosAPI.get(`region-orders/detail/${id}`);
@@ -212,6 +242,25 @@ const RegionOrderDetail: React.FC = () => {
       console.log(error);
     }
   }
+
+  useEffect(() => {
+      const fetchFiles = async () => {
+          try {
+              const response = await axiosAPI.get(`region-orders/${id}/files/list`);
+              if (Array.isArray(response.data)) {
+                  setFiles(response.data);
+              } else {
+                  console.error("Kutilmagan format:", response.data);
+              }
+          } catch (error) {
+              console.error("Fayllarni olishda xato:", error);
+          } finally {
+              setLoading(false);
+          }
+      };
+      if (id) fetchFiles();
+    }, [id]);
+
 
   useEffect(() => {
     fetchOrderDetail();
@@ -325,7 +374,27 @@ const RegionOrderDetail: React.FC = () => {
   //     setLoading(false)
   //   }
   // }
-
+  const handleDownload = async (file) => {
+          try {
+              const response = await axiosAPI.get(
+              `region-orders/${id}/file/${file.file_name}`,
+              {
+                  responseType: "blob", // fayl sifatida olish uchun
+              }
+              );
+  
+              const blobUrl = URL.createObjectURL(response.data);
+              const link = document.createElement("a");
+              link.href = blobUrl;
+              link.setAttribute("download", file.file_name);
+              document.body.appendChild(link);
+              link.click();
+              link.remove();
+              URL.revokeObjectURL(blobUrl); // xotirani tozalash
+          } catch (error) {
+              console.error("Faylni yuklab olishda xato:", error);
+          }
+  };
   useEffect(() => {
     if (showWarehouseSelect) fetchWarehousesByRegion();
 
@@ -337,6 +406,36 @@ const RegionOrderDetail: React.FC = () => {
   //   setShowWarehouseSelect(false);
   //   await fetchRemaindersUserWarehouse(warehouseId);
   // };
+  const formatDate = (iso: string): string => {
+        const date = new Date(iso);
+        return date.toLocaleString("uz-UZ", {
+            year: "numeric",
+            month: "2-digit",
+            day: "2-digit",
+            hour: "2-digit",
+            minute: "2-digit",
+        });
+  };
+  const getFileIcon = (fileName) => {
+        const ext = fileName.split(".").pop().toLowerCase();
+
+        switch (ext) {
+            case "pdf":
+                return { icon: <FilePdfOutlined />, color: "text-red-500", bg: "bg-red-50" };
+            case "doc":
+            case "docx":
+                return { icon: <FileWordOutlined />, color: "text-blue-500", bg: "bg-blue-50" };
+            case "xls":
+            case "xlsx":
+                return { icon: <FileExcelOutlined />, color: "text-green-500", bg: "bg-green-50" };
+            case "jpg":
+            case "jpeg":
+            case "png":
+                return { icon: <FileImageOutlined />, color: "text-yellow-500", bg: "bg-yellow-50" };
+            default:
+                return { icon: <FileTextOutlined />, color: "text-gray-500", bg: "bg-gray-100" };
+        }
+    };
 
   if (loading) {
     return (
@@ -691,9 +790,88 @@ const RegionOrderDetail: React.FC = () => {
 
         {/* 🔸 3. FAYLLAR RO‘YXATI */}
         {viewMode === 'files' && (
-          <div>
-            edswnjsj
-          </div>
+          <div className="p-4">
+              {files.length !== 0 ? (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
+                      {files.map((file, index) => {
+                          const { icon, color, bg } = getFileIcon(file.file_name);
+                          return (
+                              <div
+                                  key={index}
+                                  className="bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-all duration-300 p-4 flex flex-col justify-between"
+                              >
+                                  {/* 🔹 Exit number & Row number */}
+                                  <div className="flex justify-between items-center mb-3">
+                                      <span className="text-sm font-semibold text-gray-700 bg-gray-100 px-3 py-1 rounded-full">
+                                          {regionData.exit_number}-{file.raw_number}
+                                      </span>
+                                  </div>
+                                  {/* 🔸 Fayl ma’lumotlari */}
+                                  <div className="flex items-center gap-4 mb-3">
+                                      <div className={`p-3 rounded-lg ${bg}`}>
+                                          <div className={`${color} text-3xl`}>{icon}</div>
+                                      </div>
+                                      <div className="flex flex-col">
+                                          <h4 className="text-gray-800 font-semibold text-sm truncate w-48">
+                                              {file.file_name}
+                                          </h4>
+                                          {file.user}
+                                          <p className="text-gray-500 text-sm mt-1">{formatDate(file.date)}</p>
+                                      </div>
+                                  </div>
+                                  {/* 🔸 Action tugmalar */}
+                                  <div className="flex justify-end gap-3 mt-auto">
+                                      <button
+                                          onClick={() => setSelectedFile(file)}
+                                          className="p-2 rounded-md text-gray-600 hover:text-purple-700 hover:bg-gray-100 transition"
+                                          title="Ko‘rish"
+                                      >
+                                          <EyeOutlined className="text-lg" />
+                                      </button>
+                                      <button
+                                          onClick={() => handleDownload(file)}
+                                          className="p-2 rounded-md text-gray-600 hover:text-purple-700 hover:bg-gray-100 transition"
+                                          title="Yuklab olish"
+                                      >
+                                          <DownloadOutlined className="text-lg" />
+                                      </button>
+                                  </div>
+                              </div>
+                          );
+                      })}
+                  </div>
+              ) : (
+                  <p className="text-gray-900 font-bold text-2xl text-center">
+                      Hozircha fayllar mavjud emas.
+                  </p>
+              )}
+              {/* 🟣 PDF modal */}
+              {selectedFile && (
+                  <div
+                      className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50"
+                      onClick={() => setSelectedFile(null)}
+                  >
+                      <div
+                          className="bg-white w-11/12 h-[90vh] rounded-xl overflow-hidden shadow-xl flex flex-col"
+                          onClick={(e) => e.stopPropagation()}
+                      >  
+                         {pdfUrl && (
+                                        <iframe
+                                            src={pdfUrl}
+                                            title="PDF Viewer"
+                                            className="flex-1 border-none w-full h-screen"
+                                        />
+                          )}
+                          <button
+                              onClick={() => setSelectedFile(null)}
+                              className="bg-purple-600 hover:bg-purple-700 text-white py-2 font-medium"
+                          >
+                              Yopish
+                          </button>
+                      </div>
+                  </div>
+              )}
+          </div>          
         )}
 
 

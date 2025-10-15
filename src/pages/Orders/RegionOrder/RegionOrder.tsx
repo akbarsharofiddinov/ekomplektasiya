@@ -522,11 +522,24 @@ const RegionOrder: React.FC = () => {
                 <TableBody>
                   {filteredData.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={8} className="text-center font-semibold text-xl py-6 text-gray-900 ">
-                        {selectedDistrict
-                          ? `${selectedDistrict} tumanida hujjat mavjud emas ?`
-                          : "Hujjatlar mavjud emas"}
-                      </TableCell>
+                       <TableCell
+                          colSpan={8}
+                          className="text-center font-semibold text-xl py-6 text-gray-900"
+                        >
+                          {selectedDistrict ? (
+                            <div>
+                              {selectedDistrict} tumanida{" "}
+                              {orderType === "outgoing" ? (
+                                <p className="text-red-600 inline">Chiqish</p>
+                              ) : (
+                                <p className="text-green-600 inline">Kirish</p>
+                              )}{" "}
+                              hujjat mavjud emas
+                            </div>
+                          ) : (
+                            "Hujjatlar mavjud emas"
+                          )}
+                        </TableCell>
                     </TableRow>
                   ) : (
                     filteredData.map((item, index) => {

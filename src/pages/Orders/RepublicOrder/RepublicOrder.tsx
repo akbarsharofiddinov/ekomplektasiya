@@ -12,7 +12,7 @@ import { useAppDispatch } from '@/store/hooks/hooks';
 import { Outlet, useNavigate, useParams } from 'react-router-dom';
 // import { SearchOutlined } from '@ant-design/icons';
 import { setRegions } from '@/store/infoSlice/infoSlice';
-import { Select } from 'antd';
+import { Select, Tag } from 'antd';
 
 interface DocumentInfo {
   id: string;
@@ -31,18 +31,25 @@ interface DocumentInfo {
   reception_number: string;
   from_region: string;
   sender_from_region: string;
-  to_district: string;
-  recipient_district: string;
+  sender_from_republic: string;
+  recipient_republic: string;
+  application_status_republic:string;
 }
 
+interface RegionFilter {
+  region: string;
+  count: number;
+}
 
 
 type FilterStatus = 'all' | 'approved' | 'approved_not_accepted' | 'not_approved' | "Canceled";
 
 const RepublicOrder: React.FC = () => {
-  const [data] = useState<DocumentInfo[]>([]);
-  const [filteredData, setFilteredData] = useState<DocumentInfo[]>([]);
-
+const [data, setData] = useState<DocumentInfo[]>([]); // ✅ API dan kelgan asl ma'lumotlar
+const [filteredData, setFilteredData] = useState<DocumentInfo[]>([]);
+  const [region_filter, setRegionFilter] = useState<RegionFilter[]>([]);
+  const [selectedRegion, setSelectedRegion] = useState<string>("");
+  
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
@@ -66,12 +73,14 @@ const RepublicOrder: React.FC = () => {
     count: number;
     limit: number;
     offset: number;
-    results: DocumentInfo[];
+    // filter_by_regions: RegionFilter[];
+    // results: DocumentInfo[];
   }>({
     count: 0,
     limit: itemsPerPage,
     offset: 0,
-    results: [],
+    // filter_by_regions: [],
+    // results: [],
   });
 
   const [searchValue] = useState("");
@@ -88,14 +97,22 @@ const RepublicOrder: React.FC = () => {
 
   // API Requests
   const getRegionOrdersList = async () => {
-    try {
-      const response = await axiosAPI.get(`republic-orders/list/?limit=${itemsPerPage}&offset=${(currentPage - 1) * itemsPerPage}&type_document_for_filter=${orderType === "outgoing" ? encodeURIComponent("Вилоятга") : encodeURIComponent("Вилоятдан")}`);
-      setFilteredData(response.data.results);
-      setTotalItems(response.data);
-    } catch (error) {
-      console.error('Error fetching warehouse transfers:', error);
+  try {
+    let url = `republic-orders/list/?limit=${itemsPerPage}&offset=${(currentPage - 1) * itemsPerPage}&type_document_for_filter=${orderType === "outgoing" ? encodeURIComponent("Вилоятга") : encodeURIComponent("Вилоятдан")}`;
+    
+    if (selectedRegion && selectedRegion !== 'Barchasi') {
+      url += `&from_region=${selectedRegion}`;
     }
-  };
+    
+    const response = await axiosAPI.get(url);
+    setData(response.data.results); // ✅ Asl ma'lumotlarni saqlaymiz
+    setFilteredData(response.data.results); // ✅ Ko'rsatiladigan ma'lumotlar
+    setRegionFilter(response.data.filter_by_regions);
+    setTotalItems(response.data);
+  } catch (error) {
+    console.error('Error fetching warehouse transfers:', error);
+  }
+};
 
   const handleDocumentClick = (id: string) => {
     navigate("order-details/" + id);
@@ -103,43 +120,44 @@ const RepublicOrder: React.FC = () => {
 
   useEffect(() => {
     getRegionOrdersList();
-  }, [orderType, currentPage]);
+  }, [orderType, currentPage, selectedRegion]);
 
 
   const navigate = useNavigate();
   const { id } = useParams()
 
   // 🔹 ViewMode bo‘yicha filter
-  useEffect(() => {
-    let filtered = data;
-    if (orderType === "outgoing") {
-      filtered = data.filter(
-        (item) => item.type_document_for_filter === "Вилоятга"
-      );
-    } else {
-      filtered = data.filter(
-        (item) => item.type_document_for_filter === "Вилоятдан"
-      );
-    }
+  // useEffect(() => {
+  //   let filtered = data;
+  //   if (orderType === "outgoing") {
+  //     filtered = data.filter(
+  //       (item) => item.type_document_for_filter === "Вилоятга"
+  //     );
+  //   } else {
+  //     filtered = data.filter(
+  //       (item) => item.type_document_for_filter === "Вилоятдан"
+  //     );
+  //   }
 
-    // 🔸 Search qo‘llanadi
-    if (searchValue.trim() !== "") {
-      const query = searchValue.toLowerCase();
-      filtered = filtered.filter(
-        (item) =>
-          item.exit_number?.toLowerCase().includes(query) ||
-          item.reception_number?.toLowerCase().includes(query) ||
-          item.from_district?.toLowerCase().includes(query) ||
-          item.to_region?.toLowerCase().includes(query) ||
-          item.application_status_district?.toLowerCase().includes(query) ||
-          item.from_region?.toLowerCase().includes(query) ||
-          item.to_district?.toLowerCase().includes(query)
-      );
-    }
+  //   // 🔸 Search qo‘llanadi
+  //   if (searchValue.trim() !== "") {
+  //     const query = searchValue.toLowerCase();
+  //     filtered = filtered.filter(
+  //       (item) =>
+  //         item.exit_number?.toLowerCase().includes(query) ||
+  //         item.reception_number?.toLowerCase().includes(query) ||
+  //         item.from_district?.toLowerCase().includes(query) ||
+  //         item.to_region?.toLowerCase().includes(query) ||
+  //         item.application_status_district?.toLowerCase().includes(query) ||
+  //         item.from_region?.toLowerCase().includes(query) ||
+  //         item.sender_from_republic?.toLowerCase().includes(query) ||
+  //         item.recipient_republic?.toLowerCase().includes(query)
+  //     );
+  //   }
 
-    setFilteredData(filtered);
-    setCurrentPage(1);
-  }, [orderType, searchValue, data]);
+  //   setFilteredData(filtered);
+  //   setCurrentPage(1);
+  // }, [orderType, searchValue, data]);
 
 
   // Pagination handlers
@@ -152,13 +170,18 @@ const RepublicOrder: React.FC = () => {
   // Generate page numbers for pagination
   const getPageNumbers = () => {
     const pages = [];
-    const maxVisiblePages = 5;
-    let startPage = Math.max(1, currentPage - 2);
-    const endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+    const maxVisiblePages = 4;
 
-    // Adjust start page if we're near the end
-    if (endPage - startPage < maxVisiblePages - 1) {
-      startPage = Math.max(1, endPage - maxVisiblePages + 1);
+    // totalPages kam bo'lsa, maxVisiblePages dan kichik qilib olamiz
+    const visiblePages = Math.min(maxVisiblePages, totalPages);
+
+    let startPage = Math.max(1, currentPage - Math.floor(visiblePages / 2));
+    let endPage = startPage + visiblePages - 1;
+
+    // endPage totalPages dan oshmasin
+    if (endPage > totalPages) {
+      endPage = totalPages;
+      startPage = Math.max(1, endPage - visiblePages + 1);
     }
 
     for (let i = startPage; i <= endPage; i++) {
@@ -167,6 +190,8 @@ const RepublicOrder: React.FC = () => {
 
     return pages;
   };
+
+
 
   // API Requests
   // Get regions
@@ -184,6 +209,14 @@ const RepublicOrder: React.FC = () => {
   useEffect(() => {
     getRegionsList();
   }, []);
+  const { Option } = Select;
+
+  const handleChange = (value) => {
+    setSelectedRegion(value || "");
+    setCurrentPage(1); 
+    
+    getRegionOrdersList();
+  };
 
   // Get counts for each status
   const statusCounts = {
@@ -287,7 +320,7 @@ const RepublicOrder: React.FC = () => {
                     </span>
                   </button>
                 </div>
-                <div className='w-[30%]'>
+                <div className='w-[20%]'>
                   <Select
                     placeholder="tur"
                     value={orderType}
@@ -301,6 +334,39 @@ const RepublicOrder: React.FC = () => {
                       else setOrderType("outgoing")
                     }}
                   />
+                </div>
+                 <div className='w-[30%]'>
+                  <Select
+                        value={selectedRegion || ""}
+                        onChange={handleChange}
+                        allowClear
+                        placeholder="Barcha hujjatlar"
+                        className="w-[100%]"
+                        showSearch
+                        optionFilterProp="children"
+                        popupClassName="rounded-xl shadow-md"
+                      >
+                        <Option key="all" value="">
+                          <span className="text-gray-600">Barcha hujjatlar</span>
+                        </Option>
+                        {region_filter.map((item, index) => (
+                          <Option key={index} value={item.region}>
+                            <div className="flex justify-between items-center">
+                              <span>{item.region}</span>
+                              <Tag
+                                color={item.count > 0 ? "blue" : "default"}
+                                style={{
+                                  marginLeft: "auto",
+                                  fontSize: "12px",
+                                  borderRadius: "10px",
+                                }}
+                              >
+                                {item.count}
+                              </Tag>
+                            </div>
+                          </Option>
+                        ))}
+                      </Select>
                 </div>
 
                 {/* Action Buttons - Right Side */}
@@ -348,37 +414,65 @@ const RepublicOrder: React.FC = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredData.map((item, index) => {
-                    // const documentStyle = getDocumentStyling(item.is_approved, item.is_accepted);
-                    // const StatusIcon = documentStyle.icon;
-
-                    return (
+                  {filteredData.length === 0 ? (
+                    <TableRow>
+                      <TableCell
+                        colSpan={8}
+                        className="text-center font-semibold text-xl py-6 text-gray-900"
+                      >
+                        {selectedRegion ? (
+                          <div>
+                            {selectedRegion} {" "}
+                            {orderType === "outgoing" ? (
+                              <p className="text-red-600 inline">Chiqish</p>
+                            ) : (
+                              <p className="text-green-600 inline">Kirish</p>
+                            )}{" "}
+                            hujjat mavjud emas
+                          </div>
+                        ) : (
+                          "Hujjatlar mavjud emas"
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    filteredData.map((item, index) => ( 
                       <TableRow
-                        key={`${index}`}
-                        // className={getRowStyling(item.is_approved, item.is_accepted)}
+                        key={index}
                         onClick={() => handleDocumentClick(item.id)}
                       >
                         <TableCell className="py-3 px-4">{item.exit_number}</TableCell>
                         <TableCell className="py-3 px-4">
-                        {new Date(item.exit_date)
-                            .toLocaleString('uz-UZ', {
-                              day: '2-digit',
-                              month: '2-digit',
-                              year: 'numeric',
-                              hour: '2-digit',
-                              minute: '2-digit',
+                          {new Date(item.exit_date)
+                            .toLocaleString("uz-UZ", {
+                              day: "2-digit",
+                              month: "2-digit",
+                              year: "numeric",
+                              hour: "2-digit",
+                              minute: "2-digit",
                             })
-                            .replace(',', '. ')}
+                            .replace(",", ". ")}
                         </TableCell>
-                        <TableCell className="text-slate-700 py-3 px-4">{item.from_region}</TableCell>
-                        <TableCell className="text-slate-700 py-3 px-4">{item.sender_from_region}</TableCell>
-                        {/* <TableCell className="text-slate-700 py-3 px-4">{item.recipient_republic}</TableCell> */}
-                        {/* <TableCell className="py-3 px-4">{item.application_status_republic}</TableCell> */}
-                        <TableCell className="text-slate-700 py-3 px-4">{item.confirmation_date}</TableCell>
+                        <TableCell className="text-slate-700 py-3 px-4">
+                          {item.from_region}
+                        </TableCell>
+                        <TableCell className="text-slate-700 py-3 px-4">
+                          {item.sender_from_region}
+                        </TableCell>
+                        <TableCell className="text-slate-700 py-3 px-4">
+                          {item.recipient_republic}
+                        </TableCell>
+                        <TableCell className="text-slate-700 py-3 px-4">
+                          {item.application_status_republic}
+                        </TableCell>
+                        <TableCell className="text-slate-700 py-3 px-4">
+                          {item.confirmation_date}
+                        </TableCell>
                       </TableRow>
-                    );
-                  })}
+                    ))
+                  )}
                 </TableBody>
+
               </Table>
             </div>
 
