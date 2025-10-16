@@ -32,6 +32,7 @@ const Layout: React.FC = () => {
       "order-by-districts": "Tumanlar bo'yicha buyurtma",
       "order-by-regions": "Viloyatlar bo'yicha buyurtma",
       "order-by-republic": "Respublika bo'yicha buyurtma",
+      "order-by-sale": "Komplektasiya bo'yicha buyurtma",
       "card-m17": "Kartochka (M-17)",
       "product-circulation-report": "Tovar aylanma hisoboti",
       "product-materials-input-report": "Tovar va materiallar kirimi hisoboti",
