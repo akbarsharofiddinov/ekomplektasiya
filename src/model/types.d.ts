@@ -221,3 +221,10 @@ interface CreateTransferPayload {
   is_approved: boolean;
   products: TransferProduct[];
 }
+
+interface SpecialProductFieldType {
+  id: string;
+  number: number;
+  name: string;
+  name_uz: string;
+}

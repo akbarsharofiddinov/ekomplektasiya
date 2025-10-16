@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-non-null-asserted-optional-chain */
-import { DatePicker, Input, Select, type DatePickerProps } from "antd";
+import { Button, DatePicker, Input, Select, type DatePickerProps } from "antd";
 import React, { useEffect, useState } from "react";
 import dayjs, { Dayjs } from "dayjs";
 import { axiosAPI } from "@/services/axiosAPI";
@@ -11,12 +11,6 @@ import {
   setTypesOfGoods,
   setWarehouses,
 } from "@/store/infoSlice/infoSlice";
-import {
-  setProductModels,
-  setProducts,
-  setProductSizes,
-  setProductTypes,
-} from "@/store/productSlice/productSlice";
 import { Plus, Trash } from "lucide-react";
 import CounterPartyForm from "./CounterPartyForm";
 import Typography from "@mui/material/Typography";
@@ -29,7 +23,7 @@ import {
   TableRow,
 } from "../UI/table";
 import { toast } from "react-toastify";
-
+import FieldModal from "../modal/FieldModal";
 
 const DATE_FORMAT = "YYYY-MM-DD HH:mm:ss";
 
@@ -83,6 +77,7 @@ const ProductInputForm: React.FC<IProductInputFormProps> = ({
     responsible_person: "",
     products: [],
   });
+  const [fieldName, setFieldName] = useState<"size" | "product" | "product_type" | "model" | "unit" | "">("");
   // const [selectedProducts, setSelectedProducts] = React.useState<Product[]>([]);
 
   // Redux
@@ -233,52 +228,6 @@ const ProductInputForm: React.FC<IProductInputFormProps> = ({
   }, [warehouse, warehouses]);
 
   // API - Products ================================
-  // Get products list
-  const getProductsList = React.useCallback(async () => {
-    try {
-      const response = await axiosAPI.get("products/list");
-      if (response.status === 200) {
-        dispatch(setProducts(response.data.results));
-      }
-    } catch (error) {
-      console.log(error);
-    }
-  }, [dispatch]);
-
-  const getProductTypesList = React.useCallback(async () => {
-    try {
-      const response = await axiosAPI.get("product_types/list");
-      if (response.status === 200) {
-        dispatch(setProductTypes(response.data));
-      }
-    } catch (error) {
-      console.log(error);
-    }
-  }, [dispatch]);
-
-  // Get product models list
-  const getProductModelsList = React.useCallback(async () => {
-    try {
-      const response = await axiosAPI.get("models/list");
-      if (response.status === 200) {
-        dispatch(setProductModels(response.data));
-      }
-    } catch (error) {
-      console.log(error);
-    }
-  }, [dispatch]);
-
-  // Get product sizes list
-  const getProductSizesList = React.useCallback(async () => {
-    try {
-      const response = await axiosAPI.get("sizes/list");
-      if (response.status === 200) {
-        dispatch(setProductSizes(response.data));
-      }
-    } catch (error) {
-      console.log(error);
-    }
-  }, [dispatch]);
 
   // Effects
   useEffect(() => {
@@ -300,22 +249,6 @@ const ProductInputForm: React.FC<IProductInputFormProps> = ({
   useEffect(() => {
     getResponsiblePersonList();
   }, [warehouse, getResponsiblePersonList]);
-
-  useEffect(() => {
-    if (products.length === 0) getProductsList();
-    if (product_types.length === 0) getProductTypesList();
-    if (product_models.length === 0) getProductModelsList();
-    if (product_sizes.length === 0) getProductSizesList();
-  }, [
-    getProductsList,
-    getProductTypesList,
-    getProductModelsList,
-    getProductSizesList,
-    products.length,
-    product_types.length,
-    product_models.length,
-    product_sizes.length,
-  ]);
 
   useEffect(() => {
     setFormData((prev) => ({
@@ -446,67 +379,6 @@ const ProductInputForm: React.FC<IProductInputFormProps> = ({
             </Select>
           </div>
 
-          {/* <div className="flex flex-col relative">
-            <label className="mb-1">Kontragent</label>
-            <Select
-              placeholder="Kontragent tanlang"
-              showSearch
-              allowClear // 🔹 Shu joy — 'x' ni chiqaradi
-              value={
-                selectedCounterParty
-                  ? selectedCounterParty
-                  : currentCreatedCounterParty
-                    ? currentCreatedCounterParty.name
-                    : undefined
-              }
-              onChange={(value) => {
-                if (!value) {
-                  // 🔹 'x' bosilganda qiymatni tozalash
-                  setSelectedCounterParty(null);
-                  setFormData((prev) => ({
-                    ...prev,
-                    counterparty: null,
-                  }));
-                  return;
-                }
-
-                const findCounterParty = counterparties.find(
-                  (c) => c.name === value
-                );
-
-                if (findCounterParty) {
-                  setSelectedCounterParty(value);
-                  setFormData((prev) => ({
-                    ...prev,
-                    counterparty: findCounterParty.id,
-                  }));
-                } else {
-                  setCreateCounterPartyModal(true);
-                }
-              }}
-            >
-              <Button
-                className="bg-gray-200"
-                onClick={() => setCreateCounterPartyModal(true)}
-              >
-                <div className="flex items-center justify-center gap-2">
-                  <span>
-                    <Plus size={17} />
-                  </span>
-                  <span>Kontragent yaratish</span>
-                </div>
-              </Button>
-
-              {counterparties.map((counterparty, index) => (
-                <Select.Option key={index} value={counterparty.name}>
-                  {counterparty.name}
-                </Select.Option>
-              ))}
-            </Select>
-          </div> */}
-
-
-
           {/* Type of Goods */}
           <div className="flex flex-col">
             <label className="mb-1">Tovar kirim turi</label>
@@ -626,12 +498,12 @@ const ProductInputForm: React.FC<IProductInputFormProps> = ({
 
                       {/* Product Type */}
                       <TableCell className="text-slate-700 font-medium p-3">
-                        <Select
+                        {/* <Select
                           showSearch
                           className="w-full"
                           placeholder="Tovar turini tanlang"
                           onChange={(value) => {
-                            const selectedType = product_types.find(
+                            const selectedType = product_types.results.find(
                               (t) => t.name === value
                             );
                             setFormData((prev) => ({
@@ -644,22 +516,33 @@ const ProductInputForm: React.FC<IProductInputFormProps> = ({
                             }));
                           }}
                         >
-                          {product_types.map((type) => (
+                          {product_types.results.map((type) => (
                             <Select.Option key={type.id} value={type.name}>
                               {type.name}
                             </Select.Option>
                           ))}
-                        </Select>
+                        </Select> */}
+                        <Button className="w-full" onClick={() => setFieldName("product_type")}><span className={`${formData.products[index].product_type ? "text-gray-800" : "text-gray-400"}`}>{product.product_type ? product_types.results.find((t) => t.id === product.product_type)?.name : "Tanlang"}</span></Button>
+                        {fieldName === "product_type" && (
+                          <FieldModal
+                            field_name={fieldName}
+                            selectedItem={{ id: product.product_type, name: "" }}
+                            setSelectedItem={newItem => {
+                              if (newItem) setFormData(prev => ({ ...prev, products: prev.products.map((p, i) => i === index ? { ...p, product_type: newItem!.id } : p) }))
+                              setFieldName("")
+                            }}
+                          />
+                        )}
                       </TableCell>
 
                       <TableCell className="text-slate-700 font-medium p-3">
                         {/* Product models */}
-                        <Select
+                        {/* <Select
                           showSearch
                           className="w-full"
                           placeholder="Modelni tanlang"
                           onChange={(value) => {
-                            const selectedModel = product_models.find(
+                            const selectedModel = product_models.results.find(
                               (m) => m.name === value
                             );
                             setFormData((prev) => ({
@@ -672,22 +555,34 @@ const ProductInputForm: React.FC<IProductInputFormProps> = ({
                             }));
                           }}
                         >
-                          {product_models.map((model) => (
+                          {product_models.results.map((model) => (
                             <Select.Option key={model.id} value={model.name}>
                               {model.name}
                             </Select.Option>
                           ))}
-                        </Select>
+                        </Select> */}
+                        <Button className="w-full" onClick={() => setFieldName("model")}><span className={`${formData.products[index].model ? "text-gray-800" : "text-gray-400"}`}>{product.model ? product_models.results.find((m) => m.id === product.model)?.name : "Tanlang"}</span></Button>
+                        {fieldName === "model" && (
+                          <FieldModal
+                            field_name="model"
+                            selectedItem={{ id: product.model, name: "" }}
+                            setSelectedItem={newItem => {
+                              if (newItem) setFormData(prev => ({ ...prev, products: prev.products.map((p, i) => i === index ? { ...p, model: newItem!.id } : p) }))
+                              setFieldName("")
+                            }}
+                          />
+                        )
+                        }
                       </TableCell>
 
                       {/* Product size */}
                       <TableCell className="text-slate-700 font-medium p-3">
-                        <Select
+                        {/* <Select
                           showSearch
                           className="w-full"
                           placeholder="O'lchamini tanlang"
                           onChange={(value) => {
-                            const selectedSize = product_sizes.find(
+                            const selectedSize = product_sizes.results.find(
                               (s) => s.name === value
                             );
                             setFormData((prev) => ({
@@ -700,12 +595,12 @@ const ProductInputForm: React.FC<IProductInputFormProps> = ({
                             }));
                           }}
                         >
-                          {product_sizes.map((size) => (
+                          {product_sizes.results.map((size) => (
                             <Select.Option key={size.id} value={size.name}>
                               {size.name}
                             </Select.Option>
                           ))}
-                        </Select>
+                        </Select> */}
                       </TableCell>
 
                       {/* Product */}
@@ -715,7 +610,7 @@ const ProductInputForm: React.FC<IProductInputFormProps> = ({
                           className="w-full"
                           placeholder="Tovar tanlang"
                           onChange={(value) => {
-                            const selectedProduct = products.find(
+                            const selectedProduct = products.results.find(
                               (p) => p.name === value
                             );
                             setFormData((prev) => ({
@@ -728,7 +623,7 @@ const ProductInputForm: React.FC<IProductInputFormProps> = ({
                             }));
                           }}
                         >
-                          {products.map((prod) => (
+                          {products.results.map((prod) => (
                             <Select.Option key={prod.id} value={prod.name}>
                               {prod.name}
                             </Select.Option>

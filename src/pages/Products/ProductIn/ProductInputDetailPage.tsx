@@ -58,6 +58,7 @@ import { useAppSelector } from "@/store/hooks/hooks";
 // import PrintPage from "./pages/Products/ProductIn/PrintPage";
 // import PrintPage from "../PrintPage";
 import PrintPage from "./PrintPage";
+import FieldModal from "@/components/modal/FieldModal";
 
 
 const DATE_FORMAT = "YYYY-MM-DD HH:mm:ss";
@@ -146,13 +147,14 @@ const ProductInputDetailPage: React.FC = () => {
   const [openBarCodeModal, setOpenBarCodeModal] = useState("");
   const [alertDialog, setAlertDialog] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [fieldName, setFieldName] = useState<"size" | "product" | "product_type" | "model" | "unit" | "">("");
 
   const navigate = useNavigate();
   const { id } = useParams();
   const dispatch = useDispatch();
 
   // Store data
-  const { products, product_types, product_models, product_sizes } =
+  const { products } =
     useAppSelector((state) => state.product);
   const {
     regions,
@@ -413,41 +415,41 @@ const ProductInputDetailPage: React.FC = () => {
   };
 
   // API - Products
-  const getProductsList = useCallback(async () => {
-    try {
-      const response = await axiosAPI.get("products/list");
-      if (response.status === 200) dispatch(setProducts(response.data.results));
-    } catch (error) {
-      console.log(error);
-    }
-  }, [dispatch]);
+  // const getProductsList = useCallback(async () => {
+  //   try {
+  //     const response = await axiosAPI.get("products/list");
+  //     if (response.status === 200) dispatch(setProducts(response.data.results));
+  //   } catch (error) {
+  //     console.log(error);
+  //   }
+  // }, [dispatch]);
 
-  const getProductTypesList = useCallback(async () => {
-    try {
-      const response = await axiosAPI.get("product_types/list");
-      if (response.status === 200) dispatch(setProductTypes(response.data));
-    } catch (error) {
-      console.log(error);
-    }
-  }, [dispatch]);
+  // const getProductTypesList = useCallback(async () => {
+  //   try {
+  //     const response = await axiosAPI.get("product_types/list");
+  //     if (response.status === 200) dispatch(setProductTypes(response.data));
+  //   } catch (error) {
+  //     console.log(error);
+  //   }
+  // }, [dispatch]);
 
-  const getProductModelsList = useCallback(async () => {
-    try {
-      const response = await axiosAPI.get("models/list");
-      if (response.status === 200) dispatch(setProductModels(response.data));
-    } catch (error) {
-      console.log(error);
-    }
-  }, [dispatch]);
+  // const getProductModelsList = useCallback(async () => {
+  //   try {
+  //     const response = await axiosAPI.get("models/list");
+  //     if (response.status === 200) dispatch(setProductModels(response.data));
+  //   } catch (error) {
+  //     console.log(error);
+  //   }
+  // }, [dispatch]);
 
-  const getProductSizesList = useCallback(async () => {
-    try {
-      const response = await axiosAPI.get("sizes/list");
-      if (response.status === 200) dispatch(setProductSizes(response.data));
-    } catch (error) {
-      console.log(error);
-    }
-  }, [dispatch]);
+  // const getProductSizesList = useCallback(async () => {
+  //   try {
+  //     const response = await axiosAPI.get("sizes/list");
+  //     if (response.status === 200) dispatch(setProductSizes(response.data));
+  //   } catch (error) {
+  //     console.log(error);
+  //   }
+  // }, [dispatch]);
 
   // Handle approve input product
   const handleApproveInput = async () => {
@@ -510,21 +512,21 @@ const ProductInputDetailPage: React.FC = () => {
     getResponsiblePersonList();
   }, [getResponsiblePersonList]);
 
-  useEffect(() => {
-    if (products.length === 0) getProductsList();
-    if (product_types.length === 0) getProductTypesList();
-    if (product_models.length === 0) getProductModelsList();
-    if (product_sizes.length === 0) getProductSizesList();
-  }, [
-    getProductsList,
-    getProductTypesList,
-    getProductModelsList,
-    getProductSizesList,
-    products.length,
-    product_types.length,
-    product_models.length,
-    product_sizes.length,
-  ]);
+  // useEffect(() => {
+  //   if (products.length === 0) getProductsList();
+  //   if (product_types.length === 0) getProductTypesList();
+  //   if (product_models.length === 0) getProductModelsList();
+  //   if (product_sizes.length === 0) getProductSizesList();
+  // }, [
+  //   getProductsList,
+  //   getProductTypesList,
+  //   getProductModelsList,
+  //   getProductSizesList,
+  //   products.length,
+  //   product_types.length,
+  //   product_models.length,
+  //   product_sizes.length,
+  // ]);
 
   // Detect changes
   useEffect(() => {
@@ -1063,7 +1065,7 @@ const ProductInputDetailPage: React.FC = () => {
 
                         {/* Product name */}
                         <TableCell className="p-3 text-center">
-                          <Select
+                          {/* <Select
                             disabled={documentData?.is_approved}
                             value={item.product?.name || ""}
                             placeholder="Tovar tanlang"
@@ -1081,13 +1083,24 @@ const ProductInputDetailPage: React.FC = () => {
                                 {product.name}
                               </Select.Option>
                             ))}
-                          </Select>
+                          </Select> */}
+                          {item.product ?
+                            item.product.name :
+                            <Button onClick={() => setFieldName("product")}>
+                              Add Product
+                            </Button>}
+                          {fieldName === "product" && (
+                            <FieldModal field_name="product" selectedItem={item.product} setSelectedItem={(newItem) => updateProductField(index, p => {
+                              p.product = newItem ?? { id: "", name: "" }
+                              return p
+                            })} />
+                          )}
                         </TableCell>
 
 
                         {/* Product type */}
                         <TableCell className="p-3 text-center">
-                          <Select
+                          {/* <Select
                             disabled={documentData?.is_approved}
                             value={item.product_type?.name || ""}  // ✅ id ishlatamiz
                             placeholder="Tovar turini tanlang"
@@ -1107,12 +1120,18 @@ const ProductInputDetailPage: React.FC = () => {
                                 {type.name}
                               </Select.Option>
                             ))}
-                          </Select>
+                          </Select> */}
+                          {/* <FieldModal field_name="product_type" selectedItem={item.product_type} setSelectedItem={newProduct => {
+                            updateProductField(index, (p) => {
+                              p.product_type = newProduct ?? { id: "", name: "" }
+                              return p
+                            })
+                          }} /> */}
                         </TableCell>
 
                         {/* Model */}
                         <TableCell className="p-3 text-center">
-                          <Select
+                          {/* <Select
                             disabled={documentData?.is_approved}
                             value={item.model?.id || ""} // ✅ id ishlatyapmiz
                             placeholder="Model tanlang"
@@ -1132,12 +1151,18 @@ const ProductInputDetailPage: React.FC = () => {
                                 {model.name}
                               </Select.Option>
                             ))}
-                          </Select>
+                          </Select> */}
+                          {/* <FieldModal field_name="model" selectedProductTypeId={item.product_type.name} selectedItem={item.model} setSelectedItem={newProduct => {
+                            updateProductField(index, (p) => {
+                              p.model = newProduct ?? { id: "", name: "" }
+                              return p
+                            })
+                          }} /> */}
                         </TableCell>
 
                         {/* O‘lcham */}
                         <TableCell className="p-3 text-center">
-                          <Select
+                          {/* <Select
                             disabled={documentData?.is_approved}
                             value={item.size?.id || ""} // ✅ id ishlatyapmiz
                             placeholder="O‘lcham"
@@ -1157,7 +1182,13 @@ const ProductInputDetailPage: React.FC = () => {
                                 {size.name}
                               </Select.Option>
                             ))}
-                          </Select>
+                          </Select> */}
+                          {/* <FieldModal field_name="size" selectedModelId={item.model.name} selectedProductTypeId={item.product_type.name} selectedItem={item.size} setSelectedItem={newSize => {
+                            updateProductField(index, p => {
+                              p.size = newSize ?? { id: "", name: "" }
+                              return p
+                            })
+                          }} /> */}
                         </TableCell>
 
                         {/* Date party */}
