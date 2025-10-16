@@ -5,12 +5,11 @@ import { Button, Input, InputNumber, Popconfirm, Select, Spin, message } from "a
 import { Plus, Trash2 } from "lucide-react";
 import { axiosAPI } from "@/services/axiosAPI";
 import { useAppDispatch, useAppSelector } from "@/store/hooks/hooks";
-import FilePreviewer from "@/components/files/FilePreviewer";
+import { DownloadOutlined, EyeOutlined, FileWordOutlined } from "@ant-design/icons";
 import FieldModal from "@/components/modal/FieldModal";
-import { setOrderTypes, setProductModels, setProductSizes, setProductTypes, setProductUnits } from "@/store/productSlice/productSlice";
 
-const fileURL = "https://ekomplektasiya.uz/Xujjatlar/buyurtmalar/Хоразм%вилояти/0000000006.docm";
-const documentID = "31385c68-a91e-11f0-adb6-244bfe93ba23";
+const fileURL = "https://ekomplektasiya.uz/Xujjatlar/buyurtmalar/Хоразм вилояти/0000000009.docm";
+const documentID = "5bd6fe59-a9cc-11f0-adb6-244bfe93ba23";
 
 // ===== Types =====
 type IDName = { id: string; name: string };
@@ -86,23 +85,20 @@ function normalizeList(data: any): IDName[] {
 }
 
 const OrderWIndow: React.FC<IDistrictOrderFormProps> = ({ setIsCreateFormModalOpen }) => {
-  // Global spravochniklar
-  const [loadingDicts, setLoadingDicts] = useState(false);
   // FormData
   const [formData, setFormData] = useState<FormDataType>(initialFormData);
-  const [messageFile, setMessageFile] = useState<File | null>(null);
   const [fieldName, setFieldName] = useState<"size" | "product" | "product_type" | "model" | "unit" | "">("");
   // Employee
   const [employees, setEmployees] = useState<any[]>([]);
   const [selectedEmployee, setSelectedEmployee] = useState<any | null>(null);
   const [showEmployeeModal, setShowEmployeeModal] = useState(false);
-
   // Executores
   const [executors, setExecutors] = useState<any[]>([]);
-
   // Document is Confirmed state
   const [documentConfirmed, setDocumentConfirmed] = useState(false);
+  const [messageFile, setMessageFile] = useState<File | null>(null)
 
+  // Redux
   const { currentUserInfo } = useAppSelector(state => state.info);
   const { product_types, product_models, product_sizes, product_units, order_types } = useAppSelector(state => state.product)
 
@@ -229,39 +225,6 @@ const OrderWIndow: React.FC<IDistrictOrderFormProps> = ({ setIsCreateFormModalOp
     // console.log("first")
   }, [])
 
-  // Dictlarni yuklash
-  useEffect(() => {
-    let mounted = true;
-    (async () => {
-      try {
-        setLoadingDicts(true);
-        const [orderTypeRes, productTypeRes, sizeRes, unitRes, modelRes] =
-          await Promise.all([
-            axiosAPI.get("/enumerations/order_types"),
-            axiosAPI.get("/product_types/list", { params: { limit: 200 } }),
-            axiosAPI.get("/sizes/list"),
-            axiosAPI.get("/units/list"),
-            axiosAPI.get("/models/list", { params: { limit: 200 } }), // <— model mustaqil
-          ]);
-
-        if (!mounted) return;
-        dispatch(setOrderTypes(orderTypeRes.data))
-        dispatch(setProductTypes(productTypeRes.data))
-        dispatch(setProductSizes(sizeRes.data))
-        dispatch(setProductUnits(unitRes.data))
-        dispatch(setProductModels(modelRes.data))
-      } catch (err) {
-        console.error(err);
-        message.error("Ma’lumotlarni yuklashda xatolik!");
-      } finally {
-        setLoadingDicts(false);
-      }
-    })();
-    return () => {
-      mounted = false;
-    };
-  }, [dispatch]);
-
   return (
     <>
       <div className="min-h-screen py-2 px-2 bg-white">
@@ -278,10 +241,10 @@ const OrderWIndow: React.FC<IDistrictOrderFormProps> = ({ setIsCreateFormModalOp
             ) : (
               <Popconfirm
                 placement="bottomLeft"
-                title={"Buyurtma yaratilsinmi?"}
-                description={"Buyurtma saqlansinmi yoki o'chirib tashlansinmi?"}
-                okText="Ha"
-                cancelText="Yo'q"
+                title={"Buyurtmani saqlashni xohlaysizmi?"}
+                description={"Buyurtmani saqlash yoki bekor qilishni tanlang."}
+                okText="Saqlash"
+                cancelText="Bekor qilish"
                 className="mr-6"
                 onCancel={() => {
                   // Delete created document and get back
@@ -359,10 +322,11 @@ const OrderWIndow: React.FC<IDistrictOrderFormProps> = ({ setIsCreateFormModalOp
 
             <div className="bg-white rounded-xl mb-6 overflow-x-auto">
               <div className="min-w-[1000px]">
-                {loadingDicts ? (
-                  <div className="flex items-center justify-center py-8">
-                    <Spin />
-                  </div>
+                {false ? (
+                  // <div className="flex items-center justify-center py-8">
+                  //   <Spin />
+                  // </div>
+                  <></>
                 ) : (
                   <table className="w-full">
                     <thead className="bg-gray-50 border-b-2">
@@ -450,30 +414,8 @@ const OrderWIndow: React.FC<IDistrictOrderFormProps> = ({ setIsCreateFormModalOp
                                 />
                               </td>
 
+                              {/* Product type */}
                               <td className="px-3 py-3 text-center">
-                                {/* <Select
-                                  className="w-46"
-                                  placeholder="Tovar turi"
-                                  allowClear
-                                  showSearch
-                                  value={r.product_type}
-                                  onChange={(v) =>
-                                    updateRow(
-                                      r.raw_number + "",
-                                      "product_type",
-                                      v as ID
-                                    )
-                                  }
-                                  options={productTypes.map((o) => ({
-                                    value: o.id,
-                                    label: o.name,
-                                  }))}
-                                  filterOption={(input, option) =>
-                                    (option?.label as string)
-                                      ?.toLowerCase()
-                                      .includes(input.toLowerCase())
-                                  }
-                                /> */}
                                 <Button className="w-full" onClick={() => setFieldName("product_type")}>
                                   <span className={`${formData.products[index].product_type ? "text-gray-800" : "text-gray-400"}`}>
                                     {r.product_type ? product_types.results.find((t) => t.id === r.product_type)?.name : "Tanlang"}
@@ -491,29 +433,11 @@ const OrderWIndow: React.FC<IDistrictOrderFormProps> = ({ setIsCreateFormModalOp
                                 )}
                               </td>
 
+                              {/* Model */}
                               <td className="px-3 py-3 text-center">
-                                {/* <Select
-                                  className="w-50"
-                                  placeholder="Model"
-                                  allowClear
-                                  showSearch
-                                  value={r.model}
-                                  onChange={(v) =>
-                                    updateRow(r.raw_number + "", "model", v as ID)
-                                  }
-                                  options={models.map((o) => ({
-                                    value: o.id,
-                                    label: o.name,
-                                  }))}
-                                  filterOption={(input, option) =>
-                                    (option?.label as string)
-                                      ?.toLowerCase()
-                                      .includes(input.toLowerCase())
-                                  }
-                                /> */}
                                 <Button className="w-full" onClick={() => setFieldName("model")}>
                                   <span className={`${formData.products[index].model ? "text-gray-800" : "text-gray-400"}`}>
-                                    {r.product_type ? product_types.results.find((t) => t.id === r.product_type)?.name : "Tanlang"}
+                                    {r.model ? product_models.results.find((t) => t.id === r.model)?.name : "Tanlang"}
                                   </span>
                                 </Button>
                                 {fieldName === "model" && (
@@ -523,55 +447,52 @@ const OrderWIndow: React.FC<IDistrictOrderFormProps> = ({ setIsCreateFormModalOp
                                     setSelectedItem={newItem => {
                                       if (newItem) setFormData(prev => ({ ...prev, products: prev.products.map((p, i) => i === index ? { ...p, model: newItem!.id } : p) }))
                                       setFieldName("");
-                                      console.log(formData)
                                     }}
                                     selectedProductTypeId={product_types.results.find(type => type.id === r.product_type)?.name}
                                   />
                                 )}
                               </td>
 
+                              {/* Size */}
                               <td className="px-3 py-3 text-center">
-                                <Select
-                                  className="w-36"
-                                  placeholder="O‘lcham"
-                                  allowClear
-                                  showSearch
-                                  value={r.size}
-                                  onChange={(v) =>
-                                    updateRow(r.raw_number + "", "size", v as ID)
-                                  }
-                                  options={product_sizes.results.map((o) => ({
-                                    value: o.id,
-                                    label: o.name,
-                                  }))}
-                                  filterOption={(input, option) =>
-                                    (option?.label as string)
-                                      ?.toLowerCase()
-                                      .includes(input.toLowerCase())
-                                  }
-                                />
+                                <Button className="w-full" onClick={() => setFieldName("size")}>
+                                  <span className={`${formData.products[index].size ? "text-gray-800" : "text-gray-400"}`}>
+                                    {r.size ? product_sizes.results.find((t) => t.id === r.size)?.name : "Tanlang"}
+                                  </span>
+                                </Button>
+                                {fieldName === "size" && (
+                                  <FieldModal
+                                    field_name={fieldName}
+                                    selectedItem={{ id: r.size, name: "" }}
+                                    setSelectedItem={newItem => {
+                                      if (newItem) setFormData(prev => ({ ...prev, products: prev.products.map((p, i) => i === index ? { ...p, size: newItem!.id } : p) }))
+                                      setFieldName("");
+                                    }}
+                                    selectedProductTypeId={product_types.results.find(type => type.id === r.product_type)?.name}
+                                    selectedModelId={product_models.results.find(model => model.id === r.model)?.name}
+                                  />
+                                )}
                               </td>
 
+                              {/* Unit */}
                               <td className="px-3 py-3 text-center">
-                                <Select
-                                  className="w-36"
-                                  placeholder="O‘lchov birligi"
-                                  allowClear
-                                  showSearch
-                                  value={r.unit}
-                                  onChange={(v) =>
-                                    updateRow(r.raw_number + "", "unit", v as ID)
-                                  }
-                                  options={product_units.results.map((o) => ({
-                                    value: o.id,
-                                    label: o.name,
-                                  }))}
-                                  filterOption={(input, option) =>
-                                    (option?.label as string)
-                                      ?.toLowerCase()
-                                      .includes(input.toLowerCase())
-                                  }
-                                />
+                                <Button className="w-full" onClick={() => setFieldName("unit")}>
+                                  <span className={`${formData.products[index].unit ? "text-gray-800" : "text-gray-400"}`}>
+                                    {r.unit ? product_units.results.find((t) => t.id === r.unit)?.name : "Tanlang"}
+                                  </span>
+                                </Button>
+                                {fieldName === "unit" && (
+                                  <FieldModal
+                                    field_name={fieldName}
+                                    selectedItem={{ id: r.unit, name: "" }}
+                                    setSelectedItem={newItem => {
+                                      if (newItem) setFormData(prev => ({ ...prev, products: prev.products.map((p, i) => i === index ? { ...p, unit: newItem!.id } : p) }))
+                                      setFieldName("");
+                                    }}
+                                    selectedProductTypeId={product_types.results.find(type => type.id === r.product_type)?.name}
+                                    selectedModelId={product_models.results.find(model => model.id === r.model)?.name}
+                                  />
+                                )}
                               </td>
 
                               <td className="px-3 py-3 text-center">
@@ -638,14 +559,42 @@ const OrderWIndow: React.FC<IDistrictOrderFormProps> = ({ setIsCreateFormModalOp
           </div>
 
           {/* ===== Yuborilayotgan xat ===== */}
-          {messageFile && (
-            <>
-            </>
-          )}
-          <div>
-            {/* <p>{messageFile.name}</p> */}
-            <a href={fileURL} className="text-sky-500 underline">Open in word</a>
-            {/* <FilePreviewer file={messageFile} /> */}
+          <div className='flex '>
+
+            <div className="flex items-center gap-4 mb-3">
+              <div className={`p-3 rounded-lg`}>
+                <div className={`text-3xl`}>
+                  <FileWordOutlined className="text-blue-500 bg-blue-50" />
+                </div>
+              </div>
+              <div className="flex flex-col">
+                <h4 className="text-gray-800 font-semibold text-[12px] truncate w-40">
+                  {/* {file.file_name} */}
+                  {messageFile?.name}
+                </h4>
+                {messageFile?.type}
+                <p className="text-gray-500 text-[12px] mt-1">{messageFile?.lastModified}</p>
+              </div>
+            </div>
+
+            {/* 🔸 Action tugmalar */}
+            <div className="flex flex-col gap-2">
+              <button
+                // onClick={() => setSelectedFile(file)}
+                className="p-1 rounded-md text-gray-600 hover:text-purple-700 hover:bg-gray-100 transition"
+                title="Ko‘rish"
+              >
+                <EyeOutlined className="text-lg" />
+              </button>
+              <button
+                // onClick={() => handleDownload(file)}
+                className="p-1 rounded-md text-gray-600 hover:text-purple-700 hover:bg-gray-100 transition"
+                title="Yuklab olish"
+              >
+                <DownloadOutlined className="text-lg" />
+              </button>
+            </div>
+
           </div>
 
           {/* ===== Imzolovchilar ro'yxati (skelet) ===== */}

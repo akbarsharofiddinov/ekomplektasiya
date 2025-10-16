@@ -2,10 +2,10 @@
 import React, { useEffect, useState } from "react";
 import { Header, Sidebar } from "@/components";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
-import { axiosAPI, fetchProductPaginationData, fetchProductTypesPaginationData } from "@/services/axiosAPI";
+import { axiosAPI, fetchProductModelsPaginationData, fetchProductPaginationData, fetchProductSizesPaginationData, fetchProductTypesPaginationData } from "@/services/axiosAPI";
 import { useAppDispatch } from "@/store/hooks/hooks";
 import { setCurrentUserInfo } from "@/store/infoSlice/infoSlice";
-import { setProducts, setProductTypes } from "@/store/productSlice/productSlice";
+import { setProducts, setProductSizes, setProductTypes } from "@/store/productSlice/productSlice";
 
 const Layout: React.FC = () => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -94,6 +94,26 @@ const Layout: React.FC = () => {
       }
     };
     fetchProductTypes();
+  }, [token])
+
+  useEffect(() => {
+    const fetchProductModels = async () => {
+      if (token) {
+        const productModels = await fetchProductModelsPaginationData(100, 0)
+        if (productModels) dispatch(setProductTypes(productModels))
+      }
+    };
+    fetchProductModels();
+  }, [token])
+
+  useEffect(() => {
+    const fetchProductSizes = async () => {
+      if (token) {
+        const productSizes = await fetchProductSizesPaginationData(100, 0)
+        if (productSizes) dispatch(setProductSizes(productSizes))
+      }
+    };
+    fetchProductSizes();
   }, [token])
 
   return (
