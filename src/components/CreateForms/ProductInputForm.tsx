@@ -522,7 +522,11 @@ const ProductInputForm: React.FC<IProductInputFormProps> = ({
                             </Select.Option>
                           ))}
                         </Select> */}
-                        <Button className="w-full" onClick={() => setFieldName("product_type")}><span className={`${formData.products[index].product_type ? "text-gray-800" : "text-gray-400"}`}>{product.product_type ? product_types.results.find((t) => t.id === product.product_type)?.name : "Tanlang"}</span></Button>
+                        <Button className="w-full" onClick={() => setFieldName("product_type")}>
+                          <span className={`${formData.products[index].product_type ? "text-gray-800" : "text-gray-400"}`}>
+                            {product.product_type ? product_types.results.find((t) => t.id === product.product_type)?.name : "Tanlang"}
+                          </span>
+                        </Button>
                         {fieldName === "product_type" && (
                           <FieldModal
                             field_name={fieldName}
@@ -561,7 +565,11 @@ const ProductInputForm: React.FC<IProductInputFormProps> = ({
                             </Select.Option>
                           ))}
                         </Select> */}
-                        <Button className="w-full" onClick={() => setFieldName("model")}><span className={`${formData.products[index].model ? "text-gray-800" : "text-gray-400"}`}>{product.model ? product_models.results.find((m) => m.id === product.model)?.name : "Tanlang"}</span></Button>
+                        <Button className="w-full" onClick={() => setFieldName("model")}>
+                          <span className={`${formData.products[index].model ? "text-gray-800" : "text-gray-400"}`}>
+                            {product.model ? product_models.results.find((m) => m.id === product.model)?.name : "Tanlang"}
+                          </span>
+                        </Button>
                         {fieldName === "model" && (
                           <FieldModal
                             field_name="model"
