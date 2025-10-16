@@ -17,6 +17,7 @@ import SelectRemainsModal from '@/components/CreateForms/SelectRemainsModal';
 import { toast } from 'react-toastify';
 import { useAppSelector } from '@/store/hooks/hooks';
 import DistrictOrderSigning from './DistrictOrderSigning';
+import FilePreviewer from "@/components/files/FilePreviewer";
 
 
 interface IdName {
@@ -93,7 +94,6 @@ const DistrictOrderDetail: React.FC = () => {
     const [fileUploadModal, setFileUploadModal] = useState(false);
     const [file, setFile] = useState<File | null>(null);
     const [documentTypes, setDocumentTypes] = useState<IdName[]>([]);
-    const [viewMode, setViewMode] = useState<'orders' | 'letters'>('orders');
     const [files, setFiles] = useState<FileData[]>([]);
     const [selectedFile, setSelectedFile] = useState<FileData | null>(null);
     const [remainders, setRemainders] = useState<ProductRemainder[]>([]);
@@ -445,132 +445,108 @@ const DistrictOrderDetail: React.FC = () => {
                 orderData.for_purpose === "editing" ? (
                     <div className="min-h-screen py-2 px-2 bg-white">
                         <div className="max-w-8xl mx-auto bg-white">
-                            {/* 🔹 Yuqoridagi text-style navigation */}
-                            <div className="flex gap-8 mb-1 border-b border-gray-200 pb-2">
-                                <span
-                                    onClick={() => setViewMode('orders')}
-                                    className={`cursor-pointer pb-2 text-base font-medium transition-all duration-200 ${viewMode === 'orders'
-                                        ? 'text-blue-600 border-b-2 border-blue-600'
-                                        : 'text-gray-500 hover:text-blue-500'
-                                        }`}
-                                >
-                                    Buyurtmalar oynasi
-                                </span>
 
-                                <span
-                                    onClick={() => setViewMode('letters')}
-                                    className={`cursor-pointer pb-2 text-base font-medium transition-all duration-200 ${viewMode === 'letters'
-                                        ? 'text-blue-600 border-b-2 border-blue-600'
-                                        : 'text-gray-500 hover:text-blue-500'
-                                        }`}
-                                >
-                                    Yuborilgan xatning ko‘rinishi
-                                </span>
-                            </div>
+                            <div>
+                                {/* Header */}
+                                <div className="bg-white overflow-hidden mb-4">
+                                    <div className="flex items-center justify-between p-4">
+                                        <div className="text-center border-gray-200">
+                                            <p className="text-xs text-gray-500 uppercase font-semibold mb-2">Chiqish</p>
+                                            <p className="text-md font-semibold text-gray-800">{orderData.exit_number}</p>
+                                        </div>
 
-                            {/* 🔸 1. BUYURTMALAR OYNASI */}
-                            {viewMode === 'orders' && (
+                                        <div className="text-center border-gray-200">
+                                            <p className="text-xs text-gray-500 uppercase font-semibold mb-2">Chiqish Sana</p>
+                                            <p className="text-md font-semibold text-gray-800">{orderData.exit_date?.split("T").join(" ")}</p>
+                                        </div>
+
+                                        <div className="text-center border-gray-200">
+                                            <p className="text-xs text-gray-500 uppercase font-semibold mb-2">Tumandan</p>
+                                            <p className="text-md font-semibold text-gray-800">{orderData.from_district?.name}</p>
+                                        </div>
+
+                                        <div className="text-center">
+                                            <p className="text-xs text-gray-500 uppercase font-semibold mb-2">Viloyatga</p>
+                                            <p className="text-md font-semibold text-gray-800">{orderData.from_region?.name}</p>
+                                        </div>
+
+                                        <div className="text-center border-gray-200">
+                                            <p className="text-xs text-gray-500 uppercase font-semibold mb-2">Tumandan junatuvchi</p>
+                                            <p className="text-md font-semibold text-gray-800">{orderData.recipient_district?.name}</p>
+                                        </div>
+
+                                        <div className="text-center border-gray-200">
+                                            <p className="text-xs text-gray-500 uppercase font-semibold mb-2">Viloyatdan qabul qiluvchi</p>
+                                            <p className="text-md font-semibold text-gray-800">{orderData.recipient_region?.name}</p>
+                                        </div>
+
+                                    </div>
+                                </div>
+
                                 <div>
-                                    {/* Header */}
-                                    <div className="bg-white overflow-hidden mb-4">
-                                        <div className="flex items-center justify-between p-4">
-                                            <div className="text-center border-gray-200">
-                                                <p className="text-xs text-gray-500 uppercase font-semibold mb-2">Chiqish</p>
-                                                <p className="text-md font-semibold text-gray-800">{orderData.exit_number}</p>
-                                            </div>
-
-                                            <div className="text-center border-gray-200">
-                                                <p className="text-xs text-gray-500 uppercase font-semibold mb-2">Chiqish Sana</p>
-                                                <p className="text-md font-semibold text-gray-800">{orderData.exit_date?.split("T").join(" ")}</p>
-                                            </div>
-
-                                            <div className="text-center border-gray-200">
-                                                <p className="text-xs text-gray-500 uppercase font-semibold mb-2">Tumandan</p>
-                                                <p className="text-md font-semibold text-gray-800">{orderData.from_district?.name}</p>
-                                            </div>
-
-                                            <div className="text-center">
-                                                <p className="text-xs text-gray-500 uppercase font-semibold mb-2">Viloyatga</p>
-                                                <p className="text-md font-semibold text-gray-800">{orderData.from_region?.name}</p>
-                                            </div>
-
-                                            <div className="text-center border-gray-200">
-                                                <p className="text-xs text-gray-500 uppercase font-semibold mb-2">Tumandan junatuvchi</p>
-                                                <p className="text-md font-semibold text-gray-800">{orderData.recipient_district?.name}</p>
-                                            </div>
-
-                                            <div className="text-center border-gray-200">
-                                                <p className="text-xs text-gray-500 uppercase font-semibold mb-2">Viloyatdan qabul qiluvchi</p>
-                                                <p className="text-md font-semibold text-gray-800">{orderData.recipient_region?.name}</p>
-                                            </div>
-
+                                    <div className="bg-transparent rounded-md flex justify-between mb-4">
+                                        <div className='flex items-center gap-3'>
+                                            <Button
+                                                onClick={handleAddProduct}
+                                                className='cursor-pointer'>
+                                                <Plus></Plus>
+                                                Kiritish
+                                            </Button>
+                                            <Button className='cursor-pointer' onClick={() => fetchRemaindersUserWarehouse()}>
+                                                Qoldiqlar
+                                            </Button>
+                                        </div>
+                                        <div className="relative">
+                                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4" />
+                                            <Input
+                                                type="text"
+                                                placeholder="Qidirish (Ctrl+F)"
+                                                className="w-64 h-9 pl-9 text-sm border-slate-200 bg-white"
+                                            />
                                         </div>
                                     </div>
 
-                                    <div>
-                                        <div className="bg-transparent rounded-md flex justify-between mb-4">
-                                            <div className='flex items-center gap-3'>
-                                                <Button
-                                                    onClick={handleAddProduct}
-                                                    className='cursor-pointer'>
-                                                    <Plus></Plus>
-                                                    Kiritish
-                                                </Button>
-                                                <Button className='cursor-pointer' onClick={() => fetchRemaindersUserWarehouse()}>
-                                                    Qoldiqlar
-                                                </Button>
-                                            </div>
-                                            <div className="relative">
-                                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4" />
-                                                <Input
-                                                    type="text"
-                                                    placeholder="Qidirish (Ctrl+F)"
-                                                    className="w-64 h-9 pl-9 text-sm border-slate-200 bg-white"
-                                                />
-                                            </div>
-                                        </div>
+                                    <div className="bg-white rounded-xl border border-gray-200 overflow-y-auto mb-4">
+                                        <div className="overflow-x-auto">
+                                            <table className="w-full caption-bottom text-sm">
+                                                <thead className="[&_tr]:border-b bg-gradient-to-r from-slate-100 via-blue-50 to-purple-50">
+                                                    <tr className=" data-[state=selected]:bg-muted border-b transition-colors">
+                                                        <th className="px-3 py-2 text-center text-sm font-semibold text-gray-600">№</th>
+                                                        <th className="px-3 py-2 text-center text-sm font-semibold text-gray-600">Buyurtma turi</th>
+                                                        <th className="px-3 py-2 text-center text-sm font-semibold text-gray-600">Tovar</th>
+                                                        <th className="px-3 py-2 text-center text-sm font-semibold text-gray-600">Tovar turi</th>
+                                                        <th className="px-3 py-2 text-center text-sm font-semibold text-gray-600">Model</th>
+                                                        <th className="px-3 py-2 text-center text-sm font-semibold text-gray-600">O‘lcham</th>
+                                                        <th className="px-3 py-2 text-center text-sm font-semibold text-gray-600">O'lchov birligi</th>
+                                                        <th className="px-3 py-2 text-center text-sm font-semibold text-gray-600">Soni</th>
+                                                        <th className="px-3 py-2 text-center text-sm font-semibold text-gray-600">Izoh</th>
+                                                    </tr>
+                                                </thead>
 
-                                        <div className="bg-white rounded-xl border border-gray-200 overflow-y-auto mb-4">
-                                            <div className="overflow-x-auto">
-                                                <table className="w-full caption-bottom text-sm">
-                                                    <thead className="[&_tr]:border-b bg-gradient-to-r from-slate-100 via-blue-50 to-purple-50">
-                                                        <tr className=" data-[state=selected]:bg-muted border-b transition-colors">
-                                                            <th className="px-3 py-2 text-center text-sm font-semibold text-gray-600">№</th>
-                                                            <th className="px-3 py-2 text-center text-sm font-semibold text-gray-600">Buyurtma turi</th>
-                                                            <th className="px-3 py-2 text-center text-sm font-semibold text-gray-600">Tovar</th>
-                                                            <th className="px-3 py-2 text-center text-sm font-semibold text-gray-600">Tovar turi</th>
-                                                            <th className="px-3 py-2 text-center text-sm font-semibold text-gray-600">Model</th>
-                                                            <th className="px-3 py-2 text-center text-sm font-semibold text-gray-600">O‘lcham</th>
-                                                            <th className="px-3 py-2 text-center text-sm font-semibold text-gray-600">O'lchov birligi</th>
-                                                            <th className="px-3 py-2 text-center text-sm font-semibold text-gray-600">Soni</th>
-                                                            <th className="px-3 py-2 text-center text-sm font-semibold text-gray-600">Izoh</th>
-                                                        </tr>
-                                                    </thead>
+                                                <tbody className="divide-y divide-gray-100">
+                                                    {orderData?.products?.map((p, idx) => (
+                                                        <tr key={idx} className="hover:bg-gray-50 transition-all duration-200">
+                                                            {/* № */}
+                                                            <td className="px-3 py-2 text-center">
+                                                                <span className="inline-flex items-center justify-center w-8 h-8 rounded-xl bg-gradient-to-r from-purple-500 to-blue-500 text-white font-semibold text-sm">
+                                                                    {p.row_number}
+                                                                </span>
+                                                            </td>
 
-                                                    <tbody className="divide-y divide-gray-100">
-                                                        {orderData?.products?.map((p, idx) => (
-                                                            <tr key={idx} className="hover:bg-gray-50 transition-all duration-200">
-                                                                {/* № */}
-                                                                <td className="px-3 py-2 text-center">
-                                                                    <span className="inline-flex items-center justify-center w-8 h-8 rounded-xl bg-gradient-to-r from-purple-500 to-blue-500 text-white font-semibold text-sm">
-                                                                        {p.row_number}
-                                                                    </span>
-                                                                </td>
-
-                                                                {/* 🟢 Buyurtma turi (API dan kelgan SELECT) */}
-                                                                <td className="px-3 py-2 text-center">
-                                                                    <Select
-                                                                        value={p.order_type?.id}
-                                                                        onChange={(val) => {
-                                                                            const found = order_types.find(o => o.id === val);
-                                                                            if (found) updateRow(p.row_number, "order_type", found);
-                                                                        }}
-                                                                        style={{ width: 160 }}
-                                                                        options={order_types.map(o => ({ value: o.id, label: o.name }))}
-                                                                        placeholder="Tanlang"
-                                                                    />
-                                                                </td>
-                                                                {/* <td className="px-3 py-2 text-center">
+                                                            {/* 🟢 Buyurtma turi (API dan kelgan SELECT) */}
+                                                            <td className="px-3 py-2 text-center">
+                                                                <Select
+                                                                    value={p.order_type?.id}
+                                                                    onChange={(val) => {
+                                                                        const found = order_types.find(o => o.id === val);
+                                                                        if (found) updateRow(p.row_number, "order_type", found);
+                                                                    }}
+                                                                    style={{ width: 160 }}
+                                                                    options={order_types.map(o => ({ value: o.id, label: o.name }))}
+                                                                    placeholder="Tanlang"
+                                                                />
+                                                            </td>
+                                                            {/* <td className="px-3 py-2 text-center">
                                                                     <Button
                                                                         size="small"
                                                                         onClick={() => setModalData({ type: "order_type", row: p.row_number })}
@@ -579,21 +555,21 @@ const DistrictOrderDetail: React.FC = () => {
                                                                     </Button>
                                                                 </td> */}
 
-                                                                {/* 🟠 Mahsulot nomi (qo‘lda Input) */}
-                                                                <td className="px-3 py-2 text-center">
-                                                                    <Input
-                                                                        value={p.product?.name || ""}
-                                                                        onChange={(e) =>
-                                                                            updateRow(p.row_number, "product", {
-                                                                                id: p.product?.id || crypto.randomUUID(),
-                                                                                name: e.target.value,
-                                                                            })
-                                                                        }
-                                                                        className="text-sm"
-                                                                    />
-                                                                </td>
+                                                            {/* 🟠 Mahsulot nomi (qo‘lda Input) */}
+                                                            <td className="px-3 py-2 text-center">
+                                                                <Input
+                                                                    value={p.product?.name || ""}
+                                                                    onChange={(e) =>
+                                                                        updateRow(p.row_number, "product", {
+                                                                            id: p.product?.id || crypto.randomUUID(),
+                                                                            name: e.target.value,
+                                                                        })
+                                                                    }
+                                                                    className="text-sm"
+                                                                />
+                                                            </td>
 
-                                                                {/* <td className="px-3 py-2 text-center">
+                                                            {/* <td className="px-3 py-2 text-center">
                                                                     <Select
                                                                         value={p.product_type?.name}
                                                                         onChange={(val) => {
@@ -606,18 +582,18 @@ const DistrictOrderDetail: React.FC = () => {
                                                                     />
                                                                 </td> */}
 
-                                                                <td className="px-3 py-2 text-center">
-                                                                    <Button
-                                                                        onClick={() => openModal("product_type", p.row_number)}
-                                                                        size="small"
-                                                                        className="text-blue-600 border-blue-400"
-                                                                    >
-                                                                        {p.product_type?.name || "Tovar turini tanlash"}
-                                                                    </Button>
-                                                                </td>
+                                                            <td className="px-3 py-2 text-center">
+                                                                <Button
+                                                                    onClick={() => openModal("product_type", p.row_number)}
+                                                                    size="small"
+                                                                    className="text-blue-600 border-blue-400"
+                                                                >
+                                                                    {p.product_type?.name || "Tovar turini tanlash"}
+                                                                </Button>
+                                                            </td>
 
-                                                                {/* 🔵 Model (useAppSelector dan Select) */}
-                                                                {/* <td className="px-3 py-2 text-center">
+                                                            {/* 🔵 Model (useAppSelector dan Select) */}
+                                                            {/* <td className="px-3 py-2 text-center">
                                                                     <Select
                                                                         value={p.model?.name}
                                                                         onChange={(val) => {
@@ -630,18 +606,18 @@ const DistrictOrderDetail: React.FC = () => {
                                                                     />
                                                                 </td> */}
 
-                                                                <td className="px-3 py-2 text-center">
-                                                                    <Button
-                                                                        onClick={() => openModal("model", p.row_number)}
-                                                                        size="small"
-                                                                        className="text-blue-600 border-blue-400"
-                                                                    >
-                                                                        {p.model?.name || "Modelni tanlash"}
-                                                                    </Button>
-                                                                </td>
+                                                            <td className="px-3 py-2 text-center">
+                                                                <Button
+                                                                    onClick={() => openModal("model", p.row_number)}
+                                                                    size="small"
+                                                                    className="text-blue-600 border-blue-400"
+                                                                >
+                                                                    {p.model?.name || "Modelni tanlash"}
+                                                                </Button>
+                                                            </td>
 
-                                                                {/* 🟣 O‘lcham */}
-                                                                {/* <td className="px-3 py-2 text-center">
+                                                            {/* 🟣 O‘lcham */}
+                                                            {/* <td className="px-3 py-2 text-center">
                                                                     <Select
                                                                         value={p.size?.name}
                                                                         onChange={(val) => {
@@ -654,18 +630,18 @@ const DistrictOrderDetail: React.FC = () => {
                                                                     />
                                                                 </td> */}
 
-                                                                <td className="px-3 py-2 text-center">
-                                                                    <Button
-                                                                        onClick={() => openModal("size", p.row_number)}
-                                                                        size="small"
-                                                                        className="text-blue-600 border-blue-400"
-                                                                    >
-                                                                        {p.size?.name || "O‘lchamni tanlash"}
-                                                                    </Button>
-                                                                </td>
+                                                            <td className="px-3 py-2 text-center">
+                                                                <Button
+                                                                    onClick={() => openModal("size", p.row_number)}
+                                                                    size="small"
+                                                                    className="text-blue-600 border-blue-400"
+                                                                >
+                                                                    {p.size?.name || "O‘lchamni tanlash"}
+                                                                </Button>
+                                                            </td>
 
-                                                                {/* ⚪ Birlik */}
-                                                                {/* <td className="px-3 py-2 text-center">
+                                                            {/* ⚪ Birlik */}
+                                                            {/* <td className="px-3 py-2 text-center">
                                                                     <Select
                                                                         value={p.unit?.id}
                                                                         onChange={(val) => {
@@ -677,288 +653,276 @@ const DistrictOrderDetail: React.FC = () => {
                                                                         placeholder="Birlik"
                                                                     />
                                                                 </td> */}
-                                                                <td className="px-3 py-2 text-center">
-                                                                    <Button
-                                                                        onClick={() => openModal("unit", p.row_number)}
-                                                                        size="small"
-                                                                        className="text-blue-600 border-blue-400"
-                                                                    >
-                                                                        {p.unit?.name || "Birlikni tanlash"}
-                                                                    </Button>
-                                                                </td>
+                                                            <td className="px-3 py-2 text-center">
+                                                                <Button
+                                                                    onClick={() => openModal("unit", p.row_number)}
+                                                                    size="small"
+                                                                    className="text-blue-600 border-blue-400"
+                                                                >
+                                                                    {p.unit?.name || "Birlikni tanlash"}
+                                                                </Button>
+                                                            </td>
 
-                                                                {/* 🔢 Soni (Input number) */}
-                                                                <td className="px-3 py-2 text-center">
-                                                                    <Input
-                                                                        type="number"
-                                                                        value={p.quantity}
-                                                                        onChange={(e) =>
-                                                                            updateRow(p.row_number, "quantity", Number(e.target.value))
-                                                                        }
-                                                                        className="text-sm text-center w-24"
-                                                                    />
-                                                                </td>
+                                                            {/* 🔢 Soni (Input number) */}
+                                                            <td className="px-3 py-2 text-center">
+                                                                <Input
+                                                                    type="number"
+                                                                    value={p.quantity}
+                                                                    onChange={(e) =>
+                                                                        updateRow(p.row_number, "quantity", Number(e.target.value))
+                                                                    }
+                                                                    className="text-sm text-center w-24"
+                                                                />
+                                                            </td>
 
-                                                                {/* 📝 Izoh (Input text) */}
-                                                                <td className="px-3 py-2 text-center">
-                                                                    <Input
-                                                                        placeholder="Izoh"
-                                                                        value={p.description || ""}
-                                                                        onChange={(e) =>
-                                                                            updateRow(p.row_number, "description", e.target.value)
-                                                                        }
-                                                                        className="text-sm"
-                                                                    />
-                                                                </td>
-                                                            </tr>
-                                                        ))}
-                                                    </tbody>
-                                                </table>
-                                            </div>
+                                                            {/* 📝 Izoh (Input text) */}
+                                                            <td className="px-3 py-2 text-center">
+                                                                <Input
+                                                                    placeholder="Izoh"
+                                                                    value={p.description || ""}
+                                                                    onChange={(e) =>
+                                                                        updateRow(p.row_number, "description", e.target.value)
+                                                                    }
+                                                                    className="text-sm"
+                                                                />
+                                                            </td>
+                                                        </tr>
+                                                    ))}
+                                                </tbody>
+                                            </table>
                                         </div>
-
-
                                     </div>
 
 
-                                    <div>
-                                        <div className="bg-transparent rounded-md p-2 flex justify-between mb-2">
-                                            <div className='flex items-center gap-3'>
-                                                <Button className='cursor-pointer'
-                                                    onClick={() => { fetchEmployees(); setShowEmployeeModal(true); }}
-                                                >
-                                                    <Plus />
-                                                    Kiritish
-                                                </Button>
-                                                <Button className='cursor-pointer'>
-                                                    Yuborish
-                                                </Button>
+                                </div>
+
+
+                                <div>
+                                    <div className="bg-transparent rounded-md p-2 flex justify-between mb-2">
+                                        <div className='flex items-center gap-3'>
+                                            <Button className='cursor-pointer'
+                                                onClick={() => { fetchEmployees(); setShowEmployeeModal(true); }}
+                                            >
+                                                <Plus />
+                                                Kiritish
+                                            </Button>
+                                            <Button className='cursor-pointer'>
+                                                Yuborish
+                                            </Button>
+                                        </div>
+                                        <div className="relative">
+                                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4" />
+                                            <Input
+                                                type="text"
+                                                placeholder="Qidirish (Ctrl+F)"
+                                                className="w-64 h-9 pl-9 text-sm border-slate-200 bg-white"
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div className="flex items-center gap-4">
+                                        {orderData.executors?.map((executor, index) => (
+                                            <div
+                                                key={index}
+                                                className="bg-white rounded-lg shadow-sm hover:shadow-md transition-all duration-300 border border-gray-100 overflow-hidden"
+                                            >
+                                                <div className="p-5">
+                                                    {/* Header with number and status */}
+                                                    <div className="flex items-center justify-between mb-4">
+                                                        <span className="text-xm font-semibold text-gray-500">№ {index + 1}</span>
+                                                        <span className="px-3 py-1 bg-indigo-50 text-indigo-600 text-xs font-medium rounded-full">
+                                                            {executor.status?.name}
+                                                        </span>
+                                                    </div>
+
+                                                    {/* Employee info */}
+                                                    <div className="mb-4">
+                                                        <p className="text-sm text-gray-500 mb-1">Imzolovchi xodim</p>
+                                                        <p className="text-sm font-semibold text-gray-900">{executor.executor?.name}</p>
+                                                    </div>
+
+                                                    {/* Message */}
+                                                    {executor.message && (
+                                                        <div className="mb-4">
+                                                            <p className="text-xs text-gray-500 mb-1">Imzolash xolati</p>
+                                                            <p className="text-sm text-gray-700">{executor.message}</p>
+                                                        </div>
+                                                    )}
+
+                                                    {/* Date */}
+                                                    <div className="pt-3 border-t border-gray-100">
+                                                        <p className="text-xs text-gray-500">Sana</p>
+                                                        <p className="text-sm text-gray-900 font-medium">{executor.confirmation_date}</p>
+                                                    </div>
+                                                </div>
                                             </div>
-                                            <div className="relative">
-                                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4" />
-                                                <Input
-                                                    type="text"
-                                                    placeholder="Qidirish (Ctrl+F)"
-                                                    className="w-64 h-9 pl-9 text-sm border-slate-200 bg-white"
+                                        ))}
+                                    </div>
+
+                                </div>
+
+                                {/* Attach document */}
+                                <div className='flex items-center justify-center gap-6 p-6'>
+                                    {/* File Upload Button */}
+                                    <button
+                                        onClick={() => setFileUploadModal(true)}
+                                        className='group relative bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white px-6 py-4 rounded-xl shadow-md hover:shadow-lg transition-all duration-300 flex items-center gap-3 font-medium cursor-pointer'
+                                    >
+                                        <div className='bg-white/20 p-2 rounded-lg group-hover:bg-white/30 transition-colors'>
+                                            <FilePlus2 className='w-5 h-5' />
+                                        </div>
+                                        <span>Hujjat biriktirish</span>
+                                    </button>
+
+                                    {/* Text Area */}
+                                    <div className='flex-1 max-w-md'>
+                                        <TextArea
+                                            placeholder='Qisqacha mazmun yozing...'
+                                            className='rounded-xl border-2 border-gray-200 focus:border-blue-400 hover:border-gray-300 transition-colors shadow-sm'
+                                            style={{ height: "120px" }}
+                                        />
+                                    </div>
+
+                                    {/* Save Button */}
+                                    <button
+                                        className='group bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white px-8 py-4 rounded-xl shadow-md hover:shadow-lg transition-all duration-300 flex items-center gap-3 font-medium cursor-pointer'
+                                        onClick={handleUpdateOrder}
+                                    >
+                                        <div className='bg-white/20 p-2 rounded-lg group-hover:bg-white/30 transition-colors'>
+                                            <SaveOutlined className='text-xl' />
+                                        </div>
+                                        <span>Saqlash</span>
+                                    </button>
+                                </div>
+
+                                {fileUploadModal && (
+                                    <div className="fixed inset-0 bg-black/20 bg-opacity-50 flex items-center justify-center z-50" onClick={() => setFileUploadModal(false)}>
+                                        <div className="bg-white rounded-lg p-6 w-96 flex flex-col" onClick={(e) => e.stopPropagation()}>
+                                            {/* Top */}
+                                            <div className='flex items-center justify-between mb-4 pb-2 border-b'>
+                                                <h2 className="text-xl font-semibold">Hujjat biriktirish</h2>
+                                                <button className='text-2xl' onClick={() => setFileUploadModal(false)}>&times;</button>
+                                            </div>
+                                            <div className="mb-4">
+                                                <label className="block text-sm font-medium text-gray-700 mb-1">Hujjat turi</label>
+                                                <Select
+                                                    style={{ width: '100%' }}
+                                                    placeholder="Hujjat turini tanlang"
+                                                    onChange={(value) => {
+                                                        console.log(value)
+                                                        // setDocumentFormData(prev => ({ ...prev!, selectedDocumentType: value }))
+                                                    }}
+                                                    options={documentTypes.map(docType => ({ value: docType.id, label: docType.name }))}
                                                 />
                                             </div>
-                                        </div>
+                                            <div className="mb-4">
+                                                <FileDropZone file={file} setFile={setFile} />
+                                            </div>
 
-                                        <div className="flex items-center gap-4">
-                                            {orderData.executors?.map((executor, index) => (
-                                                <div
-                                                    key={index}
-                                                    className="bg-white rounded-lg shadow-sm hover:shadow-md transition-all duration-300 border border-gray-100 overflow-hidden"
-                                                >
-                                                    <div className="p-5">
-                                                        {/* Header with number and status */}
-                                                        <div className="flex items-center justify-between mb-4">
-                                                            <span className="text-xm font-semibold text-gray-500">№ {index + 1}</span>
-                                                            <span className="px-3 py-1 bg-indigo-50 text-indigo-600 text-xs font-medium rounded-full">
-                                                                {executor.status?.name}
+                                            <Button
+                                                className="bg-gray-100 p-2 rounded-lg text-sm cursor-pointer hover:bg-blue-400 hover:text-white ml-auto"
+                                                onClick={() => {
+                                                    setFileUploadModal(false);
+                                                    handleFileAttach()
+                                                }}
+                                                disabled={!file && !documentFormData?.selectedDocumentType}>
+                                                Yuklash
+                                            </Button>
+                                        </div>
+                                    </div>
+
+
+                                )}
+
+                                <div className="p-4">
+                                    {files.length !== 0 ? (
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
+                                            {files.map((file, index) => {
+                                                const { icon, color, bg } = getFileIcon(file.file_name);
+
+                                                return (
+                                                    <div
+                                                        key={index}
+                                                        className="bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-all duration-300 p-3 flex flex-col justify-between"
+                                                    >
+                                                        {/* 🔹 Exit number & Row number */}
+                                                        <div className="flex justify-between items-center mb-3">
+                                                            <span className="text-[13px] font-semibold text-gray-700 bg-gray-100 px-2 py-1 rounded-full">
+                                                                {orderData.exit_number}-{file.raw_number}
                                                             </span>
                                                         </div>
 
-                                                        {/* Employee info */}
-                                                        <div className="mb-4">
-                                                            <p className="text-sm text-gray-500 mb-1">Imzolovchi xodim</p>
-                                                            <p className="text-sm font-semibold text-gray-900">{executor.executor?.name}</p>
-                                                        </div>
+                                                        {/* 🔸 Fayl ma’lumotlari */}
+                                                        <div className='flex'>
 
-                                                        {/* Message */}
-                                                        {executor.message && (
-                                                            <div className="mb-4">
-                                                                <p className="text-xs text-gray-500 mb-1">Imzolash xolati</p>
-                                                                <p className="text-sm text-gray-700">{executor.message}</p>
+                                                            <div className="flex items-center gap-2 mb-3">
+                                                                <div className={`p-3 rounded-lg ${bg}`}>
+                                                                    <div className={`${color} text-3xl`}>{icon}</div>
+                                                                </div>
+                                                                <div className="flex flex-col">
+                                                                    <h4 className="text-gray-800 font-semibold text-[12px] truncate w-40">
+                                                                        {file.file_name}
+                                                                    </h4>
+                                                                    {file.user}
+                                                                    <p className="text-gray-500 text-[12px] mt-1">{formatDate(file.date)}</p>
+                                                                </div>
                                                             </div>
-                                                        )}
 
-                                                        {/* Date */}
-                                                        <div className="pt-3 border-t border-gray-100">
-                                                            <p className="text-xs text-gray-500">Sana</p>
-                                                            <p className="text-sm text-gray-900 font-medium">{executor.confirmation_date}</p>
+                                                            {/* 🔸 Action tugmalar */}
+                                                            <div className="flex flex-col gap-2">
+                                                                <button
+                                                                    onClick={() => setSelectedFile(file)}
+                                                                    className="p-1 rounded-md text-gray-600 hover:text-purple-700 hover:bg-gray-100 transition"
+                                                                    title="Ko‘rish"
+                                                                >
+                                                                    <EyeOutlined className="text-lg" />
+                                                                </button>
+                                                                <button
+                                                                    onClick={() => handleDownload(file)}
+                                                                    className="p-1 rounded-md text-gray-600 hover:text-purple-700 hover:bg-gray-100 transition"
+                                                                    title="Yuklab olish"
+                                                                >
+                                                                    <DownloadOutlined className="text-lg" />
+                                                                </button>
+                                                            </div>
+
                                                         </div>
                                                     </div>
-                                                </div>
-                                            ))}
+                                                );
+                                            })}
                                         </div>
-
-                                    </div>
-
-                                    {/* Attach document */}
-                                    <div className='flex items-center justify-center gap-6 p-6'>
-                                        {/* File Upload Button */}
-                                        <button
-                                            onClick={() => setFileUploadModal(true)}
-                                            className='group relative bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white px-6 py-4 rounded-xl shadow-md hover:shadow-lg transition-all duration-300 flex items-center gap-3 font-medium cursor-pointer'
-                                        >
-                                            <div className='bg-white/20 p-2 rounded-lg group-hover:bg-white/30 transition-colors'>
-                                                <FilePlus2 className='w-5 h-5' />
-                                            </div>
-                                            <span>Hujjat biriktirish</span>
-                                        </button>
-
-                                        {/* Text Area */}
-                                        <div className='flex-1 max-w-md'>
-                                            <TextArea
-                                                placeholder='Qisqacha mazmun yozing...'
-                                                className='rounded-xl border-2 border-gray-200 focus:border-blue-400 hover:border-gray-300 transition-colors shadow-sm'
-                                                style={{ height: "120px" }}
-                                            />
-                                        </div>
-
-                                        {/* Save Button */}
-                                        <button
-                                            className='group bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white px-8 py-4 rounded-xl shadow-md hover:shadow-lg transition-all duration-300 flex items-center gap-3 font-medium cursor-pointer'
-                                            onClick={handleUpdateOrder}
-                                        >
-                                            <div className='bg-white/20 p-2 rounded-lg group-hover:bg-white/30 transition-colors'>
-                                                <SaveOutlined className='text-xl' />
-                                            </div>
-                                            <span>Saqlash</span>
-                                        </button>
-                                    </div>
-
-                                    {fileUploadModal && (
-                                        <div className="fixed inset-0 bg-black/20 bg-opacity-50 flex items-center justify-center z-50" onClick={() => setFileUploadModal(false)}>
-                                            <div className="bg-white rounded-lg p-6 w-96 flex flex-col" onClick={(e) => e.stopPropagation()}>
-                                                {/* Top */}
-                                                <div className='flex items-center justify-between mb-4 pb-2 border-b'>
-                                                    <h2 className="text-xl font-semibold">Hujjat biriktirish</h2>
-                                                    <button className='text-2xl' onClick={() => setFileUploadModal(false)}>&times;</button>
-                                                </div>
-                                                <div className="mb-4">
-                                                    <label className="block text-sm font-medium text-gray-700 mb-1">Hujjat turi</label>
-                                                    <Select
-                                                        style={{ width: '100%' }}
-                                                        placeholder="Hujjat turini tanlang"
-                                                        onChange={(value) => {
-                                                            console.log(value)
-                                                            // setDocumentFormData(prev => ({ ...prev!, selectedDocumentType: value }))
-                                                        }}
-                                                        options={documentTypes.map(docType => ({ value: docType.id, label: docType.name }))}
-                                                    />
-                                                </div>
-                                                <div className="mb-4">
-                                                    <FileDropZone file={file} setFile={setFile} />
-                                                </div>
-
-                                                <Button
-                                                    className="bg-gray-100 p-2 rounded-lg text-sm cursor-pointer hover:bg-blue-400 hover:text-white ml-auto"
-                                                    onClick={() => {
-                                                        setFileUploadModal(false);
-                                                        handleFileAttach()
-                                                    }}
-                                                    disabled={!file && !documentFormData?.selectedDocumentType}>
-                                                    Yuklash
-                                                </Button>
-                                            </div>
-                                        </div>
-
-
+                                    ) : (
+                                        <p className="text-gray-900 font-bold text-2xl text-center">
+                                            Hozircha fayllar mavjud emas.
+                                        </p>
                                     )}
 
-                                    <div className="p-4">
-                                        {files.length !== 0 ? (
-                                            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
-                                                {files.map((file, index) => {
-                                                    const { icon, color, bg } = getFileIcon(file.file_name);
-
-                                                    return (
-                                                        <div
-                                                            key={index}
-                                                            className="bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-all duration-300 p-3 flex flex-col justify-between"
-                                                        >
-                                                            {/* 🔹 Exit number & Row number */}
-                                                            <div className="flex justify-between items-center mb-3">
-                                                                <span className="text-[13px] font-semibold text-gray-700 bg-gray-100 px-2 py-1 rounded-full">
-                                                                    {orderData.exit_number}-{file.raw_number}
-                                                                </span>
-                                                            </div>
-
-                                                            {/* 🔸 Fayl ma’lumotlari */}
-                                                            <div className='flex '>
-
-                                                                <div className="flex items-center gap-4 mb-3">
-                                                                    <div className={`p-3 rounded-lg ${bg}`}>
-                                                                        <div className={`${color} text-3xl`}>{icon}</div>
-                                                                    </div>
-                                                                    <div className="flex flex-col">
-                                                                        <h4 className="text-gray-800 font-semibold text-[12px] truncate w-40">
-                                                                            {file.file_name}
-                                                                        </h4>
-                                                                        {file.user}
-                                                                        <p className="text-gray-500 text-[12px] mt-1">{formatDate(file.date)}</p>
-                                                                    </div>
-                                                                </div>
-
-                                                                {/* 🔸 Action tugmalar */}
-                                                                <div className="flex flex-col gap-2">
-                                                                    <button
-                                                                        onClick={() => setSelectedFile(file)}
-                                                                        className="p-1 rounded-md text-gray-600 hover:text-purple-700 hover:bg-gray-100 transition"
-                                                                        title="Ko‘rish"
-                                                                    >
-                                                                        <EyeOutlined className="text-lg" />
-                                                                    </button>
-                                                                    <button
-                                                                        onClick={() => handleDownload(file)}
-                                                                        className="p-1 rounded-md text-gray-600 hover:text-purple-700 hover:bg-gray-100 transition"
-                                                                        title="Yuklab olish"
-                                                                    >
-                                                                        <DownloadOutlined className="text-lg" />
-                                                                    </button>
-                                                                </div>
-
-                                                            </div>
-                                                        </div>
-                                                    );
-                                                })}
-                                            </div>
-                                        ) : (
-                                            <p className="text-gray-900 font-bold text-2xl text-center">
-                                                Hozircha fayllar mavjud emas.
-                                            </p>
-                                        )}
-
-                                        {/* 🟣 PDF modal */}
-                                        {selectedFile && (
+                                    {/* 🟣 PDF modal */}
+                                    {selectedFile && (
+                                        <div
+                                            className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50"
+                                            onClick={() => setSelectedFile(null)}
+                                        >
                                             <div
-                                                className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50"
-                                                onClick={() => setSelectedFile(null)}
+                                                className="bg-white w-11/12 h-[90vh] rounded-xl overflow-hidden shadow-xl flex flex-col"
+                                                onClick={(e) => e.stopPropagation()}
                                             >
-                                                <div
-                                                    className="bg-white w-11/12 h-[90vh] rounded-xl overflow-hidden shadow-xl flex flex-col"
-                                                    onClick={(e) => e.stopPropagation()}
+                                                <iframe
+                                                    src={`https://ekomplektasiya.uz/ekomplektasiya_backend/hs/district-orders/${id}/file/${selectedFile.raw_number}`}
+                                                    title="PDF Viewer"
+                                                    className="flex-1 border-none"
+                                                />
+                                                <button
+                                                    onClick={() => setSelectedFile(null)}
+                                                    className="bg-purple-600 hover:bg-purple-700 text-white py-2 font-medium"
                                                 >
-                                                    <iframe
-                                                        src={`https://ekomplektasiya.uz/ekomplektasiya_backend/hs/district-orders/${id}/file/${selectedFile.raw_number}`}
-                                                        title="PDF Viewer"
-                                                        className="flex-1 border-none"
-                                                    />
-                                                    <button
-                                                        onClick={() => setSelectedFile(null)}
-                                                        className="bg-purple-600 hover:bg-purple-700 text-white py-2 font-medium"
-                                                    >
-                                                        Yopish
-                                                    </button>
-                                                </div>
+                                                    Yopish
+                                                </button>
                                             </div>
-                                        )}
-                                    </div>
+                                        </div>
+                                    )}
                                 </div>
-                            )}
-
-                            {/* 🔸 2. YUBORILGAN XATNI KO‘RINISHI */}
-                            {viewMode === 'letters' && (
-                                <div className="p-6 bg-gray-50 rounded-lg shadow-sm">
-                                    <h2 className="text-lg font-semibold mb-4">Yuborilgan xatni ko‘rinishi</h2>
-                                    <p>Bu bo‘limda yuborilgan xat tafsilotlari chiqadi.</p>
-                                    <p className="text-sm text-gray-500 mt-2">
-                                        (Bu joyni keyinchalik o‘z API yoki table bilan to‘ldirish mumkin)
-                                    </p>
-                                </div>
-                            )}
+                            </div>
                         </div>
                     </div>
                 ) : (

@@ -15,7 +15,12 @@ import TextArea from 'antd/es/input/TextArea';
 import FileDropZone from '@/components/FileDropZone';
 import { SaveOutlined } from '@ant-design/icons';
 import SelectRemainsModal from '@/components/CreateForms/SelectRemainsModal';
-
+import {
+  EyeOutlined, DownloadOutlined, FilePdfOutlined, FileWordOutlined, FileExcelOutlined, FileImageOutlined, FileTextOutlined,
+} from "@ant-design/icons";
+import { arrayBufferToFile, inferMimeFromExt } from "@/utils/file_preview";
+import { toast } from 'react-toastify';
+import FilePreviewModal from "@/components/files/FilePreviewModal";
 
 interface IdName {
   id: string;
@@ -41,27 +46,6 @@ interface Executor {
   confirmation_date: string;
 }
 
-// interface OrderDetail {
-//   id: string;
-//   exit_number: string;
-//   exit_date: string;
-//   type_document_for_filter: IdName;
-//   application_status_district: IdName;
-//   confirmation_date: string;
-//   is_approved: boolean;
-//   user: string;
-//   description: string;
-//   from_district: IdName;
-//   sender_from_district: IdName;
-//   to_region: IdName;
-//   recipient_region: IdName;
-//   from_region: IdName;
-//   sender_from_region: IdName;
-//   to_district: IdName;
-//   recipient_district: IdName;
-//   products: Product[];
-//   executors: Executor[];
-// }
 
 interface OrderDetail {
   id: string;
@@ -131,13 +115,18 @@ interface SimpleItem {
   name: string;
 }
 
-
-
-
 // 🔹 Turlar
 interface IdName {
   id: string;
   name: string;
+}
+
+interface FileData {
+  raw_number: string;
+  user: string;
+  file_name: string;
+  extension: string;
+  date: string;
 }
 
 const RegionOrderDetail: React.FC = () => {
@@ -146,7 +135,6 @@ const RegionOrderDetail: React.FC = () => {
   const [documentTypes, setDocumentTypes] = useState<IdName[]>([]);
   const [file, setFile] = useState<File | null>(null);
   const [fileUploadModal, setFileUploadModal] = useState(false);
-  const [viewMode, setViewMode] = useState<'orders' | 'letters' | 'files'>('orders');
   const [warehouses, setWarehouses] = useState<IdName[]>([]);
   const [districts, setDistricts] = useState<IdName[]>([]);
   const [selectedWarehouse, setSelectedWarehouse] = useState<string>("");
@@ -159,8 +147,11 @@ const RegionOrderDetail: React.FC = () => {
     extension: string;
     fileBinary: string;
   }>();
-
+  const [files, setFiles] = useState<FileData[]>([]);
   const { id } = useParams();
+  const [selectedFileMeta, setSelectedFileMeta] = useState<FileData | null>(null);
+  const [previewFile, setPreviewFile] = useState<File | null>(null);
+  const [previewOpen, setPreviewOpen] = useState(false);
 
   const fetchOrderDetail = async () => {
     try {
@@ -172,6 +163,46 @@ const RegionOrderDetail: React.FC = () => {
       setLoading(false)
     }
   }
+
+  const handleView = async (f: FileData) => {
+    try {
+      setSelectedFileMeta(f);
+      const res = await axiosAPI.get(`region-orders/${id}/file/${f.raw_number}`, {
+        responseType: "arraybuffer",
+      });
+
+      const suggestedName =
+        f.file_name || `${regionData?.exit_number || "file"}-${f.raw_number}.${f.extension}`;
+      const mime = inferMimeFromExt(suggestedName) || inferMimeFromExt(f.extension) || "application/octet-stream";
+
+      const fileObj = arrayBufferToFile(res.data, suggestedName, mime);
+      setPreviewFile(fileObj);
+      setPreviewOpen(true);
+    } catch (e) {
+      console.error(e);
+      toast("Faylni ochib bo‘lmadi", { type: "error" });
+    }
+  };
+
+  const handleDownloadFile = async (f: FileData) => {
+    try {
+      const res = await axiosAPI.get(`region-orders/${id}/file/${f.raw_number}`, {
+        responseType: "blob",
+      });
+      const blob = res.data as Blob;
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = f.file_name || `${regionData?.exit_number || "file"}-${f.raw_number}.${f.extension}`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } catch (e) {
+      console.error(e);
+      toast("Yuklab olishda xatolik", { type: "error" });
+    }
+  };
 
   useEffect(() => {
     if (file) {
@@ -193,7 +224,7 @@ const RegionOrderDetail: React.FC = () => {
     try {
       const arrayBuffer = await file?.arrayBuffer();
       const binary = new Uint8Array(arrayBuffer!);
-      const response = await axiosAPI.post(`district-orders/files/create`, binary, {
+      const response = await axiosAPI.post(`region-orders/files/create`, binary, {
         params,
         headers: { 'Content-Type': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' }
       })
@@ -212,6 +243,25 @@ const RegionOrderDetail: React.FC = () => {
       console.log(error);
     }
   }
+
+  useEffect(() => {
+    const fetchFiles = async () => {
+      try {
+        const response = await axiosAPI.get(`region-orders/${id}/files/list`);
+        if (Array.isArray(response.data)) {
+          setFiles(response.data);
+        } else {
+          console.error("Kutilmagan format:", response.data);
+        }
+      } catch (error) {
+        console.error("Fayllarni olishda xato:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    if (id) fetchFiles();
+  }, [id]);
+
 
   useEffect(() => {
     fetchOrderDetail();
@@ -307,25 +357,27 @@ const RegionOrderDetail: React.FC = () => {
     await fetchRemaindersByDistrict(districtId);
   };
 
-  // const fetRemaindersUserWarehouse = async (warehouseId: string) => {
-  //   try {
-  //     setLoading(true)
-  //     const remaindersResponse = await axiosAPI.post("remainders/warehouses", {
-  //       warehouse: warehouseId,
-  //       date: new Date().toISOString(),
-  //     });
+  const handleDownload = async (file) => {
+    try {
+      const response = await axiosAPI.get(
+        `region-orders/${id}/file/${file.file_name}`,
+        {
+          responseType: "blob", // fayl sifatida olish uchun
+        }
+      );
 
-  //     if (remaindersResponse.status === 200) {
-  //       setRemainders(remaindersResponse.data);
-  //       setShowRemaindersModal(true);
-  //     }
-  //   } catch (error) {
-  //     console.error("Qoldiqlarni olishda xatolik:", error);
-  //   } finally {
-  //     setLoading(false)
-  //   }
-  // }
-
+      const blobUrl = URL.createObjectURL(response.data);
+      const link = document.createElement("a");
+      link.href = blobUrl;
+      link.setAttribute("download", file.file_name);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(blobUrl); // xotirani tozalash
+    } catch (error) {
+      console.error("Faylni yuklab olishda xato:", error);
+    }
+  };
   useEffect(() => {
     if (showWarehouseSelect) fetchWarehousesByRegion();
 
@@ -337,6 +389,36 @@ const RegionOrderDetail: React.FC = () => {
   //   setShowWarehouseSelect(false);
   //   await fetchRemaindersUserWarehouse(warehouseId);
   // };
+  const formatDate = (iso: string): string => {
+    const date = new Date(iso);
+    return date.toLocaleString("uz-UZ", {
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  };
+  const getFileIcon = (fileName) => {
+    const ext = fileName.split(".").pop().toLowerCase();
+
+    switch (ext) {
+      case "pdf":
+        return { icon: <FilePdfOutlined />, color: "text-red-500", bg: "bg-red-50" };
+      case "doc":
+      case "docx":
+        return { icon: <FileWordOutlined />, color: "text-blue-500", bg: "bg-blue-50" };
+      case "xls":
+      case "xlsx":
+        return { icon: <FileExcelOutlined />, color: "text-green-500", bg: "bg-green-50" };
+      case "jpg":
+      case "jpeg":
+      case "png":
+        return { icon: <FileImageOutlined />, color: "text-yellow-500", bg: "bg-yellow-50" };
+      default:
+        return { icon: <FileTextOutlined />, color: "text-gray-500", bg: "bg-gray-100" };
+    }
+  };
 
   if (loading) {
     return (
@@ -358,181 +440,130 @@ const RegionOrderDetail: React.FC = () => {
     <div className="min-h-screen py-2 px-2 bg-white">
       <div className="max-w-8xl mx-auto bg-white">
 
-        <div className="flex gap-8 mb-8 border-b border-gray-200 pb-2">
-          <span
-            onClick={() => setViewMode('orders')}
-            className={`cursor-pointer pb-2 text-base font-medium transition-all duration-200 ${viewMode === 'orders'
-              ? 'text-blue-600 border-b-2 border-blue-600'
-              : 'text-gray-500 hover:text-blue-500'
-              }`}
-          >
-            Buyurtmalar oynasi
-          </span>
-
-          <span
-            onClick={() => setViewMode('letters')}
-            className={`cursor-pointer pb-2 text-base font-medium transition-all duration-200 ${viewMode === 'letters'
-              ? 'text-blue-600 border-b-2 border-blue-600'
-              : 'text-gray-500 hover:text-blue-500'
-              }`}
-          >
-            Respublikaga yuborilayotgan xatning ko‘rinishi
-          </span>
-
-          <span
-            onClick={() => setViewMode('files')}
-            className={`cursor-pointer pb-2 text-base font-medium transition-all duration-200 ${viewMode === 'files'
-              ? 'text-blue-600 border-b-2 border-blue-600'
-              : 'text-gray-500 hover:text-blue-500'
-              }`}
-          >
-            Fayllar ro‘yxati
-          </span>
-        </div>
 
         {/* 🔸 1. BUYURTMALAR OYNASI */}
-        {viewMode === 'orders' && (
+
+        <div>
+
+          <div className="bg-white mb-6 overflow-hidden">
+            <div className="flex items-center justify-between p-4">
+              <div className="text-center border-gray-200">
+                <p className="text-xs text-gray-500 uppercase font-semibold mb-2">Chiqish</p>
+                <p className="text-md font-semibold text-gray-800">{regionData.exit_number}</p>
+              </div>
+
+              <div className="text-center border-gray-200">
+                <p className="text-xs text-gray-500 uppercase font-semibold mb-2">Chiqish Sana</p>
+                <p className="text-md font-semibold text-gray-800">
+                  {regionData.exit_date.split("T").join("  ")}
+                </p>
+              </div>
+
+              <div className="text-center border-gray-200">
+                <p className="text-xs text-gray-500 uppercase font-semibold mb-2">Viloyat</p>
+                <p className="text-md font-semibold text-gray-800">{regionData.to_region?.name}</p>
+              </div>
+
+              <div className="text-center border-gray-200">
+                <p className="text-xs text-gray-500 uppercase font-semibold mb-2">Viloyatdan qabul qiluvchi</p>
+                <p className="text-md font-semibold text-gray-800">{regionData.sender_from_region?.name}</p>
+              </div>
+
+            </div>
+          </div>
+
           <div>
 
-            <div className="bg-white mb-6 overflow-hidden">
-              <div className="flex items-center justify-between p-4">
-                <div className="text-center border-gray-200">
-                  <p className="text-xs text-gray-500 uppercase font-semibold mb-2">Chiqish</p>
-                  <p className="text-md font-semibold text-gray-800">{regionData.exit_number}</p>
-                </div>
+            <div className="bg-transparent rounded-md p-2 flex justify-between mb-6">
+              <div className='flex items-center gap-3'>
+                <Button className='cursor-pointer'>
+                  <Plus></Plus>
+                  Kiritish
+                </Button>
 
-                <div className="text-center border-gray-200">
-                  <p className="text-xs text-gray-500 uppercase font-semibold mb-2">Chiqish Sana</p>
-                  <p className="text-md font-semibold text-gray-800">
-                    {regionData.exit_date.split("T").join("  ")}
-                  </p>
-                </div>
+                <Button className='cursor-pointer'
+                  onClick={() => setShowWarehouseSelect(true)}
+                >
+                  Qoldiqlar
+                </Button>
 
-                <div className="text-center border-gray-200">
-                  <p className="text-xs text-gray-500 uppercase font-semibold mb-2">Viloyat</p>
-                  <p className="text-md font-semibold text-gray-800">{regionData.to_region?.name}</p>
-                </div>
-
-                <div className="text-center border-gray-200">
-                  <p className="text-xs text-gray-500 uppercase font-semibold mb-2">Viloyatdan qabul qiluvchi</p>
-                  <p className="text-md font-semibold text-gray-800">{regionData.sender_from_region?.name}</p>
-                </div>
-
+              </div>
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4" />
+                <Input
+                  type="text"
+                  placeholder="Qidirish (Ctrl+F)"
+                  className="w-64 h-9 pl-9 text-sm border-slate-200 bg-white"
+                />
               </div>
             </div>
 
-            <div>
-              <Accordion>
-                <AccordionSummary
-                  expandIcon={<ExpandMoreIcon />}
-                  aria-controls="panel1a-content"
-                >
-                  <Typography fontSize={"20px"} fontWeight={600} color="#0f172b">Buyurtma uchun berilgan tovarlar ruyhati</Typography>
-                </AccordionSummary>
-                <AccordionDetails>
 
-                  <div className="bg-transparent rounded-md p-2 flex justify-between mb-6">
-                    <div className='flex items-center gap-3'>
-                      <Button className='cursor-pointer'>
-                        <Plus></Plus>
-                        Kiritish
-                      </Button>
-
-                      <Button className='cursor-pointer'
-                        onClick={() => setShowWarehouseSelect(true)}
-                      >
-                        Qoldiqlar
-                      </Button>
-
-                    </div>
-                    <div className="relative">
-                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4" />
-                      <Input
-                        type="text"
-                        placeholder="Qidirish (Ctrl+F)"
-                        className="w-64 h-9 pl-9 text-sm border-slate-200 bg-white"
-                      />
-                    </div>
-                  </div>
-
-
-                  <div className="bg-white rounded-xl border border-gray-200 overflow-y-auto mb-4">
-                    <div className="overflow-x-auto">
-                      <table className="w-full caption-bottom text-sm">
-                        <thead className="[&_tr]:border-b bg-gradient-to-r from-slate-100 via-blue-50 to-purple-50">
-                          <tr className=" data-[state=selected]:bg-muted border-b transition-colors">
-                            <th className="px-3 py-2 text-center text-sm font-semibold text-gray-600">№</th>
-                            <th className="px-3 py-2 text-center text-sm font-semibold text-gray-600">Buyurtma turi</th>
-                            <th className="px-3 py-2 text-center text-sm font-semibold text-gray-600">Tovar nomi</th>
-                            <th className="px-3 py-2 text-center text-sm font-semibold text-gray-600">Tovar turi</th>
-                            <th className="px-3 py-2 text-center text-sm font-semibold text-gray-600">Model</th>
-                            <th className="px-3 py-2 text-center text-sm font-semibold text-gray-600">O'lcham</th>
-                            <th className="px-3 py-2 text-center text-sm font-semibold text-gray-600">O'lchov birligi</th>
-                            <th className="px-3 py-2 text-center text-sm font-semibold text-gray-600">Soni</th>
-                            <th className="px-3 py-2 text-center text-sm font-semibold text-gray-600">Soni Tumandan</th>
-                            <th className="px-3 py-2 text-center text-sm font-semibold text-gray-600">Soni Sotuvdan</th>
-                            <th className="px-3 py-2 text-center text-sm font-semibold text-gray-600">Buyurtma bo'yicha izoh</th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-gray-100">
-                          {regionData.products?.map((product, index) => (
-                            <tr key={index} className="hover:bg-gray-50 transition-all duration-200">
-                              <td className="px-6 py-4 text-sm text-gray-900 font-medium">
-                                <span className="inline-flex items-center justify-center w-8 h-8 rounded-xl bg-gradient-to-r from-purple-500 to-blue-500 text-white font-semibold text-sm">
-                                  {product.row_number}
-                                </span>
-                              </td>
-                              <td className="px-6 py-4 text-sm text-gray-900 font-medium">{product.order_type?.name}</td>
-                              <td className="px-6 py-4 text-sm text-gray-900">{product.product?.name}</td>
-                              <td className="px-6 py-4 text-sm text-gray-900">{product.product_type?.name}</td>
-                              <td className="px-6 py-4 text-sm text-gray-900 font-medium">{product.model?.name}</td>
-                              <td className="px-6 py-4 text-sm text-gray-700">{product.size?.name}</td>
-                              <td className="px-6 py-4 text-sm text-gray-700">{product.unit?.name}</td>
-                              <td className="px-6 py-4 text-sm text-gray-900 text-right font-bold">{product.quantity}</td>
-                              <th className="px-6 py-4 text-right text-sm font-semibold text-gray-700"></th>
-                              <th className="px-6 py-4 text-right text-sm font-semibold text-gray-700"></th>
-                              <td className="px-6 py-4 text-sm text-gray-900 text-right font-bold">{product.description}</td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
-
-                </AccordionDetails>
-              </Accordion>
+            <div className="bg-white rounded-xl border border-gray-200 overflow-y-auto mb-8">
+              <div className="overflow-x-auto">
+                <table className="w-full caption-bottom text-sm">
+                  <thead className="[&_tr]:border-b bg-gradient-to-r from-slate-100 via-blue-50 to-purple-50">
+                    <tr className=" data-[state=selected]:bg-muted border-b transition-colors">
+                      <th className="px-3 py-2 text-center text-sm font-semibold text-gray-600">№</th>
+                      <th className="px-3 py-2 text-center text-sm font-semibold text-gray-600">Buyurtma turi</th>
+                      <th className="px-3 py-2 text-center text-sm font-semibold text-gray-600">Tovar nomi</th>
+                      <th className="px-3 py-2 text-center text-sm font-semibold text-gray-600">Tovar turi</th>
+                      <th className="px-3 py-2 text-center text-sm font-semibold text-gray-600">Model</th>
+                      <th className="px-3 py-2 text-center text-sm font-semibold text-gray-600">O'lcham</th>
+                      <th className="px-3 py-2 text-center text-sm font-semibold text-gray-600">O'lchov birligi</th>
+                      <th className="px-3 py-2 text-center text-sm font-semibold text-gray-600">Soni</th>
+                      <th className="px-3 py-2 text-center text-sm font-semibold text-gray-600">Soni Tumandan</th>
+                      <th className="px-3 py-2 text-center text-sm font-semibold text-gray-600">Soni Sotuvdan</th>
+                      <th className="px-3 py-2 text-center text-sm font-semibold text-gray-600">Buyurtma bo'yicha izoh</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100">
+                    {regionData.products?.map((product, index) => (
+                      <tr key={index} className="hover:bg-gray-50 transition-all duration-200">
+                        <td className="px-6 py-4 text-sm text-gray-900 font-medium">
+                          <span className="inline-flex items-center justify-center w-8 h-8 rounded-xl bg-gradient-to-r from-purple-500 to-blue-500 text-white font-semibold text-sm">
+                            {product.row_number}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 text-sm text-gray-900 font-medium">{product.order_type?.name}</td>
+                        <td className="px-6 py-4 text-sm text-gray-900">{product.product?.name}</td>
+                        <td className="px-6 py-4 text-sm text-gray-900">{product.product_type?.name}</td>
+                        <td className="px-6 py-4 text-sm text-gray-900 font-medium">{product.model?.name}</td>
+                        <td className="px-6 py-4 text-sm text-gray-700">{product.size?.name}</td>
+                        <td className="px-6 py-4 text-sm text-gray-700">{product.unit?.name}</td>
+                        <td className="px-6 py-4 text-sm text-gray-900 text-right font-bold">{product.quantity}</td>
+                        <th className="px-6 py-4 text-right text-sm font-semibold text-gray-700"></th>
+                        <th className="px-6 py-4 text-right text-sm font-semibold text-gray-700"></th>
+                        <td className="px-6 py-4 text-sm text-gray-900 text-right font-bold">{product.description}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
+          </div>
 
-            <div>
-              <Accordion>
-                <AccordionSummary
-                  expandIcon={<ExpandMoreIcon />}
-                  aria-controls="panel1a-content"
-                >
-                  <Typography fontSize={"20px"} fontWeight={600} color="#0f172b">Bekor qilingan tovarlar ruyhati</Typography>
-                </AccordionSummary>
-                <AccordionDetails>
+          <div>
 
-
-                  <div className="bg-white rounded-xl border border-gray-200 overflow-y-auto mb-4">
-                    <div className="overflow-x-auto">
-                      <table className="w-full caption-bottom text-sm">
-                        <thead className="[&_tr]:border-b bg-gradient-to-r from-slate-100 via-blue-50 to-purple-50">
-                          <tr className=" data-[state=selected]:bg-muted border-b transition-colors">
-                            <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600">№</th>
-                            <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600">Buyurtma turi</th>
-                            <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600">Tovar nomi</th>
-                            <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600">Tovar turi</th>
-                            <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600">Model</th>
-                            <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600">O'lcham</th>
-                            <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600">O'lchov birligi</th>
-                            <th className="px-6 py-4 text-right text-sm font-semibold text-gray-600">Soni</th>
-                            <th className="px-6 py-4 text-right text-sm font-semibold text-gray-600">Bekor qilish xolati</th>
-                            <th className="px-6 py-4 text-right text-sm font-semibold text-gray-600">Bekor qilish jujjati</th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-gray-100">
-                          {/* {regionData.cancelled_products?.map((cancelledproduct, index) => (
+            <div className="bg-white rounded-xl border border-gray-200 overflow-y-auto mb-8">
+              <div className="overflow-x-auto">
+                <table className="w-full caption-bottom text-sm">
+                  <thead className="[&_tr]:border-b bg-gradient-to-r from-slate-100 via-blue-50 to-purple-50">
+                    <tr className=" data-[state=selected]:bg-muted border-b transition-colors">
+                      <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600">№</th>
+                      <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600">Buyurtma turi</th>
+                      <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600">Tovar nomi</th>
+                      <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600">Tovar turi</th>
+                      <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600">Model</th>
+                      <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600">O'lcham</th>
+                      <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600">O'lchov birligi</th>
+                      <th className="px-6 py-4 text-right text-sm font-semibold text-gray-600">Soni</th>
+                      <th className="px-6 py-4 text-right text-sm font-semibold text-gray-600">Bekor qilish xolati</th>
+                      <th className="px-6 py-4 text-right text-sm font-semibold text-gray-600">Bekor qilish jujjati</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100">
+                    {/* {regionData.cancelled_products?.map((cancelledproduct, index) => (
                         <tr key={index} className="hover:bg-gray-50 transition-all duration-200">
                           <td className="px-6 py-4 text-sm text-gray-900 font-medium">{cancelledproduct.row_number}</td>
                           <td className="px-6 py-4 text-sm text-gray-900 font-medium">{cancelledproduct.order_type?.name}</td>
@@ -547,176 +578,213 @@ const RegionOrderDetail: React.FC = () => {
                           <td className="px-6 py-4 text-sm text-gray-900 text-right font-bold">{cancelledproduct.description}</td>
                         </tr>
                       ))} */}
-                          <tr>
-                            <td></td>
-                          </tr>
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
-
-                </AccordionDetails>
-              </Accordion>
+                    <tr>
+                      <td></td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
             </div>
 
-            <div>
-              <Accordion>
-                <AccordionSummary
-                  expandIcon={<ExpandMoreIcon />}
-                  aria-controls="panel1a-content"
-                >
-                  <Typography fontSize={"20px"} fontWeight={600} color="#0f172b">Kelishuvchilar ruyhati</Typography>
-                </AccordionSummary>
-                <AccordionDetails>
+          </div>
 
-
-                  <div className="bg-transparent rounded-md p-2 flex justify-between mb-6">
-                    <div className='flex items-center gap-3'>
-                      <Button className='cursor-pointer'>
-                        <Plus></Plus>
-                        Kiritish
-                      </Button>
-                      <Button className='cursor-pointer'>
-                        Yuborish
-                      </Button>
-                    </div>
-                    <div className="relative">
-                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4" />
-                      <Input
-                        type="text"
-                        placeholder="Qidirish (Ctrl+F)"
-                        className="w-64 h-9 pl-9 text-sm border-slate-200 bg-white"
-                      />
-                    </div>
-                  </div>
-
-
-                  <div className="bg-white rounded-xl border border-gray-200 overflow-y-auto mb-4">
-                    <div className="overflow-x-auto">
-                      <table className="w-full caption-bottom text-sm">
-                        <thead className="[&_tr]:border-b bg-gradient-to-r from-slate-100 via-blue-50 to-purple-50">
-                          <tr className=" data-[state=selected]:bg-muted border-b transition-colors">
-                            <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600">№</th>
-                            <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600">Xabar xolati</th>
-                            <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600">Bajaruvchi xodim</th>
-                            <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600">Xujjat turi</th>
-                            <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600">Lavozim</th>
-                            <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600">Javob turi</th>
-                            <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600">Izox</th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-gray-100">
-                          {regionData.executors?.map((executor, index) => (
-                            <tr key={index} className="hover:bg-gray-50 transition-all duration-200">
-                              <td className="px-6 py-4 text-sm text-gray-900">{executor?.row_number}</td>
-                              <td className="px-6 py-4 text-sm text-gray-900">{executor.status_message?.name}</td>
-                              <td className="px-6 py-4 text-sm text-gray-900 font-medium">{executor.executor?.name}</td>
-                              <td className="px-6 py-4 text-sm text-gray-900">{executor.executor_type?.name}</td>
-                              <td className="px-6 py-4 text-sm text-gray-900">{executor.position?.name}</td>
-                              <td className="px-6 py-4 text-sm text-gray-900 font-medium"></td>
-                              <td className="px-6 py-4 text-sm text-gray-700">{executor.comment}</td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
-
-                </AccordionDetails>
-              </Accordion>
-            </div>
-
-            {/* Attach document */}
-            <div className='flex items-center justify-center gap-6 p-6'>
-              {/* File Upload Button */}
-              <button
-                onClick={() => setFileUploadModal(true)}
-                className='group relative bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white px-6 py-4 rounded-xl shadow-md hover:shadow-lg transition-all duration-300 flex items-center gap-3 font-medium cursor-pointer'
-              >
-                <div className='bg-white/20 p-2 rounded-lg group-hover:bg-white/30 transition-colors'>
-                  <FilePlus2 className='w-5 h-5' />
-                </div>
-                <span>Hujjat biriktirish</span>
-              </button>
-
-              {/* Text Area */}
-              <div className='flex-1 max-w-md'>
-                <TextArea
-                  placeholder='Qisqacha mazmun yozing...'
-                  className='rounded-xl border-2 border-gray-200 focus:border-blue-400 hover:border-gray-300 transition-colors shadow-sm'
-                  style={{ height: "120px" }}
+          <div>
+            <div className="bg-transparent rounded-md p-2 flex justify-between mb-6">
+              <div className='flex items-center gap-3'>
+                <Button className='cursor-pointer'>
+                  <Plus></Plus>
+                  Kiritish
+                </Button>
+                <Button className='cursor-pointer'>
+                  Yuborish
+                </Button>
+              </div>
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4" />
+                <Input
+                  type="text"
+                  placeholder="Qidirish (Ctrl+F)"
+                  className="w-64 h-9 pl-9 text-sm border-slate-200 bg-white"
                 />
               </div>
-
-              {/* Save Button */}
-              <button
-                className='group bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white px-8 py-4 rounded-xl shadow-md hover:shadow-lg transition-all duration-300 flex items-center gap-3 font-medium cursor-pointer'
-
-              >
-                <div className='bg-white/20 p-2 rounded-lg group-hover:bg-white/30 transition-colors'>
-                  <SaveOutlined className='text-xl' />
-                </div>
-                <span>Saqlash</span>
-              </button>
             </div>
 
-            {fileUploadModal && (
-              <div className="fixed inset-0 bg-black/20 bg-opacity-50 flex items-center justify-center z-50" onClick={() => setFileUploadModal(false)}>
-                <div className="bg-white rounded-lg p-6 w-96 flex flex-col" onClick={(e) => e.stopPropagation()}>
-                  {/* Top */}
-                  <div className='flex items-center justify-between mb-4 pb-2 border-b'>
-                    <h2 className="text-xl font-semibold">Hujjat biriktirish</h2>
-                    <button className='text-2xl' onClick={() => setFileUploadModal(false)}>&times;</button>
-                  </div>
-                  <div className="mb-4">
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Hujjat turi</label>
-                    <Select
-                      style={{ width: '100%' }}
-                      placeholder="Hujjat turini tanlang"
-                      onChange={(value) => {
-                        console.log(value)
-                        // setDocumentFormData(prev => ({ ...prev!, selectedDocumentType: value }))
-                      }}
-                      options={documentTypes.map(docType => ({ value: docType.id, label: docType.name }))}
-                    />
-                  </div>
-                  <div className="mb-4">
-                    <FileDropZone file={file} setFile={setFile} />
-                  </div>
 
-                  <Button
-                    className="bg-gray-100 p-2 rounded-lg text-sm cursor-pointer hover:bg-blue-400 hover:text-white ml-auto"
-                    onClick={() => {
-                      setFileUploadModal(false);
-                      handleFileAttach()
-                    }}
-                    disabled={!file && !documentFormData?.selectedDocumentType}>
-                    Yuklash
-                  </Button>
-                </div>
+            <div className="bg-white rounded-xl border border-gray-200 overflow-y-auto mb-4">
+              <div className="overflow-x-auto">
+                <table className="w-full caption-bottom text-sm">
+                  <thead className="[&_tr]:border-b bg-gradient-to-r from-slate-100 via-blue-50 to-purple-50">
+                    <tr className=" data-[state=selected]:bg-muted border-b transition-colors">
+                      <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600">№</th>
+                      <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600">Xabar xolati</th>
+                      <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600">Bajaruvchi xodim</th>
+                      <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600">Xujjat turi</th>
+                      <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600">Lavozim</th>
+                      <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600">Javob turi</th>
+                      <th className="px-6 py-4 text-left text-sm font-semibold text-gray-600">Izox</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100">
+                    {regionData.executors?.map((executor, index) => (
+                      <tr key={index} className="hover:bg-gray-50 transition-all duration-200">
+                        <td className="px-6 py-4 text-sm text-gray-900">{executor?.row_number}</td>
+                        <td className="px-6 py-4 text-sm text-gray-900">{executor.status_message?.name}</td>
+                        <td className="px-6 py-4 text-sm text-gray-900 font-medium">{executor.executor?.name}</td>
+                        <td className="px-6 py-4 text-sm text-gray-900">{executor.executor_type?.name}</td>
+                        <td className="px-6 py-4 text-sm text-gray-900">{executor.position?.name}</td>
+                        <td className="px-6 py-4 text-sm text-gray-900 font-medium"></td>
+                        <td className="px-6 py-4 text-sm text-gray-700">{executor.comment}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
-            )}
-
+            </div>
           </div>
-        )}
 
-        {/* 🔸 2. YUBORILGAN XATNI KO‘RINISHI */}
-        {viewMode === 'letters' && (
-          <div className="p-6 bg-gray-50 rounded-lg shadow-sm">
-            <h2 className="text-lg font-semibold mb-4">Yuborilgan xatni ko‘rinishi</h2>
-            <p>Bu bo‘limda yuborilgan xat tafsilotlari chiqadi.</p>
-            <p className="text-sm text-gray-500 mt-2">
-              (Bu joyni keyinchalik o‘z API yoki table bilan to‘ldirish mumkin)
-            </p>
+          {/* Attach document */}
+          <div className='flex items-center justify-center gap-6 p-6'>
+            {/* File Upload Button */}
+            <button
+              onClick={() => setFileUploadModal(true)}
+              className='group relative bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white px-6 py-4 rounded-xl shadow-md hover:shadow-lg transition-all duration-300 flex items-center gap-3 font-medium cursor-pointer'
+            >
+              <div className='bg-white/20 p-2 rounded-lg group-hover:bg-white/30 transition-colors'>
+                <FilePlus2 className='w-5 h-5' />
+              </div>
+              <span>Hujjat biriktirish</span>
+            </button>
+
+            {/* Text Area */}
+            <div className='flex-1 max-w-md'>
+              <TextArea
+                placeholder='Qisqacha mazmun yozing...'
+                className='rounded-xl border-2 border-gray-200 focus:border-blue-400 hover:border-gray-300 transition-colors shadow-sm'
+                style={{ height: "120px" }}
+              />
+            </div>
+
+            {/* Save Button */}
+            <button
+              className='group bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white px-8 py-4 rounded-xl shadow-md hover:shadow-lg transition-all duration-300 flex items-center gap-3 font-medium cursor-pointer'
+
+            >
+              <div className='bg-white/20 p-2 rounded-lg group-hover:bg-white/30 transition-colors'>
+                <SaveOutlined className='text-xl' />
+              </div>
+              <span>Saqlash</span>
+            </button>
           </div>
-        )}
+
+          {fileUploadModal && (
+            <div className="fixed inset-0 bg-black/20 bg-opacity-50 flex items-center justify-center z-50" onClick={() => setFileUploadModal(false)}>
+              <div className="bg-white rounded-lg p-6 w-96 flex flex-col" onClick={(e) => e.stopPropagation()}>
+                {/* Top */}
+                <div className='flex items-center justify-between mb-4 pb-2 border-b'>
+                  <h2 className="text-xl font-semibold">Hujjat biriktirish</h2>
+                  <button className='text-2xl' onClick={() => setFileUploadModal(false)}>&times;</button>
+                </div>
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Hujjat turi</label>
+                  <Select
+                    style={{ width: '100%' }}
+                    placeholder="Hujjat turini tanlang"
+                    onChange={(value) => {
+                      console.log(value)
+                      // setDocumentFormData(prev => ({ ...prev!, selectedDocumentType: value }))
+                    }}
+                    options={documentTypes.map(docType => ({ value: docType.id, label: docType.name }))}
+                  />
+                </div>
+                <div className="mb-4">
+                  <FileDropZone file={file} setFile={setFile} />
+                </div>
+
+                <Button
+                  className="bg-blue-500 p-2 rounded-lg text-sm cursor-pointer hover:bg-blue-600 ml-auto"
+                  onClick={() => {
+                    setFileUploadModal(false);
+                    handleFileAttach()
+                  }}
+                  disabled={!file && !documentFormData?.selectedDocumentType}>
+                  Yuklash
+                </Button>
+              </div>
+            </div>
+          )}
+
+        </div>
 
         {/* 🔸 3. FAYLLAR RO‘YXATI */}
-        {viewMode === 'files' && (
-          <div>
-            edswnjsj
-          </div>
-        )}
+
+        <div className="p-4">
+          {files.length !== 0 ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
+              {files.map((file, index) => {
+                const { icon, color, bg } = getFileIcon(file.file_name);
+                return (
+                  <div
+                    key={index}
+                    className="bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-all duration-300 p-4 flex flex-col justify-between"
+                  >
+                    {/* 🔹 Exit number & Row number */}
+                    <div className="flex justify-between items-center mb-3">
+                      <span className="text-[13px] font-semibold text-gray-700 bg-gray-100 px-2 py-1 rounded-full">
+                        {regionData.exit_number}-{file.raw_number}
+                      </span>
+                    </div>
+                    <div className='flex'>
+
+                    {/* 🔸 Fayl ma’lumotlari */}
+                    <div className="flex items-center gap-2 mb-3">
+                      <div className={`p-3 rounded-lg ${bg}`}>
+                        <div className={`${color} text-3xl`}>{icon}</div>
+                      </div>
+                      <div className="flex flex-col">
+                        <h4 className="text-gray-800 font-semibold text-[12px] truncate w-40">
+                          {file.file_name}
+                        </h4>
+                        {file.user}
+                        <p className="text-gray-500 text-[12px] mt-1">{formatDate(file.date)}</p>
+                      </div>
+                    </div>
+
+                    {/* 🔸 Action tugmalar */}
+                    <div className="flex flex-col gap-2">
+                      <button
+                        onClick={() => handleView(file)}
+                        className="p-2 rounded-md text-gray-600 hover:text-purple-700 hover:bg-gray-100 transition"
+                        title="Ko‘rish"
+                      >
+                        <EyeOutlined className="text-lg" />
+                      </button>
+                      <button
+                        onClick={() => handleDownloadFile(file)}
+                        className="p-2 rounded-md text-gray-600 hover:text-purple-700 hover:bg-gray-100 transition"
+                        title="Yuklab olish"
+                      >
+                        <DownloadOutlined className="text-lg" />
+                      </button>
+                    </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <p className="text-gray-900 font-bold text-2xl text-center">
+              Hozircha fayllar mavjud emas.
+            </p>
+          )}
+          {selectedFileMeta && (
+            <FilePreviewModal
+              open={previewOpen}
+              file={previewFile}
+              onClose={() => { setPreviewOpen(false); setPreviewFile(null); }}
+              onDownload={() => { if (selectedFileMeta) handleDownloadFile(selectedFileMeta); }}
+            />
+          )}
+        </div>
 
 
       </div>
