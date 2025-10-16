@@ -24,6 +24,7 @@ import {
 } from "../UI/table";
 import { toast } from "react-toastify";
 import FieldModal from "../modal/FieldModal";
+import { setProductTypes } from "@/store/productSlice/productSlice";
 
 const DATE_FORMAT = "YYYY-MM-DD HH:mm:ss";
 
@@ -36,7 +37,7 @@ const defaultProduct: any = {
   date_party: dayjs().format("YYYY-MM-DDTHH:mm:ss"),
   price: 0,
   quantity: 0,
-  unit: "3e3a4111-8e21-4154-80cd-9c835c271a57",
+  unit: "",
   summa: 0,
 };
 
@@ -258,6 +259,8 @@ const ProductInputForm: React.FC<IProductInputFormProps> = ({
         : "",
     }));
   }, [currentCreatedCounterParty]);
+
+  console.log(formData)
 
   return (
     <>
@@ -498,30 +501,6 @@ const ProductInputForm: React.FC<IProductInputFormProps> = ({
 
                       {/* Product Type */}
                       <TableCell className="text-slate-700 font-medium p-3">
-                        {/* <Select
-                          showSearch
-                          className="w-full"
-                          placeholder="Tovar turini tanlang"
-                          onChange={(value) => {
-                            const selectedType = product_types.results.find(
-                              (t) => t.name === value
-                            );
-                            setFormData((prev) => ({
-                              ...prev,
-                              products: prev.products.map((p, i) =>
-                                i === index
-                                  ? { ...p, product_type: selectedType?.id! }
-                                  : p
-                              ),
-                            }));
-                          }}
-                        >
-                          {product_types.results.map((type) => (
-                            <Select.Option key={type.id} value={type.name}>
-                              {type.name}
-                            </Select.Option>
-                          ))}
-                        </Select> */}
                         <Button className="w-full" onClick={() => setFieldName("product_type")}>
                           <span className={`${formData.products[index].product_type ? "text-gray-800" : "text-gray-400"}`}>
                             {product.product_type ? product_types.results.find((t) => t.id === product.product_type)?.name : "Tanlang"}
@@ -539,33 +518,11 @@ const ProductInputForm: React.FC<IProductInputFormProps> = ({
                         )}
                       </TableCell>
 
+                      {/* Product models */}
                       <TableCell className="text-slate-700 font-medium p-3">
-                        {/* Product models */}
-                        {/* <Select
-                          showSearch
-                          className="w-full"
-                          placeholder="Modelni tanlang"
-                          onChange={(value) => {
-                            const selectedModel = product_models.results.find(
-                              (m) => m.name === value
-                            );
-                            setFormData((prev) => ({
-                              ...prev,
-                              products: prev.products.map((p, i) =>
-                                i === index
-                                  ? { ...p, model: selectedModel?.id! }
-                                  : p
-                              ),
-                            }));
-                          }}
-                        >
-                          {product_models.results.map((model) => (
-                            <Select.Option key={model.id} value={model.name}>
-                              {model.name}
-                            </Select.Option>
-                          ))}
-                        </Select> */}
-                        <Button className="w-full" onClick={() => setFieldName("model")}>
+                        <Button className="w-full" onClick={() => {
+                          setFieldName("model")
+                        }}>
                           <span className={`${formData.products[index].model ? "text-gray-800" : "text-gray-400"}`}>
                             {product.model ? product_models.results.find((m) => m.id === product.model)?.name : "Tanlang"}
                           </span>
@@ -578,6 +535,7 @@ const ProductInputForm: React.FC<IProductInputFormProps> = ({
                               if (newItem) setFormData(prev => ({ ...prev, products: prev.products.map((p, i) => i === index ? { ...p, model: newItem!.id } : p) }))
                               setFieldName("")
                             }}
+                            selectedProductTypeId={product_types.results.find(item => item.id === product.product_type)?.name}
                           />
                         )
                         }
