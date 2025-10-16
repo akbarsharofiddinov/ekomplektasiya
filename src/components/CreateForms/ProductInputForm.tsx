@@ -543,59 +543,52 @@ const ProductInputForm: React.FC<IProductInputFormProps> = ({
 
                       {/* Product size */}
                       <TableCell className="text-slate-700 font-medium p-3">
-                        {/* <Select
-                          showSearch
-                          className="w-full"
-                          placeholder="O'lchamini tanlang"
-                          onChange={(value) => {
-                            const selectedSize = product_sizes.results.find(
-                              (s) => s.name === value
-                            );
-                            setFormData((prev) => ({
-                              ...prev,
-                              products: prev.products.map((p, i) =>
-                                i === index
-                                  ? { ...p, size: selectedSize?.id! }
-                                  : p
-                              ),
-                            }));
-                          }}
-                        >
-                          {product_sizes.results.map((size) => (
-                            <Select.Option key={size.id} value={size.name}>
-                              {size.name}
-                            </Select.Option>
-                          ))}
-                        </Select> */}
+                        <Button className="w-full" onClick={() => {
+                          setFieldName("size")
+                        }}>
+                          <span className={`${formData.products[index].size ? "text-gray-800" : "text-gray-400"}`}>
+                            {product.size ? product_sizes.results.find((m) => m.id === product.size)?.name : "Tanlang"}
+                          </span>
+                        </Button>
+                        {fieldName === "size" && (
+                          <FieldModal
+                            field_name="size"
+                            selectedItem={{ id: product.size, name: "" }}
+                            setSelectedItem={newItem => {
+                              if (newItem) setFormData(prev => ({ ...prev, products: prev.products.map((p, i) => i === index ? { ...p, size: newItem!.id } : p) }))
+                              setFieldName("")
+                            }}
+                            selectedProductTypeId={product_types.results.find(item => item.id === product.product_type)?.name}
+                            selectedModelId={product_models.results.find(item => item.id === product.model)?.name}
+                          />
+                        )
+                        }
                       </TableCell>
 
                       {/* Product */}
-                      <TableCell className="text-slate-700 font-medium p-3 max-w-[120px]">
-                        <Select
-                          showSearch
-                          className="w-full"
-                          placeholder="Tovar tanlang"
-                          onChange={(value) => {
-                            const selectedProduct = products.results.find(
-                              (p) => p.name === value
-                            );
-                            setFormData((prev) => ({
-                              ...prev,
-                              products: prev.products.map((p, i) =>
-                                i === index
-                                  ? { ...p, product: selectedProduct?.id!, product_code: selectedProduct?.product_code! }
-                                  : p
-                              ),
-                            }));
-                          }}
-                        >
-                          {products.results.map((prod) => (
-                            <Select.Option key={prod.id} value={prod.name}>
-                              {prod.name}
-                            </Select.Option>
-                          ))}
-                        </Select>
+                      
+                      <TableCell className="text-slate-700 font-medium p-3">
+                        <Button className="w-full" onClick={() => {
+                          setFieldName("product")
+                        }}>
+                          <span className={`${formData.products[index] ? "text-gray-800" : "text-gray-400"}`}>
+                            {product.product ? products.results.find((prod) => prod.id === product.product)?.name : "Tanlang"}
+                          </span>
+                        </Button>
+                        {fieldName === "product" && (
+                          <FieldModal
+                            field_name="product"
+                            selectedItem={{ id: product.product, name: "" }}
+                            setSelectedItem={newItem => {
+                              if (newItem) setFormData(prev => ({ ...prev, products: prev.products.map((p, i) => i === index ? { ...p, product: newItem!.id } : p) }))
+                              setFieldName("")
+                            }}
+                            selectedProductTypeId={product_types.results.find(item => item.id === product.product_type)?.name}
+                          />
+                        )
+                        }
                       </TableCell>
+
 
                       {/* Quantity */}
                       <TableCell className="text-slate-700 font-medium p-3 w-[100px]">
