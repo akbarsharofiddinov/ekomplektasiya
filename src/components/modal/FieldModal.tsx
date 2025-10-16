@@ -9,7 +9,7 @@ import {
   fetchProductPaginationData,
 } from '@/services/axiosAPI';
 import { useAppDispatch } from '@/store/hooks/hooks';
-import { setProductModels, setProductSizes, setProductUnits } from '@/store/productSlice/productSlice';
+import { setProductModels, setProducts, setProductSizes, setProductUnits } from '@/store/productSlice/productSlice';
 
 interface IResultsType {
   id: string | number;
@@ -26,6 +26,7 @@ interface FieldModalProps {
   field_name: 'product' | 'product_type' | 'model' | 'size' | 'unit';
   selectedProductTypeId?: string;
   selectedModelId?: string;
+  selectedSizeId?: string;
   menuItems?: {
     count: number;
     limit: number;
@@ -42,6 +43,7 @@ const FieldModal: React.FC<FieldModalProps> = ({
   field_name,
   selectedProductTypeId,
   selectedModelId,
+  selectedSizeId,
   menuItems = null,
   selectedItem,
   setSelectedItem,
@@ -56,7 +58,6 @@ const FieldModal: React.FC<FieldModalProps> = ({
   const [selectedId, setSelectedId] = React.useState<string | null>(
     selectedItem?.id ?? null
   );
-
   const dispatch = useAppDispatch()
 
   useEffect(() => {
@@ -140,6 +141,8 @@ const FieldModal: React.FC<FieldModalProps> = ({
             l,
             offset,
             selectedProductTypeId || undefined,
+            selectedModelId || undefined,
+            selectedSizeId || undefined,
           );
           break;
         case 'unit':
@@ -154,7 +157,8 @@ const FieldModal: React.FC<FieldModalProps> = ({
         setTotal(response.count ?? 0);
         if (field_name === "model") dispatch(setProductModels(response));
         else if (field_name === "size") dispatch(setProductSizes(response));
-        else if (field_name === "unit") dispatch(setProductUnits(response))
+        else if (field_name === "unit") dispatch(setProductUnits(response));
+        else if (field_name === "product") dispatch(setProducts(response));
       } else {
         setItems([]);
         setTotal(0);
@@ -171,7 +175,7 @@ const FieldModal: React.FC<FieldModalProps> = ({
     // Re-fetch on page, pageSize, field_name, and relevant filters change
     fetchPage(page, pageSize);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [page, pageSize, field_name, selectedProductTypeId, selectedModelId]);
+  }, [page, pageSize, field_name, selectedProductTypeId, selectedModelId, selectedSizeId]);
 
   // filtered view (client-side) - filters only current page items
   const filteredItems = React.useMemo(() => {
@@ -196,7 +200,6 @@ const FieldModal: React.FC<FieldModalProps> = ({
     });
   }, [items, searchTerm]);
 
-  console.log(items , 'Item data')
   const onRowSelect = (item: IResultsType) => {
     setSelectedId((prev) => (prev === String(item.id) ? null : String(item.id)));
   };
@@ -221,15 +224,13 @@ const FieldModal: React.FC<FieldModalProps> = ({
         <div className="px-4 py-2">
           <div className="flex items-center justify-between">
             <h2 className="text-xl font-semibold text-gray-800">
-              {field_name === 'product_type'
-                ? 'Tovar turi'
-                : field_name === 'model'
-                  ? 'Model'
-                  : field_name === 'size'
-                    ? "O'lcham"
-                    : field_name === 'unit'
-                      ? "O'lchov birligi"
-                      : '—'}
+              {field_name === 'product_type' ? 'Tovar turi' : 
+              field_name === 'model' ? 'Model' : 
+              field_name === 'size' ? "O'lcham" : 
+              field_name === 'unit' ? "O'lchov birligi" : 
+              field_name === 'product' ? "Maxsulot" : "-"
+              }
+
             </h2>
           </div>
           <p className="text-sm text-gray-600 pt-1">
@@ -268,12 +269,12 @@ const FieldModal: React.FC<FieldModalProps> = ({
                   <th className="text-center px-4 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Nomi
                   </th>
-                  {field_name !== "product_type" && (
+                  {field_name !== "product_type" && field_name !== 'unit' && (
                     <th className="text-center px-4 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Tovar turi
                     </th>
                   )}
-                  {(field_name !== "product_type" && field_name !== "model") && (
+                  {(field_name !== "product_type" && field_name !== "model" && field_name !== 'unit') && (
                     <th className="text-center px-4 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Model
                     </th>
@@ -283,7 +284,7 @@ const FieldModal: React.FC<FieldModalProps> = ({
                       O'lcham
                     </th>
                   )}
-                  {field_name === "product" && (
+                  {field_name === "product"  && (
                     <th className="text-center px-4 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">
                       O'lchov birligi
                     </th>
@@ -331,17 +332,17 @@ const FieldModal: React.FC<FieldModalProps> = ({
                             <span>{highlightSearchTerm(truncatedName, searchTerm)}</span>
                           </div>
                         </td>
-                        {field_name !== "product_type" && (
+                        {field_name !== "product_type" && field_name !== 'unit' && (
                           <td className="text-center px-4 py-3 text-sm text-gray-900">
                             {item.product_type || '—'}
                           </td>
                         )}
-                        {(field_name !== "product_type" && field_name !== "model") && (
+                        {(field_name !== "product_type" && field_name !== "model" && field_name !== 'unit') && (
                           <td className="text-center px-4 py-3 text-sm text-gray-900 font-medium">
                             {item.model || '—'}
                           </td>
                         )}
-                        {field_name === "unit" && (
+                        {field_name === "unit" || field_name === "product" && (
                           <td className="text-center px-4 py-3 text-sm text-gray-900">
                             {item.size || '—'}
                           </td>

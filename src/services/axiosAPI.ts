@@ -19,10 +19,14 @@ const fetchProductPaginationData = async (
     limit: number, 
     offset: number,
     product_type?: string,
+    models?: string,
+    sizes?: string,
   ) => {
     try {
       const response = await axiosAPI.get(
-        `products/list/?limit=${limit}&offset=${offset}&product_type=${product_type}`
+        `products/list/?limit=${limit}&offset=${offset}&product_type=${product_type}${
+        sizes ? `&size=${sizes}` : ""
+      }${models ? `&model=${models}` : ""}`
       );
       if (response.status === 200) return response.data;
     } catch (error) {
@@ -71,7 +75,7 @@ const fetchProductSizesPaginationData = async (
     const response = await axiosAPI.get(
       `sizes/list/?limit=${limit}&offset=${offset}${
         product_type ? `&product_type=${product_type}` : ""
-      }${product_model ? `&product_model=${product_model}` : ""}`
+      }${product_model ? `&model=${product_model}` : ""}`
     );
     if (response.status === 200) return response.data;
   } catch (error) {
