@@ -2,9 +2,10 @@
 import React, { useEffect, useState } from "react";
 import { Header, Sidebar } from "@/components";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
-import { axiosAPI } from "@/services/axiosAPI";
+import { axiosAPI, fetchProductPaginationData, fetchProductTypesPaginationData } from "@/services/axiosAPI";
 import { useAppDispatch } from "@/store/hooks/hooks";
 import { setCurrentUserInfo } from "@/store/infoSlice/infoSlice";
+import { setProducts, setProductTypes } from "@/store/productSlice/productSlice";
 
 const Layout: React.FC = () => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -70,10 +71,30 @@ const Layout: React.FC = () => {
       localStorage.removeItem("eEquipmentM@rC");
       navigate("/login");
     }
-  }
+  };
 
   useEffect(() => {
-    getUserInfo()
+    getUserInfo();
+  }, [token]);
+
+  useEffect(() => {
+    const fetchProducts = async () => {
+      if (token) {
+        const productTypes = await fetchProductPaginationData(100, 0)
+        if (productTypes) dispatch(setProducts(productTypes))
+      }
+    };
+    fetchProducts();
+  }, [token])
+
+  useEffect(() => {
+    const fetchProductTypes = async () => {
+      if (token) {
+        const productTypes = await fetchProductTypesPaginationData(100, 0)
+        if (productTypes) dispatch(setProductTypes(productTypes))
+      }
+    };
+    fetchProductTypes();
   }, [token])
 
   return (

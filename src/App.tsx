@@ -12,6 +12,8 @@ import ProductMaterialsBalance from "./pages/Reports/ProductMaterialsBalance";
 import RepublicOrder from "./pages/Orders/RepublicOrder/RepublicOrder";
 import RepublicOrderDetail from "./pages/Orders/RepublicOrder/RepublicOrderDetail";
 import Profile from "./pages/Profile/Profile";
+import FieldModal from "./components/modal/FieldModal";
+import { useAppSelector } from "./store/hooks/hooks";
 // import CKEditorComponent from "./components/DocEditor/CKEditorComponent";
 // import TinyMCEComponent from "./components/DocEditor/TinyMCEComponent";
 
@@ -76,11 +78,11 @@ const routes = createBrowserRouter([
       },
       {
         path: "order-by-republic",
-        element: <RepublicOrder/>,
+        element: <RepublicOrder />,
         children: [
           {
             path: "order-details/:id",
-            element: <RepublicOrderDetail/>
+            element: <RepublicOrderDetail />
           }
         ]
       },
@@ -101,7 +103,7 @@ const routes = createBrowserRouter([
       {
         path: 'product-materials-balance',
         element: <ProductMaterialsBalance />
-      },      
+      },
       {
         path: 'profile',
         element: <Profile />
@@ -116,9 +118,11 @@ const routes = createBrowserRouter([
 ]);
 
 const App: React.FC = () => {
+
   return (
     <>
       <RouterProvider router={routes} />
+      
       {/* <Test /> */}
       <ToastContainer />
       <Toaster position="top-right" reverseOrder={false} />
