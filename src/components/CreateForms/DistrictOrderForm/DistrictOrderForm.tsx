@@ -4,8 +4,10 @@ import Typography from "@mui/material/Typography";
 import { Button, Input, InputNumber, Popconfirm, Select, Spin, message } from "antd";
 import { Plus, Trash2 } from "lucide-react";
 import { axiosAPI } from "@/services/axiosAPI";
-import { useAppSelector } from "@/store/hooks/hooks";
+import { useAppDispatch, useAppSelector } from "@/store/hooks/hooks";
 import FilePreviewer from "@/components/files/FilePreviewer";
+import FieldModal from "@/components/modal/FieldModal";
+import { setOrderTypes, setProductModels, setProductSizes, setProductTypes, setProductUnits } from "@/store/productSlice/productSlice";
 
 const fileURL = "https://ekomplektasiya.uz/Xujjatlar/buyurtmalar/Хоразм%вилояти/0000000006.docm";
 const documentID = "31385c68-a91e-11f0-adb6-244bfe93ba23";
@@ -85,16 +87,11 @@ function normalizeList(data: any): IDName[] {
 
 const OrderWIndow: React.FC<IDistrictOrderFormProps> = ({ setIsCreateFormModalOpen }) => {
   // Global spravochniklar
-  const [orderTypes, setOrderTypes] = useState<IDName[]>([]);
-  const [productTypes, setProductTypes] = useState<IDName[]>([]);
-  const [models, setModels] = useState<IDName[]>([]); // <-- Model mustaqil
-  const [sizes, setSizes] = useState<IDName[]>([]);
-  const [units, setUnits] = useState<IDName[]>([]);
   const [loadingDicts, setLoadingDicts] = useState(false);
   // FormData
   const [formData, setFormData] = useState<FormDataType>(initialFormData);
   const [messageFile, setMessageFile] = useState<File | null>(null);
-
+  const [fieldName, setFieldName] = useState<"size" | "product" | "product_type" | "model" | "unit" | "">("");
   // Employee
   const [employees, setEmployees] = useState<any[]>([]);
   const [selectedEmployee, setSelectedEmployee] = useState<any | null>(null);
@@ -106,7 +103,10 @@ const OrderWIndow: React.FC<IDistrictOrderFormProps> = ({ setIsCreateFormModalOp
   // Document is Confirmed state
   const [documentConfirmed, setDocumentConfirmed] = useState(false);
 
-  const { currentUserInfo } = useAppSelector(state => state.info)
+  const { currentUserInfo } = useAppSelector(state => state.info);
+  const { product_types, product_models, product_sizes, product_units, order_types } = useAppSelector(state => state.product)
+
+  const dispatch = useAppDispatch()
 
   // Row helperlar
   const addRow = () => {
@@ -124,8 +124,6 @@ const OrderWIndow: React.FC<IDistrictOrderFormProps> = ({ setIsCreateFormModalOp
     key: K,
     value: ProductRow[K]
   ) => {
-
-    console.log(`Row: ${raw_number}, Key: ${key}, Value: ${value}`);
 
     const findProduct = formData.products.find(p => p.raw_number === Number(raw_number));
     if (findProduct) {
@@ -188,6 +186,7 @@ const OrderWIndow: React.FC<IDistrictOrderFormProps> = ({ setIsCreateFormModalOp
     }
   }
 
+
   const handleCreateDefaultDocument = useCallback(async () => {
     const userId = currentUserInfo?.id
     const payload = {
@@ -246,11 +245,11 @@ const OrderWIndow: React.FC<IDistrictOrderFormProps> = ({ setIsCreateFormModalOp
           ]);
 
         if (!mounted) return;
-        setOrderTypes(normalizeList(orderTypeRes.data));
-        setProductTypes(normalizeList(productTypeRes.data));
-        setSizes(normalizeList(sizeRes.data));
-        setUnits(normalizeList(unitRes.data));
-        setModels(normalizeList(modelRes.data));
+        dispatch(setOrderTypes(orderTypeRes.data))
+        dispatch(setProductTypes(productTypeRes.data))
+        dispatch(setProductSizes(sizeRes.data))
+        dispatch(setProductUnits(unitRes.data))
+        dispatch(setProductModels(modelRes.data))
       } catch (err) {
         console.error(err);
         message.error("Ma’lumotlarni yuklashda xatolik!");
@@ -261,7 +260,7 @@ const OrderWIndow: React.FC<IDistrictOrderFormProps> = ({ setIsCreateFormModalOp
     return () => {
       mounted = false;
     };
-  }, []);
+  }, [dispatch]);
 
   return (
     <>
@@ -416,17 +415,17 @@ const OrderWIndow: React.FC<IDistrictOrderFormProps> = ({ setIsCreateFormModalOp
                                 {r.raw_number}
                               </td>
 
-                              <td className="px-3 py-3 text-center">
+                              <td className="px-3 py-3">
                                 <Select
                                   className="w-36"
                                   placeholder="Tanlang"
                                   allowClear
                                   showSearch
-                                  value={r.order_type}
+                                  value={r.order_type || null}
                                   onChange={(v) =>
                                     updateRow(r.raw_number + "", "order_type", v as ID)
                                   }
-                                  options={orderTypes.map((o) => ({
+                                  options={order_types.map((o) => ({
                                     value: o.id,
                                     label: o.name,
                                   }))}
@@ -452,7 +451,7 @@ const OrderWIndow: React.FC<IDistrictOrderFormProps> = ({ setIsCreateFormModalOp
                               </td>
 
                               <td className="px-3 py-3 text-center">
-                                <Select
+                                {/* <Select
                                   className="w-46"
                                   placeholder="Tovar turi"
                                   allowClear
@@ -474,11 +473,26 @@ const OrderWIndow: React.FC<IDistrictOrderFormProps> = ({ setIsCreateFormModalOp
                                       ?.toLowerCase()
                                       .includes(input.toLowerCase())
                                   }
-                                />
+                                /> */}
+                                <Button className="w-full" onClick={() => setFieldName("product_type")}>
+                                  <span className={`${formData.products[index].product_type ? "text-gray-800" : "text-gray-400"}`}>
+                                    {r.product_type ? product_types.results.find((t) => t.id === r.product_type)?.name : "Tanlang"}
+                                  </span>
+                                </Button>
+                                {fieldName === "product_type" && (
+                                  <FieldModal
+                                    field_name={fieldName}
+                                    selectedItem={{ id: r.product_type, name: "" }}
+                                    setSelectedItem={newItem => {
+                                      if (newItem) setFormData(prev => ({ ...prev, products: prev.products.map((p, i) => i === index ? { ...p, product_type: newItem!.id } : p) }))
+                                      setFieldName("")
+                                    }}
+                                  />
+                                )}
                               </td>
 
                               <td className="px-3 py-3 text-center">
-                                <Select
+                                {/* <Select
                                   className="w-50"
                                   placeholder="Model"
                                   allowClear
@@ -496,7 +510,24 @@ const OrderWIndow: React.FC<IDistrictOrderFormProps> = ({ setIsCreateFormModalOp
                                       ?.toLowerCase()
                                       .includes(input.toLowerCase())
                                   }
-                                />
+                                /> */}
+                                <Button className="w-full" onClick={() => setFieldName("model")}>
+                                  <span className={`${formData.products[index].model ? "text-gray-800" : "text-gray-400"}`}>
+                                    {r.product_type ? product_types.results.find((t) => t.id === r.product_type)?.name : "Tanlang"}
+                                  </span>
+                                </Button>
+                                {fieldName === "model" && (
+                                  <FieldModal
+                                    field_name={fieldName}
+                                    selectedItem={{ id: r.model, name: "" }}
+                                    setSelectedItem={newItem => {
+                                      if (newItem) setFormData(prev => ({ ...prev, products: prev.products.map((p, i) => i === index ? { ...p, model: newItem!.id } : p) }))
+                                      setFieldName("");
+                                      console.log(formData)
+                                    }}
+                                    selectedProductTypeId={product_types.results.find(type => type.id === r.product_type)?.name}
+                                  />
+                                )}
                               </td>
 
                               <td className="px-3 py-3 text-center">
@@ -509,7 +540,7 @@ const OrderWIndow: React.FC<IDistrictOrderFormProps> = ({ setIsCreateFormModalOp
                                   onChange={(v) =>
                                     updateRow(r.raw_number + "", "size", v as ID)
                                   }
-                                  options={sizes.map((o) => ({
+                                  options={product_sizes.results.map((o) => ({
                                     value: o.id,
                                     label: o.name,
                                   }))}
@@ -531,7 +562,7 @@ const OrderWIndow: React.FC<IDistrictOrderFormProps> = ({ setIsCreateFormModalOp
                                   onChange={(v) =>
                                     updateRow(r.raw_number + "", "unit", v as ID)
                                   }
-                                  options={units.map((o) => ({
+                                  options={product_units.results.map((o) => ({
                                     value: o.id,
                                     label: o.name,
                                   }))}

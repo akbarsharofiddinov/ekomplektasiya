@@ -20,8 +20,6 @@ import { message, Select } from 'antd';
 import { DistrictOrderForm } from '@/components';
 import { setOrderTypes, setProductModels, setProductSizes, setProductTypes, setProductUnits } from '@/store/productSlice/productSlice';
 
-type ID = string
-
 interface DocumentInfo {
     id: string;
     type_document_for_filter: string;

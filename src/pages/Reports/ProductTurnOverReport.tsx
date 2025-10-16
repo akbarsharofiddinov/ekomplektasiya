@@ -392,7 +392,7 @@ const ProductTurnOverReport: React.FC = () => {
                   {/* Size */}
                   <div className="flex flex-col gap-2">
                     <Label htmlFor="size">O'lcham</Label>
-                    <Select
+                    {/* <Select
                       placeholder="O'lchamni tanglang"
                       showSearch
                       allowClear value={filterData.size || null}
@@ -400,8 +400,21 @@ const ProductTurnOverReport: React.FC = () => {
                       {sizes.map(size => (
                         <Select.Option key={size.id} value={size.id}>{size.name}</Select.Option>
                       ))}
-                    </Select>
+                    </Select> */}
+                    <Button className="w-full" onClick={() => setFieldName("size")}><span className={`${filterData.size ? "text-gray-800" : "text-gray-400"}`}>{filterData.size ? products.results.find((t) => t.id === filterData.size)?.name : "Tanlang"}</span>
+                    </Button>
+                    {fieldName === "size" && (
+                      <FieldModal
+                        field_name={fieldName}
+                        selectedItem={{ id: filterData.size, name: "" }}
+                        setSelectedItem={newItem => {
+                          if (newItem) setFilterData(prev => ({ ...prev, size: newItem.id }))
+                          setFieldName("")
+                        }}
+                      />
+                    )}
                   </div>
+
                   {/* Bar code */}
                   <div className="flex flex-col gap-2">
                     <Label htmlFor="bar_code">Shtrix kod</Label>
