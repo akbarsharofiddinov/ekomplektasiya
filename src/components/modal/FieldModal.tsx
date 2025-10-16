@@ -196,7 +196,7 @@ const FieldModal: React.FC<FieldModalProps> = ({
     });
   }, [items, searchTerm]);
 
-  console.log(items , 'Item data')
+  console.log(items, 'Item data')
   const onRowSelect = (item: IResultsType) => {
     setSelectedId((prev) => (prev === String(item.id) ? null : String(item.id)));
   };
@@ -211,8 +211,26 @@ const FieldModal: React.FC<FieldModalProps> = ({
   };
 
   const onCancel = () => {
-    setSelectedItem({id: "", name: ""});
+    setSelectedItem({ id: "", name: "" });
   }
+
+  // inputdan oldin (return ichida emas, komponent ichida)
+  const getPlaceholderText = () => {
+    switch (field_name) {
+      case 'product_type':
+        return "Tovar turi bo'yicha qidirish...";
+      case 'model':
+        return "Model nomi bo'yicha qidirish...";
+      case 'size':
+        return "O'lcham bo'yicha qidirish...";
+      case 'unit':
+        return "O'lchov birligi bo'yicha qidirish...";
+      case 'product':
+        return "Tovar nomi bo'yicha qidirish...";
+      default:
+        return "Qidiruv...";
+    }
+  };
 
 
   return (
@@ -223,13 +241,15 @@ const FieldModal: React.FC<FieldModalProps> = ({
             <h2 className="text-xl font-semibold text-gray-800">
               {field_name === 'product_type'
                 ? 'Tovar turi'
-                : field_name === 'model'
-                  ? 'Model'
-                  : field_name === 'size'
-                    ? "O'lcham"
-                    : field_name === 'unit'
-                      ? "O'lchov birligi"
-                      : '—'}
+                : field_name === 'product'
+                  ? 'Tovar'
+                  : field_name === 'model'
+                    ? 'Model'
+                    : field_name === 'size'
+                      ? "O'lcham"
+                      : field_name === 'unit'
+                        ? "O'lchov birligi"
+                        : '—'}
             </h2>
           </div>
           <p className="text-sm text-gray-600 pt-1">
@@ -243,7 +263,7 @@ const FieldModal: React.FC<FieldModalProps> = ({
               type="search"
               value={searchTerm}
               onChange={handleSearchChange}
-              placeholder="Tovar nomi bo'yicha qidirish..."
+              placeholder={getPlaceholderText()}
               className="border border-gray-300 rounded-lg py-2 px-4 w-full pr-10"
               aria-label="Qidiruv"
             />
@@ -261,7 +281,9 @@ const FieldModal: React.FC<FieldModalProps> = ({
             <table className="min-w-full border border-gray-200 rounded-lg">
               <thead className="bg-gray-50">
                 <tr>
-                  <th className="text-center px-4 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider" />
+                  <th className="text-center px-4 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Tanlash
+                  </th>
                   <th className="text-center px-4 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Nomer
                   </th>
