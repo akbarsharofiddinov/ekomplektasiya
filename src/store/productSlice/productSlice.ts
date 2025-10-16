@@ -1,5 +1,9 @@
 import { createSlice } from "@reduxjs/toolkit";
 
+interface ProductModel extends SpecialProductFieldType {
+  product_type: string;
+}
+
 interface ProductState {
   products: {
     count: number;
@@ -11,13 +15,13 @@ interface ProductState {
     count: number;
     offset: number;
     limit: number;
-    results: IDimension[];
+    results: SpecialProductFieldType[];
   };
   product_models: {
     count: number;
     offset: number;
     limit: number;
-    results: IDimension[];
+    results: ProductModel[];
   };
   product_sizes: {
     count: number;
@@ -33,8 +37,6 @@ interface ProductState {
   };
   order_types: IDimension[];
   inputsList: ProductInputData[];
-  product_units: IDimension[];
-  order_types: IDimension[];
 }
 
 const initialState: ProductState = {
@@ -70,8 +72,6 @@ const initialState: ProductState = {
   },
   order_types: [],
   inputsList: [],
-  product_units: [],
-  order_types: [],
 };
 
 const productSlice = createSlice({
@@ -104,14 +104,6 @@ const productSlice = createSlice({
 
     setInputList(state, action) {
       state.inputsList = action.payload;
-    },
-
-    setProductUnits(state, action) {
-      state.product_units = action.payload;
-    },
-
-    setOrderTypes(state, action) {
-      state.order_types = action.payload;
     },
 
     // Remove from list by id

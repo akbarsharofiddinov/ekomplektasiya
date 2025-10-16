@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-non-null-asserted-optional-chain */
-import { DatePicker, Input, Select, type DatePickerProps } from "antd";
+import { Button, DatePicker, Input, Select, type DatePickerProps } from "antd";
 import React, { useEffect, useState } from "react";
 import dayjs, { Dayjs } from "dayjs";
 import { axiosAPI } from "@/services/axiosAPI";
@@ -23,6 +23,7 @@ import {
   TableRow,
 } from "../UI/table";
 import { toast } from "react-toastify";
+import FieldModal from "../modal/FieldModal";
 
 const DATE_FORMAT = "YYYY-MM-DD HH:mm:ss";
 
@@ -76,6 +77,7 @@ const ProductInputForm: React.FC<IProductInputFormProps> = ({
     responsible_person: "",
     products: [],
   });
+  const [fieldName, setFieldName] = useState<"size" | "product" | "product_type" | "model" | "unit" | "">("");
   // const [selectedProducts, setSelectedProducts] = React.useState<Product[]>([]);
 
   // Redux
@@ -496,7 +498,7 @@ const ProductInputForm: React.FC<IProductInputFormProps> = ({
 
                       {/* Product Type */}
                       <TableCell className="text-slate-700 font-medium p-3">
-                        <Select
+                        {/* <Select
                           showSearch
                           className="w-full"
                           placeholder="Tovar turini tanlang"
@@ -519,12 +521,23 @@ const ProductInputForm: React.FC<IProductInputFormProps> = ({
                               {type.name}
                             </Select.Option>
                           ))}
-                        </Select>
+                        </Select> */}
+                        <Button className="w-full" onClick={() => setFieldName("product_type")}><span className={`${formData.products[index].product_type ? "text-gray-800" : "text-gray-400"}`}>{product.product_type ? product_types.results.find((t) => t.id === product.product_type)?.name : "Tanlang"}</span></Button>
+                        {fieldName === "product_type" && (
+                          <FieldModal
+                            field_name={fieldName}
+                            selectedItem={{ id: product.product_type, name: "" }}
+                            setSelectedItem={newItem => {
+                              if (newItem) setFormData(prev => ({ ...prev, products: prev.products.map((p, i) => i === index ? { ...p, product_type: newItem!.id } : p) }))
+                              setFieldName("")
+                            }}
+                          />
+                        )}
                       </TableCell>
 
                       <TableCell className="text-slate-700 font-medium p-3">
                         {/* Product models */}
-                        <Select
+                        {/* <Select
                           showSearch
                           className="w-full"
                           placeholder="Modelni tanlang"
@@ -547,12 +560,24 @@ const ProductInputForm: React.FC<IProductInputFormProps> = ({
                               {model.name}
                             </Select.Option>
                           ))}
-                        </Select>
+                        </Select> */}
+                        <Button className="w-full" onClick={() => setFieldName("model")}><span className={`${formData.products[index].model ? "text-gray-800" : "text-gray-400"}`}>{product.model ? product_models.results.find((m) => m.id === product.model)?.name : "Tanlang"}</span></Button>
+                        {fieldName === "model" && (
+                          <FieldModal
+                            field_name="model"
+                            selectedItem={{ id: product.model, name: "" }}
+                            setSelectedItem={newItem => {
+                              if (newItem) setFormData(prev => ({ ...prev, products: prev.products.map((p, i) => i === index ? { ...p, model: newItem!.id } : p) }))
+                              setFieldName("")
+                            }}
+                          />
+                        )
+                        }
                       </TableCell>
 
                       {/* Product size */}
                       <TableCell className="text-slate-700 font-medium p-3">
-                        <Select
+                        {/* <Select
                           showSearch
                           className="w-full"
                           placeholder="O'lchamini tanlang"
@@ -575,7 +600,7 @@ const ProductInputForm: React.FC<IProductInputFormProps> = ({
                               {size.name}
                             </Select.Option>
                           ))}
-                        </Select>
+                        </Select> */}
                       </TableCell>
 
                       {/* Product */}
