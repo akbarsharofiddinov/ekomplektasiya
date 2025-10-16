@@ -93,6 +93,11 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed }: SidebarProps) => {
           icon: Globe,
         },
         {
+          id: "order-by-sale",
+          label: "Komplektasiya bo'yicha buyurtma",
+          icon: Globe,
+        },
+        {
           id: "price-analysis",
           label: "Narx tahlili",
           icon: TrendingUp,

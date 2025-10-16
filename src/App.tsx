@@ -1,6 +1,10 @@
 import React from "react";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
-import { DistrictOrder, DistrictOrderDetail, Home, Login, ProductInputDetailPage, ProductOutDetailPage, ProductOutput, ProductsInput, ProductTurnOverReport, RegionOrder, RegionOrderDetail, WarehouseTransfer, WarehouseTransferDetail } from "@/pages";
+import { 
+    DistrictOrder, DistrictOrderDetail, Home, Login, ProductInputDetailPage, ProductOutDetailPage,
+    ProductOutput, ProductsInput, ProductTurnOverReport, RegionOrder, RegionOrderDetail, WarehouseTransfer,
+    WarehouseTransferDetail, KomplektasiyaOrder
+} from "@/pages";
 import { Layout } from "@/components";
 import { Toaster } from "react-hot-toast";
 import { ToastContainer } from "react-toastify"
@@ -81,6 +85,16 @@ const routes = createBrowserRouter([
             element: <RepublicOrderDetail />
           }
         ]
+      },
+      {
+        path: "order-by-sale",
+        element: <KomplektasiyaOrder/>,
+        // children: [
+        //   {
+        //     path: "order-details/:id",
+        //     element: <RepublicOrderDetail/>
+        //   }
+        // ]
       },
       {
         path: 'product-circulation-report',

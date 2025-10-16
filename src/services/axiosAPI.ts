@@ -15,15 +15,19 @@ axiosAPI.interceptors.request.use((config) => {
   return config;
 });
 
-const fetchProductPaginationData = async (limit: number, offset: number) => {
-  try {
-    const response = await axiosAPI.get(
-      `products/list/?limit=${limit}&offset=${offset}`
-    );
-    if (response.status === 200) return response.data;
-  } catch (error) {
-    console.log(error);
-  }
+const fetchProductPaginationData = async (
+    limit: number, 
+    offset: number,
+    product_type?: string,
+  ) => {
+    try {
+      const response = await axiosAPI.get(
+        `products/list/?limit=${limit}&offset=${offset}&product_type=${product_type}`
+      );
+      if (response.status === 200) return response.data;
+    } catch (error) {
+      console.log(error);
+    }
 };
 
 const fetchProductTypesPaginationData = async (

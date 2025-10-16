@@ -24,8 +24,8 @@ interface IResultsType {
 
 interface FieldModalProps {
   field_name: 'product' | 'product_type' | 'model' | 'size' | 'unit';
-  selectedProductTypeId?: string; // for model/size filtering
-  selectedModelId?: string;       // for size filtering
+  selectedProductTypeId?: string;
+  selectedModelId?: string;
   menuItems?: {
     count: number;
     limit: number;
@@ -116,9 +116,6 @@ const FieldModal: React.FC<FieldModalProps> = ({
     try {
       let response: any = null;
       switch (field_name) {
-        case 'product':
-          response = await fetchProductPaginationData(l, offset);
-          break;
         case 'product_type':
           response = await fetchProductTypesPaginationData(l, offset);
           break;
@@ -136,6 +133,13 @@ const FieldModal: React.FC<FieldModalProps> = ({
             offset,
             selectedProductTypeId || undefined,
             selectedModelId || undefined
+          );
+          break;
+        case 'product':
+          response = await fetchProductPaginationData(
+            l,
+            offset,
+            selectedProductTypeId || undefined,
           );
           break;
         case 'unit':
@@ -180,6 +184,7 @@ const FieldModal: React.FC<FieldModalProps> = ({
       const mdl = item.model || '';
       const sz = item.size || '';
       const un = item.unit || '';
+
       return (
         name.toLowerCase().includes(q) ||
         nameUz.toLowerCase().includes(q) ||
@@ -191,6 +196,7 @@ const FieldModal: React.FC<FieldModalProps> = ({
     });
   }, [items, searchTerm]);
 
+  console.log(items , 'Item data')
   const onRowSelect = (item: IResultsType) => {
     setSelectedId((prev) => (prev === String(item.id) ? null : String(item.id)));
   };
@@ -262,18 +268,26 @@ const FieldModal: React.FC<FieldModalProps> = ({
                   <th className="text-center px-4 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Nomi
                   </th>
-                  <th className="text-center px-4 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Tovar turi
-                  </th>
-                  <th className="text-center px-4 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Model
-                  </th>
-                  <th className="text-center px-4 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    O'lcham
-                  </th>
-                  <th className="text-center px-4 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    O'lchov birligi
-                  </th>
+                  {field_name !== "product_type" && (
+                    <th className="text-center px-4 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Tovar turi
+                    </th>
+                  )}
+                  {(field_name !== "product_type" && field_name !== "model") && (
+                    <th className="text-center px-4 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Model
+                    </th>
+                  )}
+                  {field_name === "unit" || field_name === "product" && (
+                    <th className="text-center px-4 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      O'lcham
+                    </th>
+                  )}
+                  {field_name === "product" && (
+                    <th className="text-center px-4 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      O'lchov birligi
+                    </th>
+                  )}
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
@@ -317,18 +331,26 @@ const FieldModal: React.FC<FieldModalProps> = ({
                             <span>{highlightSearchTerm(truncatedName, searchTerm)}</span>
                           </div>
                         </td>
-                        <td className="text-center px-4 py-3 text-sm text-gray-900">
-                          {item.product_type || '—'}
-                        </td>
-                        <td className="text-center px-4 py-3 text-sm text-gray-900 font-medium">
-                          {item.model || '—'}
-                        </td>
-                        <td className="text-center px-4 py-3 text-sm text-gray-900">
-                          {item.size || '—'}
-                        </td>
-                        <td className="text-center px-4 py-3 text-sm text-gray-900">
-                          {item.unit || '—'}
-                        </td>
+                        {field_name !== "product_type" && (
+                          <td className="text-center px-4 py-3 text-sm text-gray-900">
+                            {item.product_type || '—'}
+                          </td>
+                        )}
+                        {(field_name !== "product_type" && field_name !== "model") && (
+                          <td className="text-center px-4 py-3 text-sm text-gray-900 font-medium">
+                            {item.model || '—'}
+                          </td>
+                        )}
+                        {field_name === "unit" && (
+                          <td className="text-center px-4 py-3 text-sm text-gray-900">
+                            {item.size || '—'}
+                          </td>
+                        )}
+                        {field_name === "product" && (
+                          <td className="text-center px-4 py-3 text-sm text-gray-900">
+                            {item.unit || '—'}
+                          </td>
+                        )}
                       </tr>
                     );
                   })
