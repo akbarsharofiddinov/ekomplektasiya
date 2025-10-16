@@ -20,6 +20,7 @@ import { saveAs } from "file-saver";
 import toast from 'react-hot-toast';
 import { motion } from "framer-motion";
 import { Modal } from "antd";
+import FieldModal from '@/components/modal/FieldModal';
 
 interface FilterData {
   start_date: string;
@@ -78,8 +79,11 @@ const ProductTurnOverReport: React.FC = () => {
   const [open, setOpen] = useState(false);
 
   const { regions } = useAppSelector(state => state.info);
-  const { products } = useAppSelector(state => state.product)
+
+  const { product_types, products, product_sizes } = useAppSelector(state => state.product)
   const dispatch = useAppDispatch();
+
+  const [fieldName, setFieldName] = useState<"size" | "product" | "product_type" | "">("");
 
   // Generate PDF for printing
   const handlePrintPDF = () => {
@@ -244,39 +248,6 @@ const ProductTurnOverReport: React.FC = () => {
     }
   }
 
-  const getProducts = async () => {
-    try {
-      const response = await axiosAPI.get(`/products/list/?order_by=2`);
-      if (response.status === 200) {
-        dispatch(setProducts(response.data.results));
-      }
-    } catch (error) {
-      console.log(error)
-    }
-  }
-
-  const getProductTypes = async () => {
-    try {
-      const response = await axiosAPI.get(`/product_types/list/?order_by=2`);
-      if (response.status === 200) {
-        setProductTypes(response.data);
-      }
-    } catch (error) {
-      console.log(error)
-    }
-  }
-
-  const getSizes = async () => {
-    try {
-      const response = await axiosAPI.get(`/sizes/list/?order_by=2`);
-      if (response.status === 200) {
-        setSizes(response.data);
-      }
-    } catch (error) {
-      console.log(error)
-    }
-  }
-
   // Get product turnover report based on filterData
   const getProductTurnoverReport = async () => {
     try {
@@ -302,9 +273,6 @@ const ProductTurnOverReport: React.FC = () => {
 
   useEffect(() => {
     getRegions();
-    getProducts();
-    getProductTypes();
-    getSizes();
   }, [])
 
   useEffect(() => {
@@ -366,23 +334,13 @@ const ProductTurnOverReport: React.FC = () => {
                       ))}
                     </Select>
                   </div>
-                  {/* Product */}
-                  <div className="flex flex-col gap-2">
-                    <Label htmlFor="product">Tovar</Label>
-                    <Select
-                      placeholder="Mahsulotni tanglang"
-                      showSearch
-                      allowClear value={filterData.product || null}
-                      onChange={(value) => setFilterData({ ...filterData, product: value })}>
-                      {products.map(product => (
-                        <Select.Option key={product.id} value={product.id}>{product.name}</Select.Option>
-                      ))}
-                    </Select>
-                  </div>
+
+
+
                   {/* Product type */}
                   <div className="flex flex-col gap-2">
                     <Label htmlFor="product_type">Tovar turi</Label>
-                    <Select
+                    {/* <Select
                       placeholder="Mahsulot turini tanglang"
                       showSearch
                       allowClear value={filterData.product_type || null}
@@ -390,12 +348,51 @@ const ProductTurnOverReport: React.FC = () => {
                       {productTypes.map(productType => (
                         <Select.Option key={productType.id} value={productType.id}>{productType.name}</Select.Option>
                       ))}
-                    </Select>
+                    </Select> */}
+                    <Button className="w-full" onClick={() => setFieldName("product_type")}><span className={`${filterData.product_type ? "text-gray-800" : "text-gray-400"}`}>{filterData.product_type ? product_types.results.find((t) => t.id === filterData.product_type)?.name : "Tanlang"}</span>
+                    </Button>
+                    {fieldName === "product_type" && (
+                      <FieldModal
+                        field_name={fieldName}
+                        selectedItem={{ id: filterData.product_type, name: "" }}
+                        setSelectedItem={newItem => {
+                          if (newItem) setFilterData(prev => ({ ...prev, product_type: newItem.id }))
+                          setFieldName("")
+                        }}
+                      />
+                    )}
                   </div>
+
+                  {/* Product */}
+                  <div className="flex flex-col gap-2">
+                    <Label htmlFor="product">Tovar</Label>
+                    {/* <Select
+                      placeholder="Mahsulotni tanglang"
+                      showSearch
+                      allowClear value={filterData.product || null}
+                      onChange={(value) => setFilterData({ ...filterData, product: value })}>
+                      {products.map(product => (
+                        <Select.Option key={product.id} value={product.id}>{product.name}</Select.Option>
+                      ))}
+                    </Select> */}
+                    <Button className="w-full" onClick={() => setFieldName("product")}><span className={`${filterData.product ? "text-gray-800" : "text-gray-400"}`}>{filterData.product ? products.results.find((t) => t.id === filterData.product)?.name : "Tanlang"}</span>
+                    </Button>
+                    {fieldName === "product" && (
+                      <FieldModal
+                        field_name={fieldName}
+                        selectedItem={{ id: filterData.product, name: "" }}
+                        setSelectedItem={newItem => {
+                          if (newItem) setFilterData(prev => ({ ...prev, product: newItem.id }))
+                          setFieldName("")
+                        }}
+                      />
+                    )}
+                  </div>
+
                   {/* Size */}
                   <div className="flex flex-col gap-2">
                     <Label htmlFor="size">O'lcham</Label>
-                    <Select
+                    {/* <Select
                       placeholder="O'lchamni tanglang"
                       showSearch
                       allowClear value={filterData.size || null}
@@ -403,8 +400,21 @@ const ProductTurnOverReport: React.FC = () => {
                       {sizes.map(size => (
                         <Select.Option key={size.id} value={size.id}>{size.name}</Select.Option>
                       ))}
-                    </Select>
+                    </Select> */}
+                    <Button className="w-full" onClick={() => setFieldName("size")}><span className={`${filterData.size ? "text-gray-800" : "text-gray-400"}`}>{filterData.size ? products.results.find((t) => t.id === filterData.size)?.name : "Tanlang"}</span>
+                    </Button>
+                    {fieldName === "size" && (
+                      <FieldModal
+                        field_name={fieldName}
+                        selectedItem={{ id: filterData.size, name: "" }}
+                        setSelectedItem={newItem => {
+                          if (newItem) setFilterData(prev => ({ ...prev, size: newItem.id }))
+                          setFieldName("")
+                        }}
+                      />
+                    )}
                   </div>
+
                   {/* Bar code */}
                   <div className="flex flex-col gap-2">
                     <Label htmlFor="bar_code">Shtrix kod</Label>

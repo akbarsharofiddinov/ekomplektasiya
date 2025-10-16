@@ -205,9 +205,9 @@ const FieldModal: React.FC<FieldModalProps> = ({
   };
 
   const onCancel = () => {
-    // Parentda: if (newItem) {...} bo'lgani uchun null yuboramiz
-    setSelectedItem(null);
-  };
+    setSelectedItem({id: "", name: ""});
+  }
+
 
   return (
     <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50">
@@ -396,4 +396,4 @@ const FieldModal: React.FC<FieldModalProps> = ({
   );
 };
 
-export default FieldModal;
+export default FieldModal 

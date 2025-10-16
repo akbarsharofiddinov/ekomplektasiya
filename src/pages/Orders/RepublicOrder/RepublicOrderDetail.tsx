@@ -4,14 +4,16 @@ import React, { useState, useEffect } from 'react';
 import { Plus, Search } from 'lucide-react';
 import { Input } from '@/components/UI/input';
 import { Button } from '@/components/UI/button';
-import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 
 import { axiosAPI } from '@/services/axiosAPI';
 import { useParams } from 'react-router-dom';
-import Accordion from '@mui/material/Accordion';
-import AccordionSummary from '@mui/material/AccordionSummary';
-import Typography from '@mui/material/Typography';
-import AccordionDetails from '@mui/material/AccordionDetails';
+import {
+  EyeOutlined, DownloadOutlined, FilePdfOutlined, FileWordOutlined, FileExcelOutlined, FileImageOutlined, FileTextOutlined,
+} from "@ant-design/icons";
+import { arrayBufferToFile, inferMimeFromExt } from "@/utils/file_preview";
+import { toast } from 'react-toastify';
+import FilePreviewModal from "@/components/files/FilePreviewModal";
+
 
 interface IdName {
   id: string;
@@ -58,20 +60,68 @@ interface OrderDetail {
   products: Product[];
   executors: Executor[];
 }
+interface FileData {
+  raw_number: string;
+  user: string;
+  file_name: string;
+  extension: string;
+  date: string;
+}
+
+
 
 const RepublicOrderDetail: React.FC = () => {
   const [orderData, setOrderData] = useState<OrderDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [documentTypes, setDocumentTypes] = useState<IdName[]>([]);
-  console.log(documentTypes)
-  // const [documentFormData, setDocumentFormData] = useState<{
-  //   selectedDocumentType: string;
-  //   filename: string;
-  //   extension: string;
-  //   fileBinary: string;
-  // }>();
-
+  const [files, setFiles] = useState<FileData[]>([]);
   const { id } = useParams();
+  const [selectedFileMeta, setSelectedFileMeta] = useState<FileData | null>(null);
+  const [previewFile, setPreviewFile] = useState<File | null>(null);
+  const [previewOpen, setPreviewOpen] = useState(false);
+
+
+
+  const handleView = async (f: FileData) => {
+    try {
+      setSelectedFileMeta(f);
+      const res = await axiosAPI.get(`republic-orders/${id}/file/${f.raw_number}`, {
+        responseType: "arraybuffer",
+      });
+
+      const suggestedName =
+        f.file_name || `${orderData?.exit_number || "file"}-${f.raw_number}.${f.extension}`;
+      const mime = inferMimeFromExt(suggestedName) || inferMimeFromExt(f.extension) || "application/octet-stream";
+
+      const fileObj = arrayBufferToFile(res.data, suggestedName, mime);
+      setPreviewFile(fileObj);
+      setPreviewOpen(true);
+    } catch (e) {
+      console.error(e);
+      toast("Faylni ochib bo‘lmadi", { type: "error" });
+    }
+  };
+
+  const handleDownloadFile = async (f: FileData) => {
+    try {
+      const res = await axiosAPI.get(`republic-orders/${id}/file/${f.raw_number}`, {
+        responseType: "blob",
+      });
+      const blob = res.data as Blob;
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = f.file_name || `${orderData?.exit_number || "file"}-${f.raw_number}.${f.extension}`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } catch (e) {
+      console.error(e);
+      toast("Yuklab olishda xatolik", { type: "error" });
+    }
+  };
+
 
   const fetchOrderDetail = async () => {
     try {
@@ -92,7 +142,24 @@ const RepublicOrderDetail: React.FC = () => {
       console.log(error);
     }
   }
+  useEffect(() => {
+    const fetchFiles = async () => {
+      try {
+        const response = await axiosAPI.get(`republic-orders/${id}/files/list`);
+        if (Array.isArray(response.data)) {
+          setFiles(response.data);
+        } else {
+          console.error("Kutilmagan format:", response.data);
+        }
+      } catch (error) {
+        console.error("Fayllarni olishda xato:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
 
+    if (id) fetchFiles();
+  }, [id]);
   useEffect(() => {
     fetchOrderDetail();
     fetchDocumentTypesList();
@@ -114,314 +181,374 @@ const RepublicOrderDetail: React.FC = () => {
     );
   }
 
+  const getFileIcon = (fileName) => {
+    const ext = fileName.split(".").pop().toLowerCase();
+
+    switch (ext) {
+      case "pdf":
+        return { icon: <FilePdfOutlined />, color: "text-red-500", bg: "bg-red-50" };
+      case "doc":
+      case "docx":
+        return { icon: <FileWordOutlined />, color: "text-blue-500", bg: "bg-blue-50" };
+      case "xls":
+      case "xlsx":
+        return { icon: <FileExcelOutlined />, color: "text-green-500", bg: "bg-green-50" };
+      case "jpg":
+      case "jpeg":
+      case "png":
+        return { icon: <FileImageOutlined />, color: "text-yellow-500", bg: "bg-yellow-50" };
+      default:
+        return { icon: <FileTextOutlined />, color: "text-gray-500", bg: "bg-gray-100" };
+    }
+  };
+
+  const formatDate = (iso: string): string => {
+    const date = new Date(iso);
+    return date.toLocaleString("uz-UZ", {
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  };
   return (
     <div className="min-h-screen py-2 px-2 bg-white">
       <div className="max-w-8xl mx-auto bg-white">
-        {/* Header */}
-        <div className="bg-white mb-6 overflow-hidden">
-          <div className="flex items-center justify-between p-4">
-            <div className="text-center border-gray-200">
-              <p className="text-xs text-gray-500 uppercase font-semibold mb-2">Chiqish</p>
-              <p className="text-md font-semibold text-gray-800">{orderData.exit_number}</p>
+        <div>
+          <div className="bg-white mb-6 overflow-hidden">
+            <div className="flex items-center justify-between p-4">
+              <div className="text-center border-gray-200">
+                <p className="text-xs text-gray-500 uppercase font-semibold mb-2">Chiqish</p>
+                <p className="text-md font-semibold text-gray-800">{orderData.exit_number}</p>
+              </div>
+
+              <div className="text-center border-gray-200">
+                <p className="text-xs text-gray-500 uppercase font-semibold mb-2">Chiqish Sana</p>
+                <p className="text-md font-semibold text-gray-800">
+                  {new Date(orderData.exit_date)
+                    .toLocaleString('uz-UZ', {
+                      day: '2-digit',
+                      month: '2-digit',
+                      year: 'numeric',
+                      hour: '2-digit',
+                      minute: '2-digit',
+                    })
+                    .replace(',', '. ')}
+                </p>
+              </div>
+
+              <div className="text-center">
+                <p className="text-xs text-gray-500 uppercase font-semibold mb-2">Viloyatdan</p>
+                <p className="text-md font-semibold text-gray-800">{orderData.from_region?.name}</p>
+              </div>
+
+              <div className="text-center border-gray-200">
+                <p className="text-xs text-gray-500 uppercase font-semibold mb-2">Respublikada qabul qiluvchi</p>
+                <p className="text-md font-semibold text-gray-800">{orderData.sender_from_region?.name}</p>
+              </div>
+
+            </div>
+          </div>
+
+          <div>
+            <div className="bg-transparent rounded-md p-2 flex justify-between mb-6">
+              <div className='flex items-center gap-3'>
+                <Button className='cursor-pointer'>
+                  <Plus></Plus>
+                  Kiritish
+                </Button>
+                <Button className='cursor-pointer'>
+                  Qoldiqlar
+                </Button>
+              </div>
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4" />
+                <Input
+                  type="text"
+                  placeholder="Qidirish (Ctrl+F)"
+                  className="w-64 h-9 pl-9 text-sm border-slate-200 bg-white"
+                />
+              </div>
             </div>
 
-            <div className="text-center border-gray-200">
-              <p className="text-xs text-gray-500 uppercase font-semibold mb-2">Chiqish Sana</p>
-              <p className="text-md font-semibold text-gray-800">
-              {new Date(orderData.exit_date)
-                            .toLocaleString('uz-UZ', {
-                              day: '2-digit',
-                              month: '2-digit',
-                              year: 'numeric',
-                              hour: '2-digit',
-                              minute: '2-digit',
-                            })
-                            .replace(',', '. ')}
-              </p>
+
+            <div className="bg-white rounded-xl border border-gray-200 overflow-y-auto mb-4">
+              <div className="overflow-x-auto">
+                <table className="w-full caption-bottom text-sm">
+                  <thead className="[&_tr]:border-b bg-gradient-to-r from-slate-100 via-blue-50 to-purple-50">
+                    <tr className=" data-[state=selected]:bg-muted border-b transition-colors">
+                      <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">№</th>
+                      <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">tovar nomi</th>
+                      <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Tovar turi</th>
+                      <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Model</th>
+                      <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">O'lcham</th>
+                      <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">O'lchov birligi</th>
+                      <th className="px-6 py-4 text-right text-sm font-semibold text-gray-700">Soni</th>
+                      <th className="px-6 py-4 text-right text-sm font-semibold text-gray-700">Buyurtma bo'yicha izoh</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100">
+                    {orderData.products?.map((product, index) => (
+                      <tr key={index} className="hover:bg-gray-50 transition-all duration-200">
+                        <td className="px-6 py-4 text-sm text-gray-900 font-medium">
+                          <span className="inline-flex items-center justify-center w-8 h-8 rounded-xl bg-gradient-to-r from-purple-500 to-blue-500 text-white font-semibold text-sm">
+                            {product.row_number}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 text-sm text-gray-900">{product.product?.name}</td>
+                        <td className="px-6 py-4 text-sm text-gray-900">{product.product_type?.name}</td>
+                        <td className="px-6 py-4 text-sm text-gray-900 font-medium">{product.model?.name}</td>
+                        <td className="px-6 py-4 text-sm text-gray-700">{product.size?.name}</td>
+                        <td className="px-6 py-4 text-sm text-gray-700">{product.unit?.name}</td>
+                        <td className="px-6 py-4 text-sm text-gray-900 text-right font-bold">{product.quantity}</td>
+                        <td className="px-6 py-4 text-sm text-gray-900 text-right font-bold">{product.description}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+
+          <div>
+            <div className="bg-transparent rounded-md p-2 flex justify-between mb-6">
+              <div className='flex items-center gap-3'>
+                <Button className='cursor-pointer'>
+                  <Plus></Plus>
+                  Kiritish
+                </Button>
+                <Button className='cursor-pointer'>
+                  Yuborish
+                </Button>
+              </div>
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4" />
+                <Input
+                  type="text"
+                  placeholder="Qidirish (Ctrl+F)"
+                  className="w-64 h-9 pl-9 text-sm border-slate-200 bg-white"
+                />
+              </div>
             </div>
 
-            <div className="text-center">
-              <p className="text-xs text-gray-500 uppercase font-semibold mb-2">Viloyatdan</p>
-              <p className="text-md font-semibold text-gray-800">{orderData.from_region?.name}</p>
+
+            <div className="bg-white rounded-xl border border-gray-200 overflow-y-auto mb-4">
+              <div className="overflow-x-auto">
+                <table className="w-full caption-bottom text-sm">
+                  <thead className="[&_tr]:border-b bg-gradient-to-r from-slate-100 via-blue-50 to-purple-50">
+                    <tr className="data-[state=selected]:bg-muted border-b transition-colors">
+                      <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">№</th>
+                      <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Xabar xolati</th>
+                      <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Bajaruvchi xodim</th>
+                      <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Lavozim</th>
+                      <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Javob turi</th>
+                      <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Izoh qoldiring</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100">
+                    {/* {orderData.executors?.map((executor, index) => (
+                          <tr key={index} className="hover:bg-gray-50 transition-all duration-200">
+                            <td className="px-6 py-4 text-sm text-gray-900"></td>
+                            <td className="px-6 py-4 text-sm text-gray-900"></td>
+                            <td className="px-6 py-4 text-sm text-gray-900 font-medium"></td>
+                            <td className="px-6 py-4 text-sm text-gray-900"></td>
+                            <td className="px-6 py-4 text-sm text-gray-900"></td>
+                            <td className="px-6 py-4 text-sm text-gray-700"></td>
+                          </tr>
+                        ))} */}
+                    <tr>
+                      <td></td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <div className="bg-transparent rounded-md p-2 flex justify-between mb-6">
+              <div className='flex items-center gap-3'>
+                <Button className='cursor-pointer'>
+                  <Plus></Plus>
+                  Kiritish
+                </Button>
+                <Button className='cursor-pointer'>
+                  Yuborish
+                </Button>
+              </div>
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4" />
+                <Input
+                  type="text"
+                  placeholder="Qidirish (Ctrl+F)"
+                  className="w-64 h-9 pl-9 text-sm border-slate-200 bg-white"
+                />
+              </div>
             </div>
 
-            <div className="text-center border-gray-200">
-              <p className="text-xs text-gray-500 uppercase font-semibold mb-2">Respublikada qabul qiluvchi</p>
-              <p className="text-md font-semibold text-gray-800">{orderData.sender_from_region?.name}</p>
+
+            <div className="bg-white rounded-xl border border-gray-200 overflow-y-auto mb-4">
+              <div className="overflow-x-auto">
+                <table className="w-full caption-bottom text-sm">
+                  <thead className="[&_tr]:border-b bg-gradient-to-r from-slate-100 via-blue-50 to-purple-50">
+                    <tr className='data-[state=selected]:bg-muted border-b transition-colors'>
+                      <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">№</th>
+                      <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Xabar xolati</th>
+                      <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Xodim</th>
+                      <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Sana</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100">
+                    {/* {orderData.executors?.map((executor, index) => (
+                          <tr key={index} className="hover:bg-gray-50 transition-all duration-200">
+                            <td className="px-6 py-4 text-sm text-gray-900"></td>
+                            <td className="px-6 py-4 text-sm text-gray-900"></td>
+                            <td className="px-6 py-4 text-sm text-gray-900 font-medium"></td>
+                          </tr>
+                        ))} */}
+                    <tr>
+                      <td></td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <div>
+
+            <div className="bg-transparent rounded-md p-2 flex justify-between mb-6">
+              <div className='flex items-center gap-3'>
+                <Button className='cursor-pointer'>
+                  <Plus></Plus>
+                  Kiritish
+                </Button>
+                <Button className='cursor-pointer'>
+                  Yuborish
+                </Button>
+              </div>
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4" />
+                <Input
+                  type="text"
+                  placeholder="Qidirish (Ctrl+F)"
+                  className="w-64 h-9 pl-9 text-sm border-slate-200 bg-white"
+                />
+              </div>
             </div>
 
+
+            <div className="bg-white rounded-xl border border-gray-200 overflow-y-auto mb-4">
+              <div className="overflow-x-auto">
+                <table className="w-full caption-bottom text-sm">
+                  <thead className="[&_tr]:border-b bg-gradient-to-r from-slate-100 via-blue-50 to-purple-50">
+                    <tr className='data-[state=selected]:bg-muted border-b transition-colors'>
+                      <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">№</th>
+                      <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Xabar xolati</th>
+                      <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Bajaruvchi xodim</th>
+                      <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Lavozim</th>
+                      <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Usti xat biriktiruvchi xodim</th>
+                      <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Bajarilish muddati</th>
+                      <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Status obzor</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100">
+                    {/* {orderData.executors?.map((executor, index) => (
+                          <tr key={index} className="hover:bg-gray-50 transition-all duration-200">
+                            <td className="px-6 py-4 text-sm text-gray-900"></td>
+                            <td className="px-6 py-4 text-sm text-gray-900"></td>
+                            <td className="px-6 py-4 text-sm text-gray-900 font-medium"></td>
+                            <td className="px-6 py-4 text-sm text-gray-900"></td>
+                            <td className="px-6 py-4 text-sm text-gray-900"></td>
+                            <td className="px-6 py-4 text-sm text-gray-700"></td>
+                          </tr>
+                        ))} */}
+                    <tr>
+                      <td></td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
           </div>
         </div>
 
-        <div>
-          <Accordion defaultExpanded>
-            <AccordionSummary
-              expandIcon={<ExpandMoreIcon />}
-              aria-controls="panel1a-content"
-            >
-              <Typography fontSize={"20px"} fontWeight={600} color="#0f172b">Buyurtma uchun berilgan tovarlar ruyhati</Typography>
-            </AccordionSummary>
-            <AccordionDetails>
+        {/* 🔸 3. FAYLLAR RO‘YXATI */}
+        <div className="p-4">
+          {files.length !== 0 ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
+              {files.map((file, index) => {
+                const { icon, color, bg } = getFileIcon(file.file_name);
+                return (
+                  <div
+                    key={index}
+                    className="bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-all duration-300 p-4 flex flex-col justify-between"
+                  >
+                    {/* 🔹 Exit number & Row number */}
+                    <div className="flex justify-between items-center mb-3">
+                      <span className="text-sm font-semibold text-gray-700 bg-gray-100 px-3 py-1 rounded-full">
+                        {orderData.exit_number}-{file.raw_number}
+                      </span>
+                    </div>
 
-              <div className="bg-transparent rounded-md p-2 flex justify-between mb-6">
-                <div className='flex items-center gap-3'>
-                  <Button className='cursor-pointer'>
-                    <Plus></Plus>
-                    Kiritish
-                  </Button>
-                  <Button className='cursor-pointer'>
-                    Qoldiqlar
-                  </Button>
-                </div>
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4" />
-                  <Input
-                    type="text"
-                    placeholder="Qidirish (Ctrl+F)"
-                    className="w-64 h-9 pl-9 text-sm border-slate-200 bg-white"
-                  />
-                </div>
-              </div>
+                    <div className='flex'>
+
+                    {/* 🔸 Fayl ma’lumotlari */}
+                    <div className="flex items-center gap-2 mb-3">
+                      <div className={`p-3 rounded-lg ${bg}`}>
+                        <div className={`${color} text-3xl`}>{icon}</div>
+                      </div>
+                      <div className="flex flex-col">
+                        <h4 className="text-gray-800 font-semibold text-[12px] truncate w-40">
+                          {file.file_name}
+                        </h4>
+                        {file.user}
+                        <p className="text-gray-500 text-[12px] mt-1">{formatDate(file.date)}</p>
+                      </div>
+                    </div>
+
+                    {/* 🔸 Action tugmalar */}
+                    <div className="flex flex-col gap-2">
+                      <button
+                        onClick={() => handleView(file)}
+                        className="p-2 rounded-md text-gray-600 hover:text-purple-700 hover:bg-gray-100 transition"
+                        title="Ko‘rish"
+                      >
+                        <EyeOutlined className="text-lg" />
+                      </button>
+                      <button
+                        onClick={() => handleDownloadFile(file)}
+                        className="p-2 rounded-md text-gray-600 hover:text-purple-700 hover:bg-gray-100 transition"
+                        title="Yuklab olish"
+                      >
+                        <DownloadOutlined className="text-lg" />
+                      </button>
+                    </div>
+
+                    </div>
 
 
-              <div className="bg-white rounded-xl mb-6 overflow-hidden">
-                <div className="overflow-x-auto">
-                  <table className="w-full">
-                    <thead className="bg-gray-50 border-b-2">
-                      <tr>
-                        <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">№</th>
-                        <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">tovar nomi</th>
-                        <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Tovar turi</th>
-                        <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Model</th>
-                        <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">O'lcham</th>
-                        <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">O'lchov birligi</th>
-                        <th className="px-6 py-4 text-right text-sm font-semibold text-gray-700">Soni</th>
-                        <th className="px-6 py-4 text-right text-sm font-semibold text-gray-700">Buyurtma bo'yicha izoh</th>
-                      </tr>
-                    </thead>
-                    <tbody className=" bg-[#f2f2f2b6]">
-                      {orderData.products?.map((product, index) => (
-                        <tr key={index} className="hover:bg-indigo-50 transition-colors">
-                          <td className="px-6 py-4 text-sm text-gray-900 font-medium">{product.row_number}</td>
-                          <td className="px-6 py-4 text-sm text-gray-900">{product.product?.name}</td>
-                          <td className="px-6 py-4 text-sm text-gray-900">{product.product_type?.name}</td>
-                          <td className="px-6 py-4 text-sm text-gray-900 font-medium">{product.model?.name}</td>
-                          <td className="px-6 py-4 text-sm text-gray-700">{product.size?.name}</td>
-                          <td className="px-6 py-4 text-sm text-gray-700">{product.unit?.name}</td>
-                          <td className="px-6 py-4 text-sm text-gray-900 text-right font-bold">{product.quantity}</td>
-                          <td className="px-6 py-4 text-sm text-gray-900 text-right font-bold">{product.description}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-
-            </AccordionDetails>
-          </Accordion>
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <p className="text-gray-900 font-bold text-2xl text-center">
+              Hozircha fayllar mavjud emas.
+            </p>
+          )}
+          {/* 🟣 PDF modal */}
+          {selectedFileMeta && (
+            <FilePreviewModal
+              open={previewOpen}
+              file={previewFile}
+              onClose={() => { setPreviewOpen(false); setPreviewFile(null); }}
+              onDownload={() => { if (selectedFileMeta) handleDownloadFile(selectedFileMeta); }}
+            />
+          )}
         </div>
-
-
-        <div>
-          <Accordion defaultExpanded>
-            <AccordionSummary
-              expandIcon={<ExpandMoreIcon />}
-              aria-controls="panel1a-content"
-            >
-              <Typography fontSize={"20px"} fontWeight={600} color="#0f172b">Kelishuvchilar ruyhati</Typography>
-            </AccordionSummary>
-            <AccordionDetails>
-
-
-              <div className="bg-transparent rounded-md p-2 flex justify-between mb-6">
-                <div className='flex items-center gap-3'>
-                  <Button className='cursor-pointer'>
-                    <Plus></Plus>
-                    Kiritish
-                  </Button>
-                  <Button className='cursor-pointer'>
-                    Yuborish
-                  </Button>
-                </div>
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4" />
-                  <Input
-                    type="text"
-                    placeholder="Qidirish (Ctrl+F)"
-                    className="w-64 h-9 pl-9 text-sm border-slate-200 bg-white"
-                  />
-                </div>
-              </div>
-
-
-              <div className="bg-white rounded-xl mb-6 overflow-hidden">
-                <div className="overflow-x-auto">
-                  <table className="w-full">
-                    <thead className="bg-gray-50 border-b-2">
-                      <tr>
-                        <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">№</th>
-                        <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Xabar xolati</th>
-                        <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Bajaruvchi xodim</th>
-                        <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Lavozim</th>
-                        <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Javob turi</th>
-                        <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Izoh qoldiring</th>
-                      </tr>
-                    </thead>
-                    <tbody className=" bg-[#f2f2f2b6]">
-                      {/* {orderData.executors?.map((executor, index) => (
-                        <tr key={index} className="hover:bg-indigo-50 transition-colors">
-                          <td className="px-6 py-4 text-sm text-gray-900"></td>
-                          <td className="px-6 py-4 text-sm text-gray-900"></td>
-                          <td className="px-6 py-4 text-sm text-gray-900 font-medium"></td>
-                          <td className="px-6 py-4 text-sm text-gray-900"></td>
-                          <td className="px-6 py-4 text-sm text-gray-900"></td>
-                          <td className="px-6 py-4 text-sm text-gray-700"></td>
-                        </tr>
-                      ))} */}
-                      <tr>
-                        <td></td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-
-            </AccordionDetails>
-          </Accordion>
-        </div>
-        
-        <div>
-          <Accordion defaultExpanded>
-            <AccordionSummary
-              expandIcon={<ExpandMoreIcon />}
-              aria-controls="panel1a-content"
-            >
-              <Typography fontSize={"20px"} fontWeight={600} color="#0f172b">Usti xat quyuvchi xodimlar</Typography>
-            </AccordionSummary>
-            <AccordionDetails>
-
-
-              <div className="bg-transparent rounded-md p-2 flex justify-between mb-6">
-                <div className='flex items-center gap-3'>
-                  <Button className='cursor-pointer'>
-                    <Plus></Plus>
-                    Kiritish
-                  </Button>
-                  <Button className='cursor-pointer'>
-                    Yuborish
-                  </Button>
-                </div>
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4" />
-                  <Input
-                    type="text"
-                    placeholder="Qidirish (Ctrl+F)"
-                    className="w-64 h-9 pl-9 text-sm border-slate-200 bg-white"
-                  />
-                </div>
-              </div>
-
-
-              <div className="bg-white rounded-xl mb-6 overflow-hidden">
-                <div className="overflow-x-auto">
-                  <table className="w-full">
-                    <thead className="bg-gray-50 border-b-2">
-                      <tr>
-                        <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">№</th>
-                        <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Xabar xolati</th>
-                        <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Xodim</th>
-                        <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Sana</th>
-                      </tr>
-                    </thead>
-                    <tbody className=" bg-[#f2f2f2b6]">
-                      {/* {orderData.executors?.map((executor, index) => (
-                        <tr key={index} className="hover:bg-indigo-50 transition-colors">
-                          <td className="px-6 py-4 text-sm text-gray-900"></td>
-                          <td className="px-6 py-4 text-sm text-gray-900"></td>
-                          <td className="px-6 py-4 text-sm text-gray-900 font-medium"></td>
-                        </tr>
-                      ))} */}
-                      <tr>
-                        <td></td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-
-            </AccordionDetails>
-          </Accordion>
-        </div>
-
-        <div>
-          <Accordion defaultExpanded>
-            <AccordionSummary
-              expandIcon={<ExpandMoreIcon />}
-              aria-controls="panel1a-content"
-            >
-              <Typography fontSize={"20px"} fontWeight={600} color="#0f172b">Ijrochilar ruyxati</Typography>
-            </AccordionSummary>
-            <AccordionDetails>
-
-
-              <div className="bg-transparent rounded-md p-2 flex justify-between mb-6">
-                <div className='flex items-center gap-3'>
-                  <Button className='cursor-pointer'>
-                    <Plus></Plus>
-                    Kiritish
-                  </Button>
-                  <Button className='cursor-pointer'>
-                    Yuborish
-                  </Button>
-                </div>
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4" />
-                  <Input
-                    type="text"
-                    placeholder="Qidirish (Ctrl+F)"
-                    className="w-64 h-9 pl-9 text-sm border-slate-200 bg-white"
-                  />
-                </div>
-              </div>
-
-
-              <div className="bg-white rounded-xl mb-6 overflow-hidden">
-                <div className="overflow-x-auto">
-                  <table className="w-full">
-                    <thead className="bg-gray-50 border-b-2">
-                      <tr>
-                        <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">№</th>
-                        <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Xabar xolati</th>
-                        <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Bajaruvchi xodim</th>
-                        <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Lavozim</th>
-                        <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Usti xat biriktiruvchi xodim</th>
-                        <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Bajarilish muddati</th>
-                        <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Status obzor</th>
-                      </tr>
-                    </thead>
-                    <tbody className=" bg-[#f2f2f2b6]">
-                      {/* {orderData.executors?.map((executor, index) => (
-                        <tr key={index} className="hover:bg-indigo-50 transition-colors">
-                          <td className="px-6 py-4 text-sm text-gray-900"></td>
-                          <td className="px-6 py-4 text-sm text-gray-900"></td>
-                          <td className="px-6 py-4 text-sm text-gray-900 font-medium"></td>
-                          <td className="px-6 py-4 text-sm text-gray-900"></td>
-                          <td className="px-6 py-4 text-sm text-gray-900"></td>
-                          <td className="px-6 py-4 text-sm text-gray-700"></td>
-                        </tr>
-                      ))} */}
-                      <tr>
-                        <td></td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-
-            </AccordionDetails>
-          </Accordion>
-        </div>
-
       </div>
     </div>
   );
