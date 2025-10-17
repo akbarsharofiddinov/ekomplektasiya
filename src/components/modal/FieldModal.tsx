@@ -9,7 +9,7 @@ import {
   fetchProductPaginationData,
 } from '@/services/axiosAPI';
 import { useAppDispatch } from '@/store/hooks/hooks';
-import { setProductModels, setProductSizes, setProductUnits } from '@/store/productSlice/productSlice';
+import { setProductUnits } from '@/store/productSlice/productSlice';
 
 interface IResultsType {
   id: string | number;
@@ -32,8 +32,8 @@ interface FieldModalProps {
     offset: number;
     results: IResultsType[];
   } | null;
-  selectedItem: { id: string; name: string } | null;
-  setSelectedItem: (item: { id: string; name: string } | null) => void;
+  selectedItem: { id: string; name: string; name_uz: string } | null;
+  setSelectedItem: (item: { id: string; name: string; name_uz: string } | null) => void;
 }
 
 const DEFAULT_PAGE_SIZE = 25;
@@ -126,7 +126,7 @@ const FieldModal: React.FC<FieldModalProps> = ({
           response = await fetchProductModelsPaginationData(
             l,
             offset,
-            selectedProductTypeId || undefined
+            selectedProductTypeId!
           );
           break;
         case 'size':
@@ -154,9 +154,9 @@ const FieldModal: React.FC<FieldModalProps> = ({
       if (response) {
         setItems(response.results ?? []);
         setTotal(response.count ?? 0);
-        if (field_name === "model") dispatch(setProductModels(response));
-        else if (field_name === "size") dispatch(setProductSizes(response));
-        else if (field_name === "unit") dispatch(setProductUnits(response))
+        // if (field_name === "model") dispatch(setProductModels(response));
+        // else if (field_name === "size") dispatch(setProductSizes(response));
+        if (field_name === "unit") dispatch(setProductUnits(response))
       } else {
         setItems([]);
         setTotal(0);
@@ -205,14 +205,14 @@ const FieldModal: React.FC<FieldModalProps> = ({
   const onConfirm = () => {
     const selected = items.find((r) => String(r.id) === String(selectedId)) ?? null;
     if (selected) {
-      setSelectedItem({ id: String(selected.id), name: selected.name || selected.name_uz || '' });
+      setSelectedItem({ id: String(selected.id), name: selected.name, name_uz: selected.name_uz });
     } else {
       setSelectedItem(null);
     }
   };
 
   const onCancel = () => {
-    setSelectedItem({ id: '', name: '' });
+    setSelectedItem({ id: '', name: '', name_uz: '' });
   }
 
 
@@ -301,7 +301,7 @@ const FieldModal: React.FC<FieldModalProps> = ({
                 ) : filteredItems.length > 0 ? (
                   filteredItems.map((item) => {
                     const isSelected = String(selectedId) === String(item.id);
-                    const displayName = item.name || item.name_uz || '—';
+                    const displayName = item.name_uz || item.name || '—';
                     const truncatedName =
                       displayName.length > 40 ? displayName.slice(0, 40) + '...' : displayName;
 
