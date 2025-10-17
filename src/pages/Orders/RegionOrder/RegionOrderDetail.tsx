@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 import React, { useState, useEffect } from 'react';
 // import { FileText, User, MapPin, Calendar, Package, CheckCircle, Clock } from 'lucide-react';
 import { FilePlus2, Plus, Search } from 'lucide-react';
@@ -302,8 +303,6 @@ const RegionOrderDetail: React.FC = () => {
   useEffect(() => {
     if (showWarehouseSelect) fetchDistrictsByRegion();
   }, [showWarehouseSelect]);
-
-
 
 
   // 🔹 Tanlangan tumandan ombor topish va qoldiqlarni olish
@@ -735,37 +734,37 @@ const RegionOrderDetail: React.FC = () => {
                     </div>
                     <div className='flex'>
 
-                    {/* 🔸 Fayl ma’lumotlari */}
-                    <div className="flex items-center gap-2 mb-3">
-                      <div className={`p-3 rounded-lg ${bg}`}>
-                        <div className={`${color} text-3xl`}>{icon}</div>
+                      {/* 🔸 Fayl ma’lumotlari */}
+                      <div className="flex items-center gap-2 mb-3">
+                        <div className={`p-3 rounded-lg ${bg}`}>
+                          <div className={`${color} text-3xl`}>{icon}</div>
+                        </div>
+                        <div className="flex flex-col">
+                          <h4 className="text-gray-800 font-semibold text-[12px] truncate w-40">
+                            {file.file_name}
+                          </h4>
+                          {file.user}
+                          <p className="text-gray-500 text-[12px] mt-1">{formatDate(file.date)}</p>
+                        </div>
                       </div>
-                      <div className="flex flex-col">
-                        <h4 className="text-gray-800 font-semibold text-[12px] truncate w-40">
-                          {file.file_name}
-                        </h4>
-                        {file.user}
-                        <p className="text-gray-500 text-[12px] mt-1">{formatDate(file.date)}</p>
-                      </div>
-                    </div>
 
-                    {/* 🔸 Action tugmalar */}
-                    <div className="flex flex-col gap-2">
-                      <button
-                        onClick={() => handleView(file)}
-                        className="p-2 rounded-md text-gray-600 hover:text-purple-700 hover:bg-gray-100 transition"
-                        title="Ko‘rish"
-                      >
-                        <EyeOutlined className="text-lg" />
-                      </button>
-                      <button
-                        onClick={() => handleDownloadFile(file)}
-                        className="p-2 rounded-md text-gray-600 hover:text-purple-700 hover:bg-gray-100 transition"
-                        title="Yuklab olish"
-                      >
-                        <DownloadOutlined className="text-lg" />
-                      </button>
-                    </div>
+                      {/* 🔸 Action tugmalar */}
+                      <div className="flex flex-col gap-2">
+                        <button
+                          onClick={() => handleView(file)}
+                          className="p-2 rounded-md text-gray-600 hover:text-purple-700 hover:bg-gray-100 transition"
+                          title="Ko‘rish"
+                        >
+                          <EyeOutlined className="text-lg" />
+                        </button>
+                        <button
+                          onClick={() => handleDownloadFile(file)}
+                          className="p-2 rounded-md text-gray-600 hover:text-purple-700 hover:bg-gray-100 transition"
+                          title="Yuklab olish"
+                        >
+                          <DownloadOutlined className="text-lg" />
+                        </button>
+                      </div>
                     </div>
                   </div>
                 );
@@ -818,7 +817,6 @@ const RegionOrderDetail: React.FC = () => {
           />
         </div>
       </Modal>
-
 
       {/* 🔹 2 - Modal: Qoldiqlarni ko‘rsatish oynasi */}
       {showRemaindersModal && (

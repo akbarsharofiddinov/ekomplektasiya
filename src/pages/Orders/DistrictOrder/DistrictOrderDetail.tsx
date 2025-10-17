@@ -168,8 +168,6 @@ const DistrictOrderDetail: React.FC = () => {
 		}
 	}
 
-	console.log(documentFormData)
-
 	const fetchRemaindersUserWarehouse = async () => {
 		try {
 			const response = await axiosAPI.get(`/warehouses/list?region=${currentUserInfo?.region.name}&district=${currentUserInfo?.district.name}`);
@@ -243,6 +241,7 @@ const DistrictOrderDetail: React.FC = () => {
 				if (response.status === 200) {
 					setFiles(response.data);
 				}
+				console.log(response)
 			} catch (error) {
 				console.error("Fayllarni olishda xato:", error);
 			} finally {
@@ -975,7 +974,7 @@ const DistrictOrderDetail: React.FC = () => {
 								className="text-xl font-bold hover:text-red-500"
 								onClick={() => setShowEmployeeModal(false)}
 							>
-								×
+								&times;
 							</button>
 						</div>
 

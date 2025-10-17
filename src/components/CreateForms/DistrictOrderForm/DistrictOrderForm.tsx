@@ -5,18 +5,16 @@ import Typography from "@mui/material/Typography";
 import { Button, Input, InputNumber, Popconfirm, Select, message } from "antd";
 import { FilePlus2, Pencil, Plus, Trash2 } from "lucide-react";
 import { axiosAPI } from "@/services/axiosAPI";
-import { useAppDispatch, useAppSelector } from "@/store/hooks/hooks";
+import { useAppSelector } from "@/store/hooks/hooks";
 import { DownloadOutlined, EyeOutlined, FileExcelOutlined, FileImageOutlined, FilePdfOutlined, FileTextOutlined, FileWordOutlined } from "@ant-design/icons";
 import FieldModal from "@/components/modal/FieldModal";
 import FileDropZone from "@/components/FileDropZone";
 import TextArea from "antd/es/input/TextArea";
 import { toast } from "react-toastify";
-import { useNavigate } from "react-router-dom";
 
 const DocumentID = "236fe19d-ab63-11f0-adbd-244bfe93ba23"
 
 // ===== Types =====
-type IDName = { id: string; name: string };
 type ID = string;
 
 interface ProductRow {
@@ -84,26 +82,6 @@ const defaultProductRow = {
 // Backend POST endpoint (o'zingizniki bilan almashtiring kerak bo'lsa)
 const CREATE_ENDPOINT = "/district-orders/create/";
 
-// Array yoki {results: [...] } uchun normalize
-function normalizeList(data: any): IDName[] {
-  const items = Array.isArray(data) ? data : (data?.results ?? data?.data ?? []);
-  if (!Array.isArray(items)) return [];
-  return items
-    .map((x: any) => {
-      const id: ID = (x?.id ?? x?.uuid ?? x?.pk ?? x?.value ?? "").toString();
-      const name: string = (
-        x?.name ??
-        x?.title ??
-        x?.label ??
-        x?.full_name ??
-        x?.display ??
-        ""
-      ).toString();
-      return { id, name };
-    })
-    .filter((x: IDName) => x.id && x.name);
-}
-
 type Executors = { id: string; name: string; number: number; position: string; region: string; district: string; };
 
 const OrderWIndow: React.FC<IDistrictOrderFormProps> = ({ setIsCreateFormModalOpen }) => {
@@ -118,10 +96,10 @@ const OrderWIndow: React.FC<IDistrictOrderFormProps> = ({ setIsCreateFormModalOp
   const [employees, setEmployees] = useState<any[]>([]);
   const [showEmployeeModal, setShowEmployeeModal] = useState(false);
   // Document is Confirmed state
+  const [documentNumber, setDocumentNumber] = useState("");
   const [documentConfirmed, setDocumentConfirmed] = useState(false);
-  const [messageFile, setMessageFile] = useState<File | null>(null);
   // Files
-  const [files, setFiles] = useState<File[]>([]);
+  const [files, setFiles] = useState<FileData[]>([]);
   const [messageFileURL, setMessageFileURL] = useState("");
   const [file, setFile] = useState<File | null>(null);
   const [fileUploadModal, setFileUploadModal] = useState(false);
@@ -134,7 +112,64 @@ const OrderWIndow: React.FC<IDistrictOrderFormProps> = ({ setIsCreateFormModalOp
   }>();
   // Redux
   const { currentUserInfo } = useAppSelector(state => state.info);
-  const { order_types } = useAppSelector(state => state.product)
+  const { order_types } = useAppSelector(state => state.product);
+
+  // Helper: try to resolve the real raw_number from server by file_name (in case local temp raw_number was used)
+
+
+  const handleView = async (f: FileData) => {
+    try {
+      const docId = documentID || DocumentID;
+      if (!docId) {
+        toast("Hujjat aniqlanmadi.", { type: "error" });
+        return;
+      }
+      // For others, fetch as blob and open in a new tab
+      const res = await axiosAPI.get(`district-orders/${docId}/file/${f.raw_number}`, {
+        responseType: "blob",
+      });
+      const url = URL.createObjectURL(res.data);
+      window.open(url, "_blank", "noopener,noreferrer");
+      // Cleanup later
+      setTimeout(() => URL.revokeObjectURL(url), 100);
+    } catch (e) {
+      console.error(e);
+      toast("Faylni ko‘rsatib bo‘lmadi.", { type: "error" });
+    }
+  };
+
+  const handleDownloadFile = async (f: FileData) => {
+    try {
+      const docId = documentID || DocumentID;
+      if (!docId) {
+        toast("Hujjat aniqlanmadi.", { type: "error" });
+        return;
+      }
+
+      const res = await axiosAPI.get(`district-orders/${docId}/file/${f.raw_number}`, {
+        responseType: "blob",
+      });
+
+      const blob = res.data as Blob;
+      const url = URL.createObjectURL(blob);
+
+      const fileName =
+        f?.file_name ||
+        `file-${String(f.raw_number)}${f?.extension ? `.${f.extension}` : ""}`;
+
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = fileName;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+
+      setTimeout(() => URL.revokeObjectURL(url), 2000);
+    } catch (e) {
+      console.error(e);
+      toast("Yuklab olishda xatolik.", { type: "error" });
+    }
+  };
 
   // Row helperlar
   const addRow = () => {
@@ -275,6 +310,17 @@ const OrderWIndow: React.FC<IDistrictOrderFormProps> = ({ setIsCreateFormModalOp
 
   }
 
+  const formatDate = (iso: string): string => {
+    const date = new Date(iso);
+    return date.toLocaleString("uz-UZ", {
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  };
+
   const handleCreateDefaultDocument = useCallback(async () => {
     const userId = currentUserInfo?.id
     const payload = {
@@ -304,6 +350,7 @@ const OrderWIndow: React.FC<IDistrictOrderFormProps> = ({ setIsCreateFormModalOp
       if (response.status === 200) {
         setDocumentConfirmed(false);
         getDistrictOrderFile(documentID[0].id)
+        setDocumentNumber(documentID[0].exit_number);
         setDocumentID(documentID[0].id)
       }
     } catch (error: any) {
@@ -355,7 +402,7 @@ const OrderWIndow: React.FC<IDistrictOrderFormProps> = ({ setIsCreateFormModalOp
   };
 
   useEffect(() => {
-    handleCreateDefaultDocument();
+    // handleCreateDefaultDocument();
     // console.log("first")
     getDistrictOrderFile(DocumentID)
     getDocumentTypes()
@@ -364,8 +411,20 @@ const OrderWIndow: React.FC<IDistrictOrderFormProps> = ({ setIsCreateFormModalOp
   useEffect(() => {
     if (file) {
       setDocumentFormData(prev => ({ ...prev!, filename: file.name, extension: file.name.split('.').pop()! }))
-      setFiles(prev => ([...prev, file]))
-      console.log(file)
+      setFiles(prev => {
+        const exists = prev.some(f => (f.file_name || "").toLowerCase() === file.name.toLowerCase());
+        if (exists) {
+          toast("Bu fayl allaqachon biriktirilgan", { type: "warning" });
+          return prev;
+        }
+        return [...prev, {
+          raw_number: (prev.length + 1) + "",
+          user: currentUserInfo?.id || "",
+          file_name: file.name,
+          extension: file.name.split('.').pop()!,
+          date: new Date().toISOString()
+        }];
+      })
     }
   }, [file]);
 
@@ -729,7 +788,7 @@ const OrderWIndow: React.FC<IDistrictOrderFormProps> = ({ setIsCreateFormModalOp
               <div className="flex flex-col">
                 <h4 className="text-gray-800 font-semibold text-xl truncate w-40">
                   {/* {file.file_name} */}
-                  {messageFile?.name}
+                  {file?.name || "Hujjat fayli"}
                 </h4>
                 <p className="text-lg">{currentUserInfo?.name}</p>
                 <p className="text-gray-500 mt-1">{currentUserInfo?.type_user}</p>
@@ -772,7 +831,7 @@ const OrderWIndow: React.FC<IDistrictOrderFormProps> = ({ setIsCreateFormModalOp
                 onClick={() => {
                   const link = document.createElement('a');
                   link.href = messageFileURL;
-                  link.setAttribute('download', messageFile?.name || 'file.docm');
+                  link.setAttribute('download', file?.name || 'file.docm');
                   document.body.appendChild(link);
                   link.click();
                   document.body.removeChild(link);
@@ -877,8 +936,69 @@ const OrderWIndow: React.FC<IDistrictOrderFormProps> = ({ setIsCreateFormModalOp
           </div>
 
           {/* 🔸 3. FAYLLAR RO‘YXATI */}
+          <div className="px-6 mb-6">
+            <Typography fontSize={"20px"} style={{ margin: "20px 0" }} fontWeight={600} color="#0f172b">
+              Biriktirilgan hujjatlar ro‘yxati
+            </Typography>
 
+            {files.length > 0 ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
+                {files.map((file, index) => {
+                  const { icon, color, bg } = getFileIcon(file.file_name);
+                  return (
+                    <div
+                      key={index}
+                      className="bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-all duration-300 p-4 flex flex-col justify-between"
+                    >
+                      {/* 🔹 Exit number & Row number */}
+                      <div className="flex justify-between items-center mb-3">
+                        <span className="text-[13px] font-semibold text-gray-700 bg-gray-100 px-2 py-1 rounded-full">
+                          {documentNumber}{file.date.split("T")[0] + " " + file.date.split("T")[1].split(".")[0]}
+                          {file.raw_number}
+                        </span>
+                      </div>
+                      <div className='flex'>
 
+                        {/* 🔸 Fayl ma’lumotlari */}
+                        <div className="flex items-center gap-2 mb-3">
+                          <div className={`p-3 rounded-lg ${bg}`}>
+                            <div className={`${color} text-3xl`}>{icon}</div>
+                          </div>
+                          <div className="flex flex-col">
+                            <h4 className="text-gray-800 font-semibold text-[12px] truncate w-40">
+                              {file.file_name}
+                            </h4>
+                            {currentUserInfo?.name}
+                            <p className="text-gray-500 text-[12px] mt-1">{formatDate(file.date)}</p>
+                          </div>
+                        </div>
+
+                        {/* 🔸 Action tugmalar */}
+                        <div className="flex flex-col gap-2">
+                          <button
+                            onClick={() => handleView(file)}
+                            className="p-2 rounded-md text-gray-600 hover:text-purple-700 hover:bg-gray-100 transition"
+                            title="Ko‘rish"
+                          >
+                            <EyeOutlined className="text-lg" />
+                          </button>
+                          <button
+                            onClick={() => handleDownloadFile(file)}
+                            className="p-2 rounded-md text-gray-600 hover:text-purple-700 hover:bg-gray-100 transition"
+                            title="Yuklab olish"
+                          >
+                            <DownloadOutlined className="text-lg" />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            ) : (
+              <p className="text-gray-500">Hujjatlar yo‘q</p>
+            )}
+          </div>
           {fileUploadModal && (
             <div className="fixed inset-0 bg-black/20 bg-opacity-50 flex items-center justify-center z-50" onClick={() => setFileUploadModal(false)}>
               <div className="bg-white rounded-lg p-6 w-96 flex flex-col" onClick={(e) => e.stopPropagation()}>
@@ -1010,6 +1130,5 @@ const OrderWIndow: React.FC<IDistrictOrderFormProps> = ({ setIsCreateFormModalOp
     </>
   );
 };
-
 
 export default OrderWIndow;
