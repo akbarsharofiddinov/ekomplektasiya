@@ -238,9 +238,10 @@ const RepublicOrder: React.FC = () => {
           <div className="animate-in slide-in-from-top-4 fade-in duration-600">
             <div className="rounded-lg">
               <h1 className='text-2xl text-black pb-4'>Respublika bo'yicha buyurtma</h1>
-              <div className="flex items-center justify-between gap-20">
+
+              <div className="w-full flex items-center gap-30">
                 {/* Status Filter Tabs - Left Side */}
-                <div className="flex gap-2">
+                <div className="flex gap-4">
                   <button
                     // onClick={() => handleStatusFilter('all')}
                     className={`flex items-center space-x-1 rounded-md transition-all duration-300 font-medium text-sm ${statusFilter === 'all'
@@ -320,53 +321,55 @@ const RepublicOrder: React.FC = () => {
                     </span>
                   </button>
                 </div>
-                <div className='w-[20%]'>
-                  <Select
-                    placeholder="tur"
-                    value={orderType}
-                    className='w-full'
-                    options={[
-                      { value: 'outgoing', label: 'Chiquvchi xabarlar' },
-                      { value: 'incoming', label: 'Kiruvchi xabarlar' },
-                    ]}
-                    onChange={value => {
-                      if (value === "incoming") setOrderType("incoming")
-                      else setOrderType("outgoing")
-                    }}
-                  />
-                </div>
-                <div className='w-[30%]'>
-                  <Select
-                    value={selectedRegion || ""}
-                    onChange={handleChange}
-                    allowClear
-                    placeholder="Barcha hujjatlar"
-                    className="w-[100%]"
-                    showSearch
-                    optionFilterProp="children"
-                    popupClassName="rounded-xl shadow-md"
-                  >
-                    <Option key="all" value="">
-                      <span className="text-gray-600">Barcha hujjatlar</span>
-                    </Option>
-                    {region_filter.map((item, index) => (
-                      <Option key={index} value={item.region}>
-                        <div className="flex justify-between items-center">
-                          <span>{item.region}</span>
-                          <Tag
-                            color={item.count > 0 ? "blue" : "default"}
-                            style={{
-                              marginLeft: "auto",
-                              fontSize: "12px",
-                              borderRadius: "10px",
-                            }}
-                          >
-                            {item.count}
-                          </Tag>
-                        </div>
+                <div className="w-full flex items-center gap-3">
+                  <div className='w-full'>
+                    <Select
+                      placeholder="tur"
+                      value={orderType}
+                      className='w-full'
+                      options={[
+                        { value: 'outgoing', label: 'Chiquvchi xabarlar' },
+                        { value: 'incoming', label: 'Kiruvchi xabarlar' },
+                      ]}
+                      onChange={value => {
+                        if (value === "incoming") setOrderType("incoming")
+                        else setOrderType("outgoing")
+                      }}
+                    />
+                  </div>
+                  <div className='w-full'>
+                    <Select
+                      value={selectedRegion || ""}
+                      onChange={handleChange}
+                      allowClear
+                      placeholder="Barcha hujjatlar"
+                      className="w-[100%]"
+                      showSearch
+                      optionFilterProp="children"
+                      popupClassName="rounded-xl shadow-md"
+                    >
+                      <Option key="all" value="">
+                        <span className="text-gray-600">Barcha hujjatlar</span>
                       </Option>
-                    ))}
-                  </Select>
+                      {region_filter.map((item, index) => (
+                        <Option key={index} value={item.region}>
+                          <div className="flex justify-between items-center">
+                            <span>{item.region}</span>
+                            <Tag
+                              color={item.count > 0 ? "blue" : "default"}
+                              style={{
+                                marginLeft: "auto",
+                                fontSize: "12px",
+                                borderRadius: "10px",
+                              }}
+                            >
+                              {item.count}
+                            </Tag>
+                          </div>
+                        </Option>
+                      ))}
+                    </Select>
+                  </div>
                 </div>
 
                 {/* Action Buttons - Right Side */}

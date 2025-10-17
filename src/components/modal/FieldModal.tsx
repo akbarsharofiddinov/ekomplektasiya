@@ -9,7 +9,7 @@ import {
   fetchProductPaginationData,
 } from '@/services/axiosAPI';
 import { useAppDispatch } from '@/store/hooks/hooks';
-import { setProductModels, setProducts, setProductSizes, setProductUnits } from '@/store/productSlice/productSlice';
+import { setProductUnits } from '@/store/productSlice/productSlice';
 
 interface IResultsType {
   id: string | number;
@@ -26,15 +26,14 @@ interface FieldModalProps {
   field_name: 'product' | 'product_type' | 'model' | 'size' | 'unit';
   selectedProductTypeId?: string;
   selectedModelId?: string;
-  selectedSizeId?: string;
   menuItems?: {
     count: number;
     limit: number;
     offset: number;
     results: IResultsType[];
   } | null;
-  selectedItem: { id: string; name: string } | null;
-  setSelectedItem: (item: { id: string; name: string } | null) => void;
+  selectedItem: { id: string; name: string; name_uz: string } | null;
+  setSelectedItem: (item: { id: string; name: string; name_uz: string } | null) => void;
 }
 
 const DEFAULT_PAGE_SIZE = 25;
@@ -43,7 +42,6 @@ const FieldModal: React.FC<FieldModalProps> = ({
   field_name,
   selectedProductTypeId,
   selectedModelId,
-  selectedSizeId,
   menuItems = null,
   selectedItem,
   setSelectedItem,
@@ -58,6 +56,8 @@ const FieldModal: React.FC<FieldModalProps> = ({
   const [selectedId, setSelectedId] = React.useState<string | null>(
     selectedItem?.id ?? null
   );
+
+  console.log(selectedProductTypeId)
 
   const dispatch = useAppDispatch()
 
@@ -126,7 +126,7 @@ const FieldModal: React.FC<FieldModalProps> = ({
           response = await fetchProductModelsPaginationData(
             l,
             offset,
-            selectedProductTypeId || undefined
+            selectedProductTypeId!
           );
           break;
         case 'size':
@@ -142,8 +142,6 @@ const FieldModal: React.FC<FieldModalProps> = ({
             l,
             offset,
             selectedProductTypeId || undefined,
-            selectedModelId || undefined,
-            selectedSizeId || undefined,
           );
           break;
         case 'unit':
@@ -156,10 +154,9 @@ const FieldModal: React.FC<FieldModalProps> = ({
       if (response) {
         setItems(response.results ?? []);
         setTotal(response.count ?? 0);
-        if (field_name === "model") dispatch(setProductModels(response));
-        else if (field_name === "size") dispatch(setProductSizes(response));
-        else if (field_name === "unit") dispatch(setProductUnits(response));
-        else if (field_name === "product") dispatch(setProducts(response));
+        // if (field_name === "model") dispatch(setProductModels(response));
+        // else if (field_name === "size") dispatch(setProductSizes(response));
+        if (field_name === "unit") dispatch(setProductUnits(response))
       } else {
         setItems([]);
         setTotal(0);
@@ -176,7 +173,7 @@ const FieldModal: React.FC<FieldModalProps> = ({
     // Re-fetch on page, pageSize, field_name, and relevant filters change
     fetchPage(page, pageSize);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [page, pageSize, field_name, selectedProductTypeId, selectedModelId, selectedSizeId]);
+  }, [page, pageSize, field_name, selectedProductTypeId, selectedModelId]);
 
   // filtered view (client-side) - filters only current page items
   const filteredItems = React.useMemo(() => {
@@ -201,7 +198,6 @@ const FieldModal: React.FC<FieldModalProps> = ({
     });
   }, [items, searchTerm]);
 
-  console.log(items, 'Item data')
   const onRowSelect = (item: IResultsType) => {
     setSelectedId((prev) => (prev === String(item.id) ? null : String(item.id)));
   };
@@ -209,33 +205,15 @@ const FieldModal: React.FC<FieldModalProps> = ({
   const onConfirm = () => {
     const selected = items.find((r) => String(r.id) === String(selectedId)) ?? null;
     if (selected) {
-      setSelectedItem({ id: String(selected.id), name: selected.name || selected.name_uz || '' });
+      setSelectedItem({ id: String(selected.id), name: selected.name, name_uz: selected.name_uz });
     } else {
       setSelectedItem(null);
     }
   };
 
   const onCancel = () => {
-    setSelectedItem({ id: "", name: "" });
+    setSelectedItem({ id: '', name: '', name_uz: '' });
   }
-
-  // inputdan oldin (return ichida emas, komponent ichida)
-  const getPlaceholderText = () => {
-    switch (field_name) {
-      case 'product_type':
-        return "Tovar turi bo'yicha qidirish...";
-      case 'model':
-        return "Model nomi bo'yicha qidirish...";
-      case 'size':
-        return "O'lcham bo'yicha qidirish...";
-      case 'unit':
-        return "O'lchov birligi bo'yicha qidirish...";
-      case 'product':
-        return "Tovar nomi bo'yicha qidirish...";
-      default:
-        return "Qidiruv...";
-    }
-  };
 
 
   return (
@@ -246,15 +224,13 @@ const FieldModal: React.FC<FieldModalProps> = ({
             <h2 className="text-xl font-semibold text-gray-800">
               {field_name === 'product_type'
                 ? 'Tovar turi'
-                : field_name === 'product'
-                  ? 'Tovar'
-                  : field_name === 'model'
-                    ? 'Model'
-                    : field_name === 'size'
-                      ? "O'lcham"
-                      : field_name === 'unit'
-                        ? "O'lchov birligi"
-                        : '—'}
+                : field_name === 'model'
+                  ? 'Model'
+                  : field_name === 'size'
+                    ? "O'lcham"
+                    : field_name === 'unit'
+                      ? "O'lchov birligi"
+                      : '—'}
             </h2>
           </div>
           <p className="text-sm text-gray-600 pt-1">
@@ -268,7 +244,7 @@ const FieldModal: React.FC<FieldModalProps> = ({
               type="search"
               value={searchTerm}
               onChange={handleSearchChange}
-              placeholder={getPlaceholderText()}
+              placeholder="Tovar nomi bo'yicha qidirish..."
               className="border border-gray-300 rounded-lg py-2 px-4 w-full pr-10"
               aria-label="Qidiruv"
             />
@@ -286,21 +262,19 @@ const FieldModal: React.FC<FieldModalProps> = ({
             <table className="min-w-full border border-gray-200 rounded-lg">
               <thead className="bg-gray-50">
                 <tr>
-                  <th className="text-center px-4 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Tanlash
-                  </th>
+                  <th className="text-center px-4 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider" />
                   <th className="text-center px-4 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Nomer
                   </th>
                   <th className="text-center px-4 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Nomi
                   </th>
-                  {field_name !== "product_type" && field_name !== 'unit' && (
+                  {field_name !== "product_type" && (
                     <th className="text-center px-4 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Tovar turi
                     </th>
                   )}
-                  {(field_name !== "product_type" && field_name !== "model" && field_name !== 'unit') && (
+                  {(field_name !== "product_type" && field_name !== "model") && (
                     <th className="text-center px-4 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Model
                     </th>
@@ -327,7 +301,7 @@ const FieldModal: React.FC<FieldModalProps> = ({
                 ) : filteredItems.length > 0 ? (
                   filteredItems.map((item) => {
                     const isSelected = String(selectedId) === String(item.id);
-                    const displayName = item.name || item.name_uz || '—';
+                    const displayName = item.name_uz || item.name || '—';
                     const truncatedName =
                       displayName.length > 40 ? displayName.slice(0, 40) + '...' : displayName;
 
@@ -358,17 +332,17 @@ const FieldModal: React.FC<FieldModalProps> = ({
                             <span>{highlightSearchTerm(truncatedName, searchTerm)}</span>
                           </div>
                         </td>
-                        {field_name !== "product_type" && field_name !== 'unit' && (
+                        {field_name !== "product_type" && (
                           <td className="text-center px-4 py-3 text-sm text-gray-900">
                             {item.product_type || '—'}
                           </td>
                         )}
-                        {(field_name !== "product_type" && field_name !== "model" && field_name !== 'unit') && (
+                        {(field_name !== "product_type" && field_name !== "model") && (
                           <td className="text-center px-4 py-3 text-sm text-gray-900 font-medium">
                             {item.model || '—'}
                           </td>
                         )}
-                        {field_name === "unit" || field_name === "product" && (
+                        {field_name === "unit" && (
                           <td className="text-center px-4 py-3 text-sm text-gray-900">
                             {item.size || '—'}
                           </td>

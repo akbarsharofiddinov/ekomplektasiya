@@ -591,14 +591,14 @@ const ProductInputForm: React.FC<IProductInputFormProps> = ({
                       </TableCell>
 
                       {/* Product */}
-                      
+
                       <TableCell className="text-slate-700 font-medium p-3">
-                        <Button className="w-full" disabled={!product.product_type}  onClick={() => {
+                        <Button className="w-full" disabled={!product.product_type} onClick={() => {
                           setFieldName("product")
                         }}>
                           <span className={`${formData.products[index] ? "text-gray-800" : "text-gray-400"}`}>
                             {product.product ? products.results.find((prod) => prod.id === product.product)?.name : "Tanlang"}
-                            
+
                           </span>
                         </Button>
                         {fieldName === "product" && (

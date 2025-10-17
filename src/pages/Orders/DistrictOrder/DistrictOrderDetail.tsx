@@ -17,7 +17,6 @@ import SelectRemainsModal from '@/components/CreateForms/SelectRemainsModal';
 import { toast } from 'react-toastify';
 import { useAppSelector } from '@/store/hooks/hooks';
 import DistrictOrderSigning from './DistrictOrderSigning';
-import FilePreviewer from "@/components/files/FilePreviewer";
 
 
 interface IdName {
@@ -94,7 +93,6 @@ const DistrictOrderDetail: React.FC = () => {
 	const [fileUploadModal, setFileUploadModal] = useState(false);
 	const [file, setFile] = useState<File | null>(null);
 	const [documentTypes, setDocumentTypes] = useState<IdName[]>([]);
-	const [viewMode, setViewMode] = useState<'orders' | 'letters'>('orders');
 	const [files, setFiles] = useState<FileData[]>([]);
 	const [selectedFile, setSelectedFile] = useState<FileData | null>(null);
 	const [remainders, setRemainders] = useState<ProductRemainder[]>([]);
@@ -446,31 +444,6 @@ const DistrictOrderDetail: React.FC = () => {
 				orderData.for_purpose === "editing" ? (
 					<div className="min-h-screen py-2 px-2 bg-white">
 						<div className="max-w-8xl mx-auto bg-white">
-							{/* 🔹 Yuqoridagi text-style navigation */}
-							<div className="flex gap-8 mb-1 border-b border-gray-200 pb-2">
-								<span
-									onClick={() => setViewMode('orders')}
-									className={`cursor-pointer pb-2 text-base font-medium transition-all duration-200 ${viewMode === 'orders'
-										? 'text-blue-600 border-b-2 border-blue-600'
-										: 'text-gray-500 hover:text-blue-500'
-										}`}
-								>
-									Buyurtmalar oynasi
-								</span>
-
-								<span
-									onClick={() => setViewMode('letters')}
-									className={`cursor-pointer pb-2 text-base font-medium transition-all duration-200 ${viewMode === 'letters'
-										? 'text-blue-600 border-b-2 border-blue-600'
-										: 'text-gray-500 hover:text-blue-500'
-										}`}
-								>
-									Yuborilgan xatning ko‘rinishi
-								</span>
-							</div>
-
-							{/* 🔸 1. BUYURTMALAR OYNASI */}
-							{viewMode === 'orders' && (
 								<div>
 									{/* Header */}
 									<div className="bg-white overflow-hidden mb-4">
@@ -948,18 +921,6 @@ const DistrictOrderDetail: React.FC = () => {
 										)}
 									</div>
 								</div>
-							)}
-
-							{/* 🔸 2. YUBORILGAN XATNI KO‘RINISHI */}
-							{viewMode === 'letters' && (
-								<div className="p-6 bg-gray-50 rounded-lg shadow-sm">
-									<h2 className="text-lg font-semibold mb-4">Yuborilgan xatni ko‘rinishi</h2>
-									<p>Bu bo‘limda yuborilgan xat tafsilotlari chiqadi.</p>
-									<p className="text-sm text-gray-500 mt-2">
-										(Bu joyni keyinchalik o‘z API yoki table bilan to‘ldirish mumkin)
-									</p>
-								</div>
-							)}
 						</div>
 					</div>
 				) : (
