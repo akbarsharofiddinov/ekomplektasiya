@@ -57,8 +57,6 @@ const FieldModal: React.FC<FieldModalProps> = ({
     selectedItem?.id ?? null
   );
 
-  console.log(selectedProductTypeId)
-
   const dispatch = useAppDispatch()
 
   useEffect(() => {

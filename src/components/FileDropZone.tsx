@@ -76,7 +76,6 @@ const FileDropZone: React.FC<FileDropZoneProps> = ({ file, setFile }) => {
             onChange={handleFileChange}
             className="hidden"
           />
-
         </div>
       )}
 
