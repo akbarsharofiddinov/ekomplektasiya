@@ -6,6 +6,7 @@ import { Plus, Trash2 } from "lucide-react";
 import { axiosAPI } from "@/services/axiosAPI";
 import { useAppSelector } from "@/store/hooks/hooks";
 import FilePreviewer from "@/components/files/FilePreviewer";
+import FieldModal from "@/components/modal/FieldModal";
 
 // ===== Types =====
 type ID = string;
@@ -60,6 +61,8 @@ const defaultProductRow = {
 const CREATE_ENDPOINT = "/district-orders/create/";
 
 const RegionOrderForm: React.FC<IDistrictOrderFormProps> = ({ setIsCreateFormModalOpen }) => {
+  type FieldName = "product_type" | "model" | "size" | "unit" | "product";
+  const [active, setActive] = useState<{ field: FieldName; row: number } | null>(null);
   // FormData
   const [formData, setFormData] = useState<FormDataType>(initialFormData);
   const [messageFile, setMessageFile] = useState<File | null>(null);
@@ -370,29 +373,29 @@ const RegionOrderForm: React.FC<IDistrictOrderFormProps> = ({ setIsCreateFormMod
                             </td>
 
                             <td className="px-3 py-3">
-                              <Select
-                                className="w-46"
-                                placeholder="Tovar turi"
-                                allowClear
-                                showSearch
-                                value={r.product_type || null}
-                                onChange={(v) =>
-                                  updateRow(
-                                    r.raw_number + "",
-                                    "product_type",
-                                    v as ID
-                                  )
-                                }
-                                options={product_types.map((o) => ({
-                                  value: o.id,
-                                  label: o.name,
-                                }))}
-                                filterOption={(input, option) =>
-                                  (option?.label as string)
-                                    ?.toLowerCase()
-                                    .includes(input.toLowerCase())
-                                }
-                              />
+                                <Button className="w-full" onClick={() => setActive({ field: "product_type", row: r.raw_number })}>
+                                  <span className={r.product_type ? "text-gray-800" : "text-gray-400"}>
+                                    {r.product_type ? product_types.results.find((t) => String(t.id) === String(r.product_type))?.name : "Tanlang"}
+                                  </span>
+                                </Button>
+                                {active?.field === "product_type" && active.row === r.raw_number && (
+                                  <FieldModal
+                                    field_name="product_type"
+                                    selectedItem={{ id: String(r.product_type || ""), name: "" }}
+                                    setSelectedItem={(newItem) => {
+                                      if (!newItem) { setActive(null); return; } // bekor -> hech narsa qilmaymiz
+                                      setFormData(prev => ({
+                                        ...prev,
+                                        products: prev.products.map(p =>
+                                          p.raw_number === r.raw_number
+                                            ? { ...p, product_type: String(newItem.id), model: "", size: "" }
+                                            : p
+                                        ),
+                                      }));
+                                      setActive(null);
+                                    }}
+                                  />
+                                )}
                             </td>
 
                             <td className="px-3 py-3">
@@ -405,7 +408,7 @@ const RegionOrderForm: React.FC<IDistrictOrderFormProps> = ({ setIsCreateFormMod
                                 onChange={(v) =>
                                   updateRow(r.raw_number + "", "model", v as ID)
                                 }
-                                options={product_models.map((o) => ({
+                                options={product_models.results.map((o) => ({
                                   value: o.id,
                                   label: o.name,
                                 }))}
@@ -427,7 +430,7 @@ const RegionOrderForm: React.FC<IDistrictOrderFormProps> = ({ setIsCreateFormMod
                                 onChange={(v) =>
                                   updateRow(r.raw_number + "", "size", v as ID)
                                 }
-                                options={product_sizes.map((o) => ({
+                                options={product_sizes.results.map((o) => ({
                                   value: o.id,
                                   label: o.name,
                                 }))}
@@ -449,7 +452,7 @@ const RegionOrderForm: React.FC<IDistrictOrderFormProps> = ({ setIsCreateFormMod
                                 onChange={(v) =>
                                   updateRow(r.raw_number + "", "unit", v as ID)
                                 }
-                                options={product_units.map((o) => ({
+                                options={product_units.results.map((o) => ({
                                   value: o.id,
                                   label: o.name,
                                 }))}

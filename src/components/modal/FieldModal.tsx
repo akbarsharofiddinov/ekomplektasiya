@@ -9,7 +9,7 @@ import {
   fetchProductPaginationData,
 } from '@/services/axiosAPI';
 import { useAppDispatch } from '@/store/hooks/hooks';
-import { setProductModels, setProducts, setProductSizes, setProductUnits } from '@/store/productSlice/productSlice';
+import { setProductModels, setProducts, setProductSizes, setProductTypes, setProductUnits } from '@/store/productSlice/productSlice';
 
 interface IResultsType {
   id: string | number;
@@ -156,6 +156,7 @@ const FieldModal: React.FC<FieldModalProps> = ({
         setItems(response.results ?? []);
         setTotal(response.count ?? 0);
         if (field_name === "model") dispatch(setProductModels(response));
+        else if (field_name === "product_type") dispatch(setProductTypes(response));
         else if (field_name === "size") dispatch(setProductSizes(response));
         else if (field_name === "unit") dispatch(setProductUnits(response));
         else if (field_name === "product") dispatch(setProducts(response));
