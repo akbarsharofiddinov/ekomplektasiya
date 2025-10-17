@@ -2,7 +2,7 @@
 import React, { useCallback, useEffect, useState } from "react";
 import Typography from "@mui/material/Typography";
 import { Button, Input, InputNumber, Popconfirm, Select, Spin, message } from "antd";
-import { Plus, Trash2 } from "lucide-react";
+import { Pencil, Plus, Trash2 } from "lucide-react";
 import { axiosAPI } from "@/services/axiosAPI";
 import { useAppDispatch, useAppSelector } from "@/store/hooks/hooks";
 import { DownloadOutlined, EyeOutlined, FileWordOutlined } from "@ant-design/icons";
@@ -87,7 +87,10 @@ function normalizeList(data: any): IDName[] {
 const OrderWIndow: React.FC<IDistrictOrderFormProps> = ({ setIsCreateFormModalOpen }) => {
   // FormData
   const [formData, setFormData] = useState<FormDataType>(initialFormData);
-  const [fieldName, setFieldName] = useState<"size" | "product" | "product_type" | "model" | "unit" | "">("");
+  // yuqoriga qo'shing
+  type FieldName = "product_type" | "model" | "size" | "unit" | "product";
+  const [active, setActive] = useState<{ field: FieldName; row: number } | null>(null);
+
   // Employee
   const [employees, setEmployees] = useState<any[]>([]);
   const [selectedEmployee, setSelectedEmployee] = useState<any | null>(null);
@@ -116,20 +119,23 @@ const OrderWIndow: React.FC<IDistrictOrderFormProps> = ({ setIsCreateFormModalOp
     }));
 
   const updateRow = <K extends keyof ProductRow>(
-    raw_number: string,
+    raw_number: string, // Har bir tovar uchun raw_number unikal
     key: K,
     value: ProductRow[K]
   ) => {
+    const updatedProducts = formData.products.map((product) => {
+      if (product.raw_number === Number(raw_number)) {
+        return { ...product, [key]: value }; // faqat kerakli tovarni yangilaymiz
+      }
+      return product; // boshqa tovarlar o'zgarmaydi
+    });
 
-    const findProduct = formData.products.find(p => p.raw_number === Number(raw_number));
-    if (findProduct) {
-      const updatedProduct = { ...findProduct, [key]: value };
-      setFormData(prev => ({
-        ...prev,
-        products: prev.products.map(p => p.raw_number === Number(raw_number) ? updatedProduct : p)
-      }))
-    }
-  }
+    setFormData((prev) => ({
+      ...prev,
+      products: updatedProducts,
+    }));
+  };
+
 
   // 🔹 Hodimlar ro'yxatini olish
   const fetchEmployees = async () => {
@@ -167,17 +173,23 @@ const OrderWIndow: React.FC<IDistrictOrderFormProps> = ({ setIsCreateFormModalOp
 
   const getDistrictOrderFile = async (id: string) => {
     if (id) {
-      try {
-        const response = await axiosAPI.get(`district-orders/${id}/order-file`);
-        console.log(response)
-        if (response.status === 200) {
-          const file = new File([response.data.file_url.split(" ").join("%")], "buyurtma.docm", { type: "application/vnd.ms-word.document.macroEnabled.12" });
-          if (file) {
-            setMessageFile(file)
-          }
-        }
-      } catch (error) {
-        console.log(error)
+      // try {
+      //   const response = await axiosAPI.get(`district-orders/${id}/order-file`);
+      //   console.log(response)
+      //   if (response.status === 200) {
+      //     const file = new File([response.data.file_url.split(" ").join("%")], "buyurtma.docm", { type: "application/vnd.ms-word.document.macroEnabled.12" });
+      //     if (file) {
+      //       setMessageFile(file)
+      //     }
+      //   }
+      // } catch (error) {
+      //   console.log(error)
+      // }
+
+      const file = new File([fileURL.split(" ").join("%")], "buyurtma.docm", { type: "application/vnd.ms-word.document.macroEnabled.12" });
+      if (file) {
+        setMessageFile(file)
+        // console.log(file)
       }
     }
   }
@@ -217,13 +229,17 @@ const OrderWIndow: React.FC<IDistrictOrderFormProps> = ({ setIsCreateFormModalOp
       alert(error.response.data)
       setIsCreateFormModalOpen(false)
     }
-  }, [currentUserInfo?.id, executors, formData.description, formData.exit_date, formData.products, setIsCreateFormModalOpen])
+  }, [currentUserInfo?.id, executors, formData.description, formData.exit_date, formData.products, setIsCreateFormModalOpen]);
 
   useEffect(() => {
     // handleCreateDefaultDocument()
-    // getDistrictOrderFile(documentID);
+    getDistrictOrderFile(documentID);
     // console.log("first")
   }, [])
+
+  useEffect(() => {
+    console.log(formData.products)
+  }, [formData.products])
 
   return (
     <>
@@ -322,276 +338,275 @@ const OrderWIndow: React.FC<IDistrictOrderFormProps> = ({ setIsCreateFormModalOp
 
             <div className="bg-white rounded-xl mb-6 overflow-x-auto">
               <div className="min-w-[1000px]">
-                {false ? (
-                  // <div className="flex items-center justify-center py-8">
-                  //   <Spin />
-                  // </div>
-                  <></>
-                ) : (
-                  <table className="w-full">
-                    <thead className="bg-gray-50 border-b-2">
-                      <tr>
-                        <th className="px-3 py-3 text-center text-sm font-semibold text-gray-700">
-                          №
-                        </th>
-                        <th className="px-3 py-3 text-center text-sm font-semibold text-gray-700">
-                          Buyurtma turi
-                        </th>
-                        <th className="px-3 py-3 text-center text-sm font-semibold text-gray-700">
-                          Tovar nomi
-                        </th>
-                        <th className="px-3 py-3 text-center text-sm font-semibold text-gray-700">
-                          Tovar turi
-                        </th>
-                        <th className="px-3 py-3 text-center text-sm font-semibold text-gray-700">
-                          Model
-                        </th>
-                        <th className="px-3 py-3 text-center text-sm font-semibold text-gray-700">
-                          O'lcham
-                        </th>
-                        <th className="px-3 py-3 text-center text-sm font-semibold text-gray-700">
-                          O'lchov birligi
-                        </th>
-                        <th className="px-3 py-3 text-center text-sm font-semibold text-gray-700">
-                          Soni
-                        </th>
-                        <th className="px-3 py-3 text-center text-sm font-semibold text-gray-700">
-                          Izoh
-                        </th>
-                        <th className="px-3 py-3 text-center text-sm font-semibold text-gray-700">
-                          -
-                        </th>
-                      </tr>
-                    </thead>
+                <table className="w-full">
+                  <thead className="bg-gray-50 border-b-2">
+                    <tr>
+                      <th className="px-3 py-3 text-center text-sm font-semibold text-gray-700">
+                        №
+                      </th>
+                      <th className="px-3 py-3 text-center text-sm font-semibold text-gray-700">
+                        Buyurtma turi
+                      </th>
+                      <th className="px-3 py-3 text-center text-sm font-semibold text-gray-700">
+                        Tovar nomi
+                      </th>
+                      <th className="px-3 py-3 text-center text-sm font-semibold text-gray-700">
+                        Tovar turi
+                      </th>
+                      <th className="px-3 py-3 text-center text-sm font-semibold text-gray-700">
+                        Model
+                      </th>
+                      <th className="px-3 py-3 text-center text-sm font-semibold text-gray-700">
+                        O'lcham
+                      </th>
+                      <th className="px-3 py-3 text-center text-sm font-semibold text-gray-700">
+                        O'lchov birligi
+                      </th>
+                      <th className="px-3 py-3 text-center text-sm font-semibold text-gray-700">
+                        Soni
+                      </th>
+                      <th className="px-3 py-3 text-center text-sm font-semibold text-gray-700">
+                        Izoh
+                      </th>
+                      <th className="px-3 py-3 text-center text-sm font-semibold text-gray-700">
+                        -
+                      </th>
+                    </tr>
+                  </thead>
 
-                    <tbody className="bg-[#f2f2f2b6]">
-                      {formData.products.length ? (
-                        formData.products.map((r) => {
-                          const index = formData.products.findIndex(
-                            (x) => x.raw_number === r.raw_number
-                          );
-                          return (
-                            <tr
-                              key={(r.raw_number + index) + ""}
-                              className="hover:bg-indigo-50 transition-colors"
-                            >
-                              <td className="px-3 py-3 text-sm text-gray-900 font-medium text-center">
-                                {r.raw_number}
-                              </td>
+                  <tbody className="bg-[#f2f2f2b6]">
+                    {formData.products.length ? (
+                      formData.products.map((r) => {
+                        const index = formData.products.findIndex(
+                          (x) => x.raw_number === r.raw_number
+                        );
+                        return (
+                          <tr
+                            key={r.raw_number}
+                            className="hover:bg-indigo-50 transition-colors"
+                          >
+                            <td className="px-3 py-3 text-sm text-gray-900 font-medium text-center">
+                              {r.raw_number}
+                            </td>
 
-                              <td className="px-3 py-3">
-                                <Select
-                                  className="w-36"
-                                  placeholder="Tanlang"
-                                  allowClear
-                                  showSearch
-                                  value={r.order_type || null}
-                                  onChange={(v) =>
-                                    updateRow(r.raw_number + "", "order_type", v as ID)
-                                  }
-                                  options={order_types.map((o) => ({
-                                    value: o.id,
-                                    label: o.name,
-                                  }))}
-                                  filterOption={(input, option) =>
-                                    (option?.label as string)
-                                      ?.toLowerCase()
-                                      .includes(input.toLowerCase())
-                                  }
-                                />
-                              </td>
-                              <td className="px-3 py-3 w-40 text-center">
-                                <Input
-                                  placeholder="Tovar nomi"
-                                  value={r.product}
-                                  onChange={(e) => {
-                                    updateRow(
-                                      r.raw_number + "",
-                                      "product",
-                                      e.target.value
-                                    )
+                            <td className="px-3 py-3">
+                              <Select
+                                className="w-full"
+                                placeholder="Tanlang"
+                                allowClear
+                                showSearch
+                                value={r.order_type || null}
+                                onChange={(v) =>
+                                  updateRow(r.raw_number + "", "order_type", v as ID)
+                                }
+                                options={order_types.map((o) => ({
+                                  value: o.id,
+                                  label: o.name,
+                                }))}
+                                filterOption={(input, option) =>
+                                  (option?.label as string)
+                                    ?.toLowerCase()
+                                    .includes(input.toLowerCase())
+                                }
+                              />
+                            </td>
+                            <td className="px-3 py-3 w-40 text-center">
+                              <Input
+                                placeholder="Tovar nomi"
+                                value={r.product}
+                                onChange={(e) => {
+                                  updateRow(
+                                    r.raw_number + "",
+                                    "product",
+                                    e.target.value
+                                  )
+                                }}
+                              />
+                            </td>
+
+                            {/* Product type */}
+                            <td className="px-3 py-3 text-center">
+                              <Button className="w-full" onClick={() => setActive({ field: "product_type", row: r.raw_number })}>
+                                <span className={r.product_type ? "text-gray-800" : "text-gray-400"}>
+                                  {r.product_type ? product_types.results.find((t) => String(t.id) === String(r.product_type))?.name : "Tanlang"}
+                                </span>
+                              </Button>
+
+                              {active?.field === "product_type" && active.row === r.raw_number && (
+                                <FieldModal
+                                  field_name="product_type"
+                                  selectedItem={{ id: String(r.product_type || ""), name: "" }}
+                                  setSelectedItem={(newItem) => {
+                                    if (!newItem) { setActive(null); return; } // bekor -> hech narsa qilmaymiz
+                                    setFormData(prev => ({
+                                      ...prev,
+                                      products: prev.products.map(p =>
+                                        p.raw_number === r.raw_number
+                                          ? { ...p, product_type: String(newItem.id), model: "", size: "" }
+                                          : p
+                                      ),
+                                    }));
+                                    setActive(null);
                                   }}
                                 />
-                              </td>
+                              )}
+                            </td>
 
-                              {/* Product type */}
-                              <td className="px-3 py-3 text-center">
-                                <Button className="w-full" onClick={() => setFieldName("product_type")}>
-                                  <span className={`${formData.products[index].product_type ? "text-gray-800" : "text-gray-400"}`}>
-                                    {r.product_type ? product_types.results.find((t) => t.id === r.product_type)?.name : "Tanlang"}
-                                  </span>
-                                </Button>
-                                {fieldName === "product_type" && (
-                                  <FieldModal
-                                    field_name={fieldName}
-                                    selectedItem={{ id: r.product_type, name: "" }}
-                                    setSelectedItem={newItem => {
-                                      if (newItem) setFormData(prev => ({ ...prev, products: prev.products.map((p, i) => i === index ? { ...p, product_type: newItem!.id } : p) }))
-                                      setFieldName("")
-                                    }}
-                                  />
-                                )}
-                              </td>
 
-                              {/* Model */}
-                              <td className="px-3 py-3 text-center">
-                                <Button className="w-full" onClick={() => setFieldName("model")}>
-                                  <span className={`${formData.products[index].model ? "text-gray-800" : "text-gray-400"}`}>
-                                    {r.model ? product_models.results.find((t) => t.id === r.model)?.name : "Tanlang"}
-                                  </span>
-                                </Button>
-                                {fieldName === "model" && (
-                                  <FieldModal
-                                    field_name={fieldName}
-                                    selectedItem={{ id: r.model, name: "" }}
-                                    setSelectedItem={newItem => {
-                                      if (newItem) setFormData(prev => ({ ...prev, products: prev.products.map((p, i) => i === index ? { ...p, model: newItem!.id } : p) }))
-                                      setFieldName("");
-                                    }}
-                                    selectedProductTypeId={product_types.results.find(type => type.id === r.product_type)?.name}
-                                  />
-                                )}
-                              </td>
+                            {/* Model */}
+                            <td className="px-3 py-3 text-center">
+                              <Button className="w-full" onClick={() => setActive({ field: "model", row: r.raw_number })}>
+                                <span className={r.model ? "text-gray-800" : "text-gray-400"}>
+                                  {r.model ? product_models.results.find((m) => String(m.id) === String(r.model))?.name : "Tanlang"}
+                                </span>
+                              </Button>
 
-                              {/* Size */}
-                              <td className="px-3 py-3 text-center">
-                                <Button className="w-full" onClick={() => setFieldName("size")}>
-                                  <span className={`${formData.products[index].size ? "text-gray-800" : "text-gray-400"}`}>
-                                    {r.size ? product_sizes.results.find((t) => t.id === r.size)?.name : "Tanlang"}
-                                  </span>
-                                </Button>
-                                {fieldName === "size" && (
-                                  <FieldModal
-                                    field_name={fieldName}
-                                    selectedItem={{ id: r.size, name: "" }}
-                                    setSelectedItem={newItem => {
-                                      if (newItem) setFormData(prev => ({ ...prev, products: prev.products.map((p, i) => i === index ? { ...p, size: newItem!.id } : p) }))
-                                      setFieldName("");
-                                    }}
-                                    selectedProductTypeId={product_types.results.find(type => type.id === r.product_type)?.name}
-                                    selectedModelId={product_models.results.find(model => model.id === r.model)?.name}
-                                  />
-                                )}
-                              </td>
-
-                              {/* Unit */}
-                              <td className="px-3 py-3 text-center">
-                                <Button className="w-full" onClick={() => setFieldName("unit")}>
-                                  <span className={`${formData.products[index].unit ? "text-gray-800" : "text-gray-400"}`}>
-                                    {r.unit ? product_units.results.find((t) => t.id === r.unit)?.name : "Tanlang"}
-                                  </span>
-                                </Button>
-                                {fieldName === "unit" && (
-                                  <FieldModal
-                                    field_name={fieldName}
-                                    selectedItem={{ id: r.unit, name: "" }}
-                                    setSelectedItem={newItem => {
-                                      if (newItem) setFormData(prev => ({ ...prev, products: prev.products.map((p, i) => i === index ? { ...p, unit: newItem!.id } : p) }))
-                                      setFieldName("");
-                                    }}
-                                    selectedProductTypeId={product_types.results.find(type => type.id === r.product_type)?.name}
-                                    selectedModelId={product_models.results.find(model => model.id === r.model)?.name}
-                                  />
-                                )}
-                              </td>
-
-                              <td className="px-3 py-3 text-center">
-                                <InputNumber
-                                  min={1}
-                                  className="w-24"
-                                  value={r.quantity}
-                                  onChange={(v) =>
-                                    updateRow(
-                                      r.raw_number + "",
-                                      "quantity",
-                                      Number(v || 0)
-                                    )
-                                  }
+                              {active?.field === "model" && active.row === r.raw_number && (
+                                <FieldModal
+                                  field_name="model"
+                                  selectedItem={{ id: String(r.model || ""), name: "" }}
+                                  // FILTRGA NOM EMAS, **ID** yuboring!
+                                  selectedProductTypeId={product_types.results.find((t) => String(t.id) === String(r.product_type))?.name || ""}
+                                  setSelectedItem={(newItem) => {
+                                    console.log(active)
+                                    if (!newItem) { setActive(null); return; }
+                                    setFormData(prev => ({
+                                      ...prev,
+                                      products: prev.products.map(p =>
+                                        p.raw_number === active.row
+                                          ? { ...p, model: String(newItem.id), size: "" }
+                                          : p
+                                      ),
+                                    }));
+                                    setActive(null);
+                                  }}
                                 />
-                              </td>
+                              )}
+                            </td>
 
-                              <div className="w-44">
-                                <td className="px-3 py-3 text-center">
-                                  <Input
-                                    placeholder="Izoh"
-                                    value={r.description}
-                                    onChange={(e) =>
-                                      updateRow(
-                                        r.raw_number + "",
-                                        "description",
-                                        e.target.value
-                                      )
-                                    }
-                                  />
-                                </td>
-                              </div>
 
-                              <td className="px-3 py-3 text-center">
-                                <Button
-                                  danger
-                                  onClick={() => removeRow(r.raw_number + "")}
-                                  icon={<Trash2 size={16} />}
-                                >
-                                </Button>
-                              </td>
-                            </tr>
-                          );
-                        })
-                      ) : (
-                        <tr>
-                          <td></td>
-                          <td></td>
-                          <td></td>
-                          <td></td>
-                          <td className="px-4 py-2 text-red-500 text-lg font-semibold">Tovar tanlanmagan</td>
-                          <td></td>
-                          <td></td>
-                          <td></td>
-                          <td></td>
-                          <td></td>
-                        </tr>
-                      )}
-                    </tbody>
-                  </table>
-                )}
+                            <td className="px-3 py-3 text-center">
+                              <InputNumber
+                                min={1}
+                                className="w-24"
+                                value={r.quantity}
+                                onChange={(v) =>
+                                  updateRow(
+                                    r.raw_number + "",
+                                    "quantity",
+                                    Number(v || 0)
+                                  )
+                                }
+                              />
+                            </td>
+
+                            <td className="px-3 py-3 text-center">
+                              <Input
+                                placeholder="Izoh"
+                                value={r.description}
+                                onChange={(e) =>
+                                  updateRow(
+                                    r.raw_number + "",
+                                    "description",
+                                    e.target.value
+                                  )
+                                }
+                              />
+                            </td>
+
+                            <td className="px-3 py-3 text-center">
+                              <Button
+                                danger
+                                onClick={() => removeRow(r.raw_number + "")}
+                                icon={<Trash2 size={16} />}
+                              >
+                              </Button>
+                            </td>
+                          </tr>
+                        );
+                      })
+                    ) : (
+                      <tr>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td className="px-4 py-2 text-red-500 text-lg font-semibold">Tovar tanlanmagan</td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
               </div>
             </div>
           </div>
 
           {/* ===== Yuborilayotgan xat ===== */}
-          <div className='flex '>
-
-            <div className="flex items-center gap-4 mb-3">
-              <div className={`p-3 rounded-lg`}>
-                <div className={`text-3xl`}>
-                  <FileWordOutlined className="text-blue-500 bg-blue-50" />
-                </div>
+          <div className='flex border shadow-md max-w-[700px] px-6 py-4 rounded-lg'>
+            <div className="flex items-center gap-4 mb-3 w-full">
+              <div className={`text-5xl p-6 flex items-center justify-center rounded-full text-blue-500 bg-blue-50`}>
+                <FileWordOutlined />
               </div>
               <div className="flex flex-col">
-                <h4 className="text-gray-800 font-semibold text-[12px] truncate w-40">
+                <h4 className="text-gray-800 font-semibold text-xl truncate w-40">
                   {/* {file.file_name} */}
                   {messageFile?.name}
                 </h4>
-                {messageFile?.type}
-                <p className="text-gray-500 text-[12px] mt-1">{messageFile?.lastModified}</p>
+                <p className="text-lg">{currentUserInfo?.name}</p>
+                <p className="text-gray-500 mt-1">{currentUserInfo?.type_user}</p>
               </div>
             </div>
 
             {/* 🔸 Action tugmalar */}
-            <div className="flex flex-col gap-2">
+            <div className="flex flex-col gap-2 min-w-[150px]">
               <button
-                // onClick={() => setSelectedFile(file)}
-                className="p-1 rounded-md text-gray-600 hover:text-purple-700 hover:bg-gray-100 transition"
+                onClick={() => {
+                  const openWordURL = `ms-word:ofe|u|${fileURL}`;
+                  const link = document.createElement("a");
+                  link.href = openWordURL;
+                  document.body.appendChild(link);
+                  link.click();
+                  document.body.removeChild(link)
+                }}
+                className="p-1 rounded-md text-gray-600 hover:text-purple-700 hover:bg-gray-100 transition flex items-center justify-between gap-4 bg-gray-100 px-2 cursor-pointer"
                 title="Ko‘rish"
               >
-                <EyeOutlined className="text-lg" />
+                <span>Ko'rish</span>
+                <EyeOutlined className="text-[24px]" />
               </button>
               <button
-                // onClick={() => handleDownload(file)}
-                className="p-1 rounded-md text-gray-600 hover:text-purple-700 hover:bg-gray-100 transition"
+                onClick={() => {
+                  const openWordURL = `ms-word:ofe|u|${fileURL}`;
+                  const link = document.createElement("a");
+                  link.href = openWordURL;
+                  document.body.appendChild(link);
+                  link.click();
+                  document.body.removeChild(link)
+                }}
+                className="p-1 rounded-md text-gray-600 hover:text-purple-700 hover:bg-gray-100 transition flex items-center justify-between gap-4 bg-gray-100 px-2 cursor-pointer"
                 title="Yuklab olish"
               >
-                <DownloadOutlined className="text-lg" />
+                <span>O'zgartirish</span>
+                <Pencil className="text-[24px]" />
+              </button>
+              <button
+                onClick={() => {
+                  const link = document.createElement('a');
+                  link.href = fileURL;
+                  link.setAttribute('download', messageFile?.name || 'file.docm');
+                  document.body.appendChild(link);
+                  link.click();
+                  document.body.removeChild(link);
+                }}
+                className="p-1 rounded-md text-gray-600 hover:text-purple-700 hover:bg-gray-100 transition flex items-center justify-between gap-4 bg-gray-100 px-2 cursor-pointer"
+                title="Yuklab olish"
+              >
+                <span>Yuklab olish</span>
+                <DownloadOutlined className="text-[24px]" />
               </button>
             </div>
 
@@ -667,7 +682,7 @@ const OrderWIndow: React.FC<IDistrictOrderFormProps> = ({ setIsCreateFormModalOp
             </div>
           </div>
           <div className="flex justify-end gap-3">
-            <Button type="primary">
+            <Button type="primary" onClick={() => console.log(formData)}>
               Saqlash
             </Button>
           </div>

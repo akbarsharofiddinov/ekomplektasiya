@@ -58,6 +58,7 @@ const FieldModal: React.FC<FieldModalProps> = ({
   const [selectedId, setSelectedId] = React.useState<string | null>(
     selectedItem?.id ?? null
   );
+
   const dispatch = useAppDispatch()
 
   useEffect(() => {
@@ -309,7 +310,7 @@ const FieldModal: React.FC<FieldModalProps> = ({
                       O'lcham
                     </th>
                   )}
-                  {field_name === "product"  && (
+                  {field_name === "product" && (
                     <th className="text-center px-4 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">
                       O'lchov birligi
                     </th>
