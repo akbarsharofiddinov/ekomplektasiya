@@ -32,6 +32,14 @@ const fetchProductPaginationData = async (
     } catch (error) {
       console.log(error);
     }
+  try {
+    const response = await axiosAPI.get(
+      `products/list/?limit=${limit}&offset=${offset}&product_type=${product_type}`
+    );
+    if (response.status === 200) return response.data;
+  } catch (error) {
+    console.log(error);
+  }
 };
 
 const fetchProductTypesPaginationData = async (
@@ -53,6 +61,7 @@ const fetchProductModelsPaginationData = async (
   offset: number,
   product_type?: string
 ) => {
+  console.log(product_type)
   try {
     const response = await axiosAPI.get(
       `models/list/?limit=${limit}&offset=${offset}${
