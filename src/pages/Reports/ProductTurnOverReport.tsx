@@ -21,10 +21,6 @@ import toast from 'react-hot-toast';
 import { motion } from "framer-motion";
 import { Modal } from "antd";
 import FieldModal from '@/components/modal/FieldModal';
-<<<<<<< HEAD
-
-=======
->>>>>>> 615bf688ea2abb333ed59fe85f7e70563f7c944d
 
 interface FilterData {
   start_date: string;
@@ -83,18 +79,8 @@ const ProductTurnOverReport: React.FC = () => {
   const { product_types, products, product_sizes, product_models } = useAppSelector(state => state.product)
   
   const { regions } = useAppSelector(state => state.info);
-<<<<<<< HEAD
   const dispatch = useAppDispatch();
 
-=======
-
-  const { product_types, products, product_sizes } = useAppSelector(state => state.product)
-  const dispatch = useAppDispatch();
-
-  const [fieldName, setFieldName] = useState<"size" | "product" | "product_type" | "">("");
-
-  // Generate PDF for printing
->>>>>>> 615bf688ea2abb333ed59fe85f7e70563f7c944d
   const handlePrintPDF = () => {
     const printWindow = window.open("", "_blank");
     if (!printWindow) return;
@@ -257,7 +243,6 @@ const ProductTurnOverReport: React.FC = () => {
     }
   }
 
-<<<<<<< HEAD
   const getProducts = async () => {
     try {
       const response = await axiosAPI.get(`/products/list/?order_by=2`);
@@ -269,8 +254,6 @@ const ProductTurnOverReport: React.FC = () => {
     }
   }
 
-=======
->>>>>>> 615bf688ea2abb333ed59fe85f7e70563f7c944d
   // Get product turnover report based on filterData
   const getProductTurnoverReport = async () => {
     try {
@@ -296,10 +279,7 @@ const ProductTurnOverReport: React.FC = () => {
 
   useEffect(() => {
     getRegions();
-<<<<<<< HEAD
     getProducts();
-=======
->>>>>>> 615bf688ea2abb333ed59fe85f7e70563f7c944d
   }, [])
 
   useEffect(() => {
