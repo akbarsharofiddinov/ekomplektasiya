@@ -20,6 +20,7 @@ import { saveAs } from "file-saver";
 import { CheckCircleOutlined } from "@ant-design/icons";
 import toast from "react-hot-toast";
 import { motion } from "framer-motion";
+import FieldModal from '@/components/modal/FieldModal';
 interface FilterData {
     date: Dayjs | null; // ✅ endi Dayjs yoki null
     region: string;
@@ -64,17 +65,19 @@ const ProductMaterialsBalance: React.FC = () => {
         size: '',
     });
     const [warehouses, setWarehouses] = React.useState<Array<{ id: string, name: string }>>([]);
-    const [models, setModels] = React.useState<ProductInfo[]>([]);
-    const [sizes, setSizes] = React.useState<Array<{ id: string, name: string }>>([]);
-    const [productTypes, setProductTypes] = React.useState<Array<{ id: string, name: string, number: number }>>([]);
+    // const [models, setModels] = React.useState<ProductInfo[]>([]);
+    // const [sizes, setSizes] = React.useState<Array<{ id: string, name: string }>>([]);
+    // const [productTypes, setProductTypes] = React.useState<Array<{ id: string, name: string, number: number }>>([]);
     const [productsReport, setProductsReport] = React.useState<WarehouseItem[]>([]);
     const [handleDownloadModal, setHandleDownloadModal] = React.useState(false);
     const [open, setOpen] = useState(false);
 
     const { regions } = useAppSelector(state => state.info);
-    const { products } = useAppSelector(state => state.product)
-    const dispatch = useAppDispatch();
 
+    const [fieldName, setFieldName] = useState<"size" | "product" | "product_type" | "model" | "">("");
+
+    const { product_types, products, product_sizes, product_models } = useAppSelector(state => state.product)
+    const dispatch = useAppDispatch();
 
     const getRegions = async () => {
         if (regions.length === 0) {
@@ -96,52 +99,20 @@ const ProductMaterialsBalance: React.FC = () => {
         }
     }
 
-    const getProducts = async () => {
-        try {
-            const response = await axiosAPI.get(`/products/list/?order_by=2`);
-            if (response.status === 200) {
-                dispatch(setProducts(response.data.results));
-            }
-        } catch (error) {
-            console.log(error)
-        }
-    }
-
-    const getProductTypes = async () => {
-        try {
-            const response = await axiosAPI.get(`/product_types/list/?order_by=2`);
-            if (response.status === 200) {
-                setProductTypes(response.data);
-            }
-        } catch (error) {
-            console.log(error)
-        }
-    }
-
-    const getSizes = async () => {
-        try {
-            const response = await axiosAPI.get(`/sizes/list/?order_by=2`);
-            if (response.status === 200) {
-                setSizes(response.data);
-            }
-        } catch (error) {
-            console.log(error)
-        }
-    }
-
     // 2) getModels funksiyasi (API javobi .results bo‘lsa ham ishlaydi)
-    const getModels = async () => {
-        try {
-            const response = await axiosAPI.get(`/models/list/?order_by=2${filterData.product_type ? `&product_type=${filterData.product_type}` : ''}`);
-            if (response.status === 200) {
-                // ba'zi endpointlar response.data.results qaytaradi, ba'zilari response.data
-                const list = response.data.results ?? response.data;
-                setModels(list);
-            }
-        } catch (error) {
-            console.log("getModels error:", error);
-        }
-    };
+
+    // const getModels = async () => {
+    //     try {
+    //         const response = await axiosAPI.get(`/models/list/?order_by=2${filterData.product_type ? `&product_type=${filterData.product_type}` : ''}`);
+    //         if (response.status === 200) {
+    //             // ba'zi endpointlar response.data.results qaytaradi, ba'zilari response.data
+    //             const list = response.data.results ?? response.data;
+    //             setModels(list);
+    //         }
+    //     } catch (error) {
+    //         console.log("getModels error:", error);
+    //     }
+    // };
 
 
     // Get remainders report (API POST)
@@ -177,7 +148,8 @@ const ProductMaterialsBalance: React.FC = () => {
                 size: filterData.size || undefined,
                 bar_code: filterData.bar_code || undefined,
             });
-
+            console.log(filterData.product)
+            console.log(filterData.product_type)
             if (response.status === 200) {
                 setProductsReport(response.data);
                 setOpen(true); // ✅ modalni ochamiz
@@ -399,10 +371,6 @@ const ProductMaterialsBalance: React.FC = () => {
 
     useEffect(() => {
         getRegions();
-        getProducts();
-        getProductTypes();
-        getSizes();
-        getModels();
     }, [])
 
     useEffect(() => {
@@ -443,6 +411,7 @@ const ProductMaterialsBalance: React.FC = () => {
                                         {/* Viloyat */}
                                         <div className="flex flex-col gap-2 flex-1 min-w-[200px]">
                                             <Label htmlFor="endDate">Viloyat</Label>
+                                            <div className="flex">
                                             <Select
                                                 placeholder="Viloyatni tanlang"
                                                 allowClear
@@ -459,123 +428,207 @@ const ProductMaterialsBalance: React.FC = () => {
                                                         </Select.Option>
                                                     ))}
                                             </Select>
+                                            <Button
+                                               variant="outlined"
+                                               className="rounded-l-none border-l-0"
+                                               onClick={() => setFilterData(prev => ({ ...prev, region: "" }))}
+                                               disabled={!filterData.region}
+                                             >
+                                               X
+                                            </Button>
+                                            </div>
                                         </div>
 
                                         {/* Ombor */}
                                         <div className="flex flex-col gap-2 flex-1 min-w-[200px]">
                                             <Label htmlFor="warehouse">Ombor</Label>
-                                            <Select
-                                                placeholder="Omborni tanlang"
-                                                disabled={!filterData.region}
-                                                allowClear
-                                                value={filterData.warehouse || null}
-                                                onChange={(value) => setFilterData({ ...filterData, warehouse: value })}
-                                                className="w-full"
-                                            >
-                                                {warehouses
-                                                    .slice()
-                                                    .sort((a, b) => a.name.localeCompare(b.name, "uz"))
-                                                    .map(warehouse => (
-                                                        <Select.Option key={warehouse.id} value={warehouse.id}>
-                                                            {warehouse.name}
-                                                        </Select.Option>
-                                                    ))}
-                                            </Select>
-                                        </div>
-
-                                        {/* Model */}
-                                        <div className="flex flex-col gap-2 flex-1 min-w-[200px]">
-                                            <Label htmlFor="model">Model</Label>
-                                            <Select
-                                                placeholder="Modelni tanlang"
-                                                showSearch
-                                                allowClear
-                                                value={filterData.model || null}
-                                                onChange={(value) => setFilterData({ ...filterData, model: value })}
-                                                className="w-full"
-                                                disabled={models.length === 0} // yoki agar model product_type ga bog'liq bo'lsa: disabled={!filterData.product_type}
-                                                filterOption={(input, option) =>
-                                                    (option?.children as unknown as string).toLowerCase().includes(input.toLowerCase())
-                                                }
-                                            >
-                                                {models.map(model => (
-                                                    <Select.Option key={model.id} value={model.id}>
-                                                        {model.name}
-                                                    </Select.Option>
-                                                ))}
-                                            </Select>
-                                        </div>
-                                    </div>
-
-                                    {/* Pastdagi qismi */}
-                                    <div className="flex flex-wrap gap-4">
-                                        {/* Mahsulot */}
-                                        <div className="flex flex-col gap-2 flex-1 min-w-[200px]">
-                                            <Label htmlFor="product">Tovar</Label>
-                                            <Select
-                                                placeholder="Mahsulotni tanlang"
-                                                showSearch
-                                                allowClear
-                                                value={filterData.product || null}
-                                                onChange={(value) => setFilterData({ ...filterData, product: value })}
-                                                className="w-full"
-                                            >
-                                                {products.map(product => (
-                                                    <Select.Option key={product.id} value={product.id}>
-                                                        {product.name}
-                                                    </Select.Option>
-                                                ))}
-                                            </Select>
-                                        </div>
-
-                                        {/* Mahsulot turi */}
-                                        <div className="flex flex-col gap-2 flex-1 min-w-[200px]">
-                                            <Label htmlFor="product_type">Tovar turi</Label>
-                                            <Select
-                                                placeholder="Mahsulot turini tanlang"
-                                                showSearch
-                                                allowClear
-                                                value={filterData.product_type || null}
-                                                onChange={(value) => setFilterData({ ...filterData, product_type: value })}
-                                                className="w-full"
-                                            >
-                                                {productTypes.map(productType => (
-                                                    <Select.Option key={productType.id} value={productType.id}>
-                                                        {productType.name}
-                                                    </Select.Option>
-                                                ))}
-                                            </Select>
-                                        </div>
-
-                                        {/* O'lcham */}
-                                        <div className="flex flex-col gap-2 flex-1 min-w-[200px]">
-                                            <Label htmlFor="size">O'lcham</Label>
-                                            <Select
-                                                placeholder="O'lchamni tanlang"
-                                                showSearch
-                                                allowClear
-                                                value={filterData.size || null}
-                                                onChange={(value) => setFilterData({ ...filterData, size: value })}
-                                                className="w-full"
-                                            >
-                                                {sizes.map(size => (
-                                                    <Select.Option key={size.id} value={size.id}>
-                                                        {size.name}
-                                                    </Select.Option>
-                                                ))}
-                                            </Select>
+                                            <div className="flex">
+                                                <Select
+                                                    placeholder="Omborni tanlang"
+                                                    disabled={!filterData.region}
+                                                    allowClear
+                                                    value={filterData.warehouse || null}
+                                                    onChange={(value) => setFilterData({ ...filterData, warehouse: value })}
+                                                    className="w-full"
+                                                >
+                                                    {warehouses
+                                                        .slice()
+                                                        .sort((a, b) => a.name.localeCompare(b.name, "uz"))
+                                                        .map(warehouse => (
+                                                            <Select.Option key={warehouse.id} value={warehouse.id}>
+                                                                {warehouse.name}
+                                                            </Select.Option>
+                                                        ))}
+                                                </Select>
+                                                <Button
+                                                variant="outlined"
+                                                className="rounded-l-none border-l-0"
+                                                onClick={() => {
+                                                    setFilterData(prev => ({ ...prev, warehouse: "" }));
+                                                }}
+                                                disabled={!filterData.warehouse} 
+                                                >
+                                                X
+                                                </Button>
+                                            </div>
                                         </div>
 
                                         {/* Shtrix kod */}
                                         <div className="flex flex-col gap-2 flex-1 min-w-[200px]">
                                             <Label htmlFor="bar_code">Shtrix kod</Label>
-                                            <Input
-                                                placeholder="Shtrix kodni kiriting"
-                                                value={filterData.bar_code || ""}
-                                                onChange={(e) => setFilterData({ ...filterData, bar_code: e.target.value })}
-                                                className="w-full"
-                                            />
+                                            <div className="flex">
+                                                <Input
+                                                    placeholder="Shtrix kodni kiriting"
+                                                    value={filterData.bar_code || ""}
+                                                    onChange={(e) => setFilterData({ ...filterData, bar_code: e.target.value })}
+                                                    className="w-full"
+                                                />
+                                                <Button
+                                                    variant="outlined"
+                                                    className="rounded-l-none border-l-0"
+                                                    onClick={() => {
+                                                    setFilterData(prev => ({ ...prev, bar_code: "" }));
+                                                    }}
+                                                    disabled={!filterData.bar_code}
+                                                
+                                                >
+                                                    X
+                                                </Button>
+                                            </div>
                                         </div>
+
+
+                                    </div>
+
+                                    {/* Pastdagi qismi */}
+                                    <div className="flex flex-wrap gap-4">
+
+                                        {/* Mahsulot turi */}
+                                        <div className="flex flex-col gap-2 flex-1 min-w-[200px]">
+                                            <Label htmlFor="product_type">Tovar turi</Label>
+                                            <div className="flex">
+                                                <Button className="w-full" onClick={() => setFieldName("product_type")}><span className={`${filterData.product_type ? "text-gray-800" : "text-gray-400"}`}>{filterData.product_type ? product_types.results.find((t) => t.id === filterData.product_type)?.name : "Tanlang"}</span>
+                                                </Button>
+                                                {fieldName === "product_type" && (
+                                                    <FieldModal
+                                                        field_name={fieldName}
+                                                        selectedItem={{ id: filterData.product_type, name: "" }}
+                                                        setSelectedItem={newItem => {
+                                                            if (newItem) setFilterData(prev => ({ ...prev, product_type: newItem.id }))
+                                                            setFieldName("")
+                                                        }}
+                                                    />
+                                                )}
+                                                <Button
+                                                  variant="outlined"
+                                                  className="rounded-l-none border-l-0"
+                                                  onClick={() => {
+                                                    setFilterData(prev => ({ ...prev, product_type: "" }));
+                                                  }}
+                                                  disabled={!filterData.product_type}
+                                                >
+                                                  X
+                                                </Button>
+                                            </div>
+                                            
+                                        </div>
+                                        {/* Model */}
+                                        <div className="flex flex-col gap-2 flex-1 min-w-[200px]">
+                                            <Label htmlFor="model">Model</Label>
+                                            <div className="flex">
+                                                <Button className="w-full" onClick={() => setFieldName("model")}><span className={`${filterData.model ? "text-gray-800" : "text-gray-400"}`}>{filterData.model ? product_models.results.find((t) => t.id === filterData.model)?.name : "Tanlang"}</span>
+                                                </Button>
+                                                {fieldName === "model" && (
+                                                    <FieldModal
+                                                        field_name={fieldName}
+                                                        selectedItem={{ id: filterData.model, name: "" }}
+                                                        setSelectedItem={newItem => {
+                                                            if (newItem)
+                                                                setFilterData(prev => ({ ...prev, model: newItem.id }));
+                                                            setFieldName("");
+                                                        }}
+                                                        selectedProductTypeId={product_types.results.find(item => item.id === filterData.product_type)?.name}
+                                                    />
+                                                )}
+                                                <Button
+                                                    variant="outlined"
+                                                    className="rounded-l-none border-l-0"
+                                                    onClick={() => {
+                                                      setFilterData(prev => ({ ...prev, model: "" }));
+                                                    }}
+                                                    disabled={!filterData.model}
+                                                
+                                                  >
+                                                    X
+                                                </Button>
+                                            </div>
+
+                                        </div>
+
+                                        {/* O'lcham */}
+                                        <div className="flex flex-col gap-2 flex-1 min-w-[200px]">
+                                            <Label htmlFor="size">O'lcham</Label>
+                                            <div className="flex">
+                                                <Button className="w-full" onClick={() => setFieldName("size")}><span className={`${filterData.size ? "text-gray-800" : "text-gray-400"}`}>{filterData.size ? product_sizes.results.find((t) => t.id === filterData.size)?.name : "Tanlang"}</span>
+                                                </Button>
+                                                {fieldName === "size" && (
+                                                    <FieldModal
+                                                        field_name="size"
+                                                        selectedItem={{ id: filterData.size, name: "" }}
+                                                        setSelectedItem={newItem => {
+                                                            if (newItem) setFilterData(prev => ({ ...prev, size: newItem.id }))
+                                                            setFieldName("")
+                                                        }}
+                                                        selectedProductTypeId={product_types.results.find(item => item.id === filterData.product_type)?.name}
+                                                        selectedModelId={product_models.results.find(item => item.id === filterData.model)?.name}
+                                                    />
+                                                )}
+                                                <Button
+                                                  variant="outlined"
+                                                  className="rounded-l-none border-l-0"
+                                                  onClick={() => {
+                                                    setFilterData(prev => ({ ...prev, size: "" }));
+                                                  }}
+                                                  disabled={!filterData.size}
+                                                  
+                                                >
+                                                  X
+                                                </Button>
+                                            </div>
+                                            
+                                        </div>
+                                        {/* Mahsulot */}
+                                        <div className="flex flex-col gap-2 flex-1 min-w-[200px]">
+                                            <Label htmlFor="product">Tovar</Label>
+                                            <div className="flex">
+                                                <Button disabled={!filterData.product_type} className="w-full" onClick={() => setFieldName("product")}><span className={`${filterData.product ? "text-gray-800" : "text-gray-400"}`}>{filterData.product ? products.results.find((t) => t.id === filterData.product)?.name : "Tanlang"}</span>
+                                                </Button>
+                                                {fieldName === "product" && (
+                                                    <FieldModal
+                                                        field_name="product"
+                                                        selectedItem={{ id: filterData.product, name: "" }}
+                                                        setSelectedItem={newItem => {
+                                                            if (newItem) setFilterData(prev => ({ ...prev, product: newItem.id }))
+                                                            setFieldName("")
+                                                        }}
+                                                        selectedProductTypeId={product_types.results.find(item => item.id === filterData.product_type)?.name}
+                                                        selectedModelId={product_models.results.find(item => item.id === filterData.model)?.name}
+                                                        selectedSizeId={product_sizes.results.find(item => item.id === filterData.size)?.name}
+                                                    />
+                                                )
+                                                }
+                                                <Button
+                                                    variant="outlined"
+                                                    className="rounded-l-none border-l-0"
+                                                    onClick={() => {
+                                                      setFilterData(prev => ({ ...prev, product: "" }));
+                                                    }}
+                                                     disabled={!filterData.product}>
+                                                    X
+                                                </Button>
+                                            </div>
+                                        </div>
+
                                     </div>
                                 </div>
 
@@ -974,7 +1027,7 @@ const ProductMaterialsBalance: React.FC = () => {
                     </Button>,
                 ]}
                 maskStyle={{
-                    backgroundColor: "rgba(0, 0, 0, 0.45)", // 🔹 yarim shaffof qora fon
+                    backgroundColor: "rgba(0, 0, 0, 0.45)", 
                 }}
                 bodyStyle={{
                     display: "flex",
@@ -982,9 +1035,9 @@ const ProductMaterialsBalance: React.FC = () => {
                     justifyContent: "center",
                     alignItems: "center",
                     minHeight: "220px",
-                    backgroundColor: "#52c41a", // 💚 butun modal yashil
+                    backgroundColor: "#52c41a", 
                     borderRadius: "12px",
-                    color: "white", // matn va ikon oq
+                    color: "white",
                 }}
             >
                 {/* 🔹 Icon animatsiya bilan */}
@@ -1020,56 +1073,6 @@ const ProductMaterialsBalance: React.FC = () => {
                     Hisobot muvaffaqiyatli shakillantirildi
                 </motion.div>
             </Modal>
-
-            {/* <Modal
-                open={open}
-                onOk={() => setOpen(false)}
-                cancelButtonProps={{ style: { display: "none" } }}
-                closable={false} // ❌ X tugmasi yo‘q
-                centered
-                width={450}
-                footer={[
-                    <Button
-                        key="ok"
-                        type="primary"
-                        style={{ borderRadius: "8px", padding: "6px 25px" }}
-                        onClick={() => setOpen(false)}
-                    >
-                        OK
-                    </Button>,
-                ]}
-                bodyStyle={{
-                    display: "flex",
-                    flexDirection: "column",
-                    justifyContent: "center",
-                    alignItems: "center",
-                    minHeight: "220px",
-                    background: "linear-gradient(135deg, #f0fff4, #e6fffb)", // 💡 fon chiroyli gradient
-                    borderRadius: "12px",
-                }}
-            >
-                <motion.div
-                    initial={{ scale: 0 }}
-                    animate={{ scale: 1.1 }}
-                    transition={{
-                        type: "spring",
-                        stiffness: 200,
-                        damping: 15,
-                    }}
-                    style={{ display: "flex", justifyContent: "center", alignItems: "center" }}
-                >
-                    <CheckCircleOutlined style={{ fontSize: "70px", color: "#52c41a" }} />
-                </motion.div>
-
-                <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.3, duration: 0.5 }}
-                    style={{ marginTop: "20px", fontSize: "20px", fontWeight: "600", textAlign: "center" }}
-                >
-                    Hisobot muvaffaqiyatli shakillantirildi
-                </motion.div>
-            </Modal> */}
 
         </>
     )
