@@ -214,7 +214,7 @@ const FieldModal: React.FC<FieldModalProps> = ({
   };
 
   const onCancel = () => {
-    setSelectedItem({id: "", name: ""});
+    setSelectedItem({ id: '', name: '' });
   }
 
 
