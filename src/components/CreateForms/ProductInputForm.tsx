@@ -89,8 +89,7 @@ const ProductInputForm: React.FC<IProductInputFormProps> = ({
     typesOfGoods,
     currentCreatedCounterParty,
   } = useAppSelector((state) => state.info);
-  const { product_types, products, product_models, product_sizes } =
-    useAppSelector((state) => state.product);
+  const { product_types, products, product_models, product_sizes, product_units } = useAppSelector((state) => state.product);
   const dispatch = useAppDispatch();
 
   // Datepicker onChange
@@ -260,7 +259,6 @@ const ProductInputForm: React.FC<IProductInputFormProps> = ({
     }));
   }, [currentCreatedCounterParty]);
 
-  console.log(formData)
 
   return (
     <>
@@ -450,6 +448,9 @@ const ProductInputForm: React.FC<IProductInputFormProps> = ({
                       O'lchami
                     </TableHead>
                     <TableHead className="text-slate-700 font-semibold p-3 text-center">
+                      O'lchov birligi
+                    </TableHead>
+                    <TableHead className="text-slate-700 font-semibold p-3 text-center">
                       Tovar
                     </TableHead>
                     <TableHead className="text-slate-700 font-semibold p-3 text-center">
@@ -460,6 +461,9 @@ const ProductInputForm: React.FC<IProductInputFormProps> = ({
                     </TableHead>
                     <TableHead className="text-slate-700 font-semibold p-3 text-center">
                       Summa
+                    </TableHead>
+                    <TableHead className="text-slate-700 font-semibold p-3 text-center">
+                      Ochirish
                     </TableHead>
                   </TableRow>
                 </TableHeader>
@@ -565,14 +569,36 @@ const ProductInputForm: React.FC<IProductInputFormProps> = ({
                         }
                       </TableCell>
 
+                      <TableCell className="text-slate-700 font-medium p-3">
+                        <Button className="w-full" onClick={() => {
+                          setFieldName("unit")
+                        }}>
+                          <span className={`${formData.products[index].unit ? "text-gray-800" : "text-gray-400"}`}>
+                            {product.unit ? product_units.results.find((m) => m.id === product.unit)?.name : "Tanlang"}
+                          </span>
+                        </Button>
+                        {fieldName === "unit" && (
+                          <FieldModal
+                            field_name="unit"
+                            selectedItem={{ id: product.unit, name: "" }}
+                            setSelectedItem={newItem => {
+                              if (newItem) setFormData(prev => ({ ...prev, products: prev.products.map((p, i) => i === index ? { ...p, unit: newItem!.id } : p) }))
+                              setFieldName("")
+                            }}
+                          />
+                        )
+                        }
+                      </TableCell>
+
                       {/* Product */}
                       
                       <TableCell className="text-slate-700 font-medium p-3">
-                        <Button className="w-full" onClick={() => {
+                        <Button className="w-full" disabled={!product.product_type}  onClick={() => {
                           setFieldName("product")
                         }}>
                           <span className={`${formData.products[index] ? "text-gray-800" : "text-gray-400"}`}>
                             {product.product ? products.results.find((prod) => prod.id === product.product)?.name : "Tanlang"}
+                            
                           </span>
                         </Button>
                         {fieldName === "product" && (
@@ -584,6 +610,8 @@ const ProductInputForm: React.FC<IProductInputFormProps> = ({
                               setFieldName("")
                             }}
                             selectedProductTypeId={product_types.results.find(item => item.id === product.product_type)?.name}
+                            selectedModelId={product_models.results.find(item => item.id === product.model)?.name}
+                            selectedSizeId={product_sizes.results.find(item => item.id === product.size)?.name}
                           />
                         )
                         }

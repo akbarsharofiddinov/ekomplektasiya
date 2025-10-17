@@ -1127,6 +1127,7 @@ const ProductInputDetailPage: React.FC = () => {
                               return p
                             })
                           }} /> */}
+
                         </TableCell>
 
                         {/* Model */}
@@ -1152,7 +1153,7 @@ const ProductInputDetailPage: React.FC = () => {
                               </Select.Option>
                             ))}
                           </Select> */}
-                          {/* <FieldModal field_name="model" selectedProductTypeId={item.product_type.name} selectedItem={item.model} setSelectedItem={newProduct => {
+                          {/* <FieldModal field_name="model" selectedProductTypeId={item.model.name} selectedItem={item.model} setSelectedItem={newProduct => {
                             updateProductField(index, (p) => {
                               p.model = newProduct ?? { id: "", name: "" }
                               return p
