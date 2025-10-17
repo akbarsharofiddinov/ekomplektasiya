@@ -57,6 +57,8 @@ const FieldModal: React.FC<FieldModalProps> = ({
     selectedItem?.id ?? null
   );
 
+  console.log(selectedProductTypeId)
+
   const dispatch = useAppDispatch()
 
   useEffect(() => {
@@ -196,7 +198,6 @@ const FieldModal: React.FC<FieldModalProps> = ({
     });
   }, [items, searchTerm]);
 
-  console.log(items , 'Item data')
   const onRowSelect = (item: IResultsType) => {
     setSelectedId((prev) => (prev === String(item.id) ? null : String(item.id)));
   };
@@ -211,7 +212,7 @@ const FieldModal: React.FC<FieldModalProps> = ({
   };
 
   const onCancel = () => {
-    setSelectedItem({id: "", name: ""});
+    setSelectedItem({ id: '', name: '' });
   }
 
 
