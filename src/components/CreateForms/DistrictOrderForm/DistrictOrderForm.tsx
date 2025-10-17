@@ -1,5 +1,3 @@
-/* eslint-disable react-hooks/exhaustive-deps */
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useCallback, useEffect, useState } from "react";
 import Typography from "@mui/material/Typography";
 import { Button, Input, InputNumber, Popconfirm, Select, message } from "antd";
