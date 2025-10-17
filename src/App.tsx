@@ -14,6 +14,7 @@ import RepublicOrderDetail from "./pages/Orders/RepublicOrder/RepublicOrderDetai
 import Profile from "./pages/Profile/Profile";
 import FieldModal from "./components/modal/FieldModal";
 import { useAppSelector } from "./store/hooks/hooks";
+import ComplektasiyaOrderDetail from "./pages/Orders/Complektasiya/ComplektasiyaOrderDetail";
 // import CKEditorComponent from "./components/DocEditor/CKEditorComponent";
 // import TinyMCEComponent from "./components/DocEditor/TinyMCEComponent";
 
@@ -89,12 +90,12 @@ const routes = createBrowserRouter([
       {
         path: "order-by-sale",
         element: <KomplektasiyaOrder/>,
-        // children: [
-        //   {
-        //     path: "order-details/:id",
-        //     element: <RepublicOrderDetail/>
-        //   }
-        // ]
+        children: [
+          {
+            path: "order-details/:id",
+            element: <ComplektasiyaOrderDetail/>
+          }
+        ]
       },
       {
         path: 'product-circulation-report',

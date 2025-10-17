@@ -62,7 +62,10 @@ interface IProductList {
   id: string;
   name: string;
   product_code: string;
-  created_at: string; // ISO date string
+  created_at: string;
+  product_type: string;
+  model: string;
+  size: string;
 }
 
 // Dimension for product and size types

@@ -16,10 +16,22 @@ axiosAPI.interceptors.request.use((config) => {
 });
 
 const fetchProductPaginationData = async (
-  limit: number,
-  offset: number,
-  product_type?: string
-) => {
+    limit: number, 
+    offset: number,
+    product_type?: string,
+    models?: string,
+    sizes?: string,
+  ) => {
+    try {
+      const response = await axiosAPI.get(
+        `products/list/?limit=${limit}&offset=${offset}&product_type=${product_type}${
+        sizes ? `&size=${sizes}` : ""
+      }${models ? `&model=${models}` : ""}`
+      );
+      if (response.status === 200) return response.data;
+    } catch (error) {
+      console.log(error);
+    }
   try {
     const response = await axiosAPI.get(
       `products/list/?limit=${limit}&offset=${offset}&product_type=${product_type}`

@@ -461,6 +461,7 @@ const ProductMaterialsBalance: React.FC = () => {
                                             />
                                         </div>
 
+
                                     </div>
 
                                     {/* Pastdagi qismi */}
@@ -469,21 +470,6 @@ const ProductMaterialsBalance: React.FC = () => {
                                         {/* Mahsulot turi */}
                                         <div className="flex flex-col gap-2 flex-1 min-w-[200px]">
                                             <Label htmlFor="product_type">Tovar turi</Label>
-                                            {/* <Select
-                                                placeholder="Mahsulot turini tanlang"
-                                                showSearch
-                                                allowClear
-                                                value={filterData.product_type || null}
-                                                onChange={(value) => setFilterData({ ...filterData, product_type: value })}
-                                                className="w-full"
-                                            >
-                                                {productTypes.map(productType => (
-                                                    <Select.Option key={productType.id} value={productType.id}>
-                                                        {productType.name}
-                                                    </Select.Option>
-                                                ))}
-                                            </Select> */}
-
                                             <Button className="w-full" onClick={() => setFieldName("product_type")}><span className={`${filterData.product_type ? "text-gray-800" : "text-gray-400"}`}>{filterData.product_type ? product_types.results.find((t) => t.id === filterData.product_type)?.name : "Tanlang"}</span>
                                             </Button>
                                             {fieldName === "product_type" && (
@@ -501,24 +487,6 @@ const ProductMaterialsBalance: React.FC = () => {
                                         {/* Model */}
                                         <div className="flex flex-col gap-2 flex-1 min-w-[200px]">
                                             <Label htmlFor="model">Model</Label>
-                                            {/* <Select
-                                                placeholder="Modelni tanlang"
-                                                showSearch
-                                                allowClear
-                                                value={filterData.model || null}
-                                                onChange={(value) => setFilterData({ ...filterData, model: value })}
-                                                className="w-full"
-                                                disabled={models.length === 0} // yoki agar model product_type ga bog'liq bo'lsa: disabled={!filterData.product_type}
-                                                filterOption={(input, option) =>
-                                                    (option?.children as unknown as string).toLowerCase().includes(input.toLowerCase())
-                                                }
-                                            >
-                                                {models.map(model => (
-                                                    <Select.Option key={model.id} value={model.id}>
-                                                        {model.name}
-                                                    </Select.Option>
-                                                ))}
-                                            </Select> */}
                                             <Button className="w-full" onClick={() => setFieldName("model")}><span className={`${filterData.model ? "text-gray-800" : "text-gray-400"}`}>{filterData.model ? product_models.results.find((t) => t.id === filterData.model)?.name : "Tanlang"}</span>
                                             </Button>
                                             {fieldName === "model" && (
@@ -526,9 +494,11 @@ const ProductMaterialsBalance: React.FC = () => {
                                                     field_name={fieldName}
                                                     selectedItem={{ id: filterData.model, name: "" }}
                                                     setSelectedItem={newItem => {
-                                                        if (newItem) setFilterData(prev => ({ ...prev, model: newItem.id }))
-                                                        setFieldName("")
+                                                        if (newItem)
+                                                            setFilterData(prev => ({ ...prev, model: newItem.id }));
+                                                        setFieldName("");
                                                     }}
+                                                    selectedProductTypeId={product_types.results.find(item => item.id === filterData.product_type)?.name}
                                                 />
                                             )}
                                         </div>
@@ -536,24 +506,10 @@ const ProductMaterialsBalance: React.FC = () => {
                                         {/* O'lcham */}
                                         <div className="flex flex-col gap-2 flex-1 min-w-[200px]">
                                             <Label htmlFor="size">O'lcham</Label>
-                                            {/* <Select
-                                                placeholder="O'lchamni tanlang"
-                                                showSearch
-                                                allowClear
-                                                value={filterData.size || null}
-                                                onChange={(value) => setFilterData({ ...filterData, size: value })}
-                                                className="w-full"
-                                            >
-                                                {sizes.map(size => (
-                                                    <Select.Option key={size.id} value={size.id}>
-                                                        {size.name}
-                                                    </Select.Option>
-                                                ))}
-                                            </Select> */}
 
                                             <Button className="w-full" onClick={() => setFieldName("size")}><span className={`${filterData.size ? "text-gray-800" : "text-gray-400"}`}>{filterData.size ? product_sizes.results.find((t) => t.id === filterData.size)?.name : "Tanlang"}</span>
                                             </Button>
-                                            {fieldName === "size" && (
+                                            {/* {fieldName === "size" && (
                                                 <FieldModal
                                                     field_name={fieldName}
                                                     selectedItem={{ id: filterData.size, name: "" }}
@@ -562,30 +518,27 @@ const ProductMaterialsBalance: React.FC = () => {
                                                         setFieldName("")
                                                     }}
                                                 />
+                                            )} */}
+                                            {fieldName === "size" && (
+                                                <FieldModal
+                                                    field_name="size"
+                                                    selectedItem={{ id: filterData.size, name: "" }}
+                                                    setSelectedItem={newItem => {
+                                                        if (newItem) setFilterData(prev => ({ ...prev, size: newItem.id }))
+                                                        setFieldName("")
+                                                    }}
+                                                    // <-- pass IDs (not names)
+                                                    selectedProductTypeId={product_types.results.find(item => item.id === filterData.product_type)?.name}
+                                                    selectedModelId={product_models.results.find(item => item.id === filterData.model)?.name}
+                                                />
                                             )}
                                         </div>
-
                                         {/* Mahsulot */}
                                         <div className="flex flex-col gap-2 flex-1 min-w-[200px]">
                                             <Label htmlFor="product">Tovar</Label>
-                                            {/* <Select
-                                                placeholder="Mahsulotni tanlang"
-                                                showSearch
-                                                allowClear
-                                                value={filterData.product || null}
-                                                onChange={(value) => setFilterData({ ...filterData, product: value })}
-                                                className="w-full"
-                                            >
-                                                {products.map(product => (
-                                                    <Select.Option key={product.id} value={product.id}>
-                                                        {product.name}
-                                                    </Select.Option>
-                                                ))}
-                                            </Select> */}
-
                                             <Button className="w-full" onClick={() => setFieldName("product")}><span className={`${filterData.product ? "text-gray-800" : "text-gray-400"}`}>{filterData.product ? products.results.find((t) => t.id === filterData.product)?.name : "Tanlang"}</span>
                                             </Button>
-                                            {fieldName === "product" && (
+                                            {/* {fieldName === "product" && (
                                                 <FieldModal
                                                     field_name={fieldName}
                                                     selectedItem={{ id: filterData.product, name: "" }}
@@ -594,7 +547,19 @@ const ProductMaterialsBalance: React.FC = () => {
                                                         setFieldName("")
                                                     }}
                                                 />
-                                            )}
+                                            )} */}
+                                            {fieldName === "product" && (
+                                                <FieldModal
+                                                    field_name="product"
+                                                    selectedItem={{ id: filterData.product, name: "" }}
+                                                    setSelectedItem={newItem => {
+                                                        if (newItem) setFilterData(prev => ({ ...prev, product: newItem.id }))
+                                                        setFieldName("")
+                                                    }}
+                                                    selectedProductTypeId={product_types.results.find(item => item.id === filterData.product_type)?.name}
+                                                />
+                                            )
+                                            }
                                         </div>
 
                                     </div>
