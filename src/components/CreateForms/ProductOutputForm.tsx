@@ -10,12 +10,6 @@ import {
   setTypesOfGoods,
   setWarehouses,
 } from "@/store/infoSlice/infoSlice";
-import {
-  setProductModels,
-  setProducts,
-  setProductSizes,
-  setProductTypes,
-} from "@/store/productSlice/productSlice";
 import SelectRemainsModal from "./SelectRemainsModal";
 import { Button } from "../UI/button";
 import { Trash2 } from "lucide-react";
@@ -61,8 +55,6 @@ const ProductOutputForm: React.FC<ProductOutputFormProps> = ({ setIsCreateFormMo
   // Redux
   const { regions, districts, warehouses, counterparties, typesOfGoods, currentUserInfo } =
     useAppSelector((state) => state.info);
-  const { product_types, products, product_models, product_sizes } =
-    useAppSelector((state) => state.product);
   const dispatch = useAppDispatch();
 
   // Datepicker onChange
@@ -194,28 +186,6 @@ const ProductOutputForm: React.FC<ProductOutputFormProps> = ({ setIsCreateFormMo
   }, [warehouse, warehouses]);
 
   // API - Products ================================
-  // Get products list
-  const getProductsList = React.useCallback(async () => {
-    try {
-      const response = await axiosAPI.get("products/list");
-      if (response.status === 200) {
-        dispatch(setProducts(response.data));
-      }
-    } catch (error) {
-      console.log(error);
-    }
-  }, [dispatch]);
-
-  const getProductTypesList = React.useCallback(async () => {
-    try {
-      const response = await axiosAPI.get("product_types/list");
-      if (response.status === 200) {
-        dispatch(setProductTypes(response.data));
-      }
-    } catch (error) {
-      console.log(error);
-    }
-  }, [dispatch]);
 
   // Get type output list
   const getTypeOutputList = async () => {
@@ -228,30 +198,6 @@ const ProductOutputForm: React.FC<ProductOutputFormProps> = ({ setIsCreateFormMo
       console.log(error);
     }
   };
-
-  // Get product models list
-  const getProductModelsList = React.useCallback(async () => {
-    try {
-      const response = await axiosAPI.get("models/list");
-      if (response.status === 200) {
-        dispatch(setProductModels(response.data));
-      }
-    } catch (error) {
-      console.log(error);
-    }
-  }, [dispatch]);
-
-  // Get product sizes list
-  const getProductSizesList = React.useCallback(async () => {
-    try {
-      const response = await axiosAPI.get("sizes/list");
-      if (response.status === 200) {
-        dispatch(setProductSizes(response.data));
-      }
-    } catch (error) {
-      console.log(error);
-    }
-  }, [dispatch]);
 
   // Handle remainders fetch
   async function getRemainders() {
@@ -355,24 +301,6 @@ const ProductOutputForm: React.FC<ProductOutputFormProps> = ({ setIsCreateFormMo
       products: updatedFormDataProducts,
     }));
   }, [selectedRemaindersList.length]);
-
-  useEffect(() => {
-    // Fetch all product-related data on component mount
-
-    if (products.length === 0) getProductsList();
-    if (product_types.length === 0) getProductTypesList();
-    if (product_models.length === 0) getProductModelsList();
-    if (product_sizes.length === 0) getProductSizesList();
-  }, [
-    getProductsList,
-    getProductTypesList,
-    getProductModelsList,
-    getProductSizesList,
-    products.length,
-    product_types.length,
-    product_models.length,
-    product_sizes.length,
-  ]);
 
   return (
     <>

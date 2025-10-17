@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useCallback, useEffect, useState } from "react";
 import Typography from "@mui/material/Typography";
-import { Button, Input, InputNumber, Popconfirm, Select, Spin, message } from "antd";
+import { Button, Input, InputNumber, Popconfirm, Select, message } from "antd";
 import { Pencil, Plus, Trash2 } from "lucide-react";
 import { axiosAPI } from "@/services/axiosAPI";
 import { useAppDispatch, useAppSelector } from "@/store/hooks/hooks";
@@ -18,10 +18,29 @@ type ID = string;
 interface ProductRow {
   raw_number: number;
   product: string;
-  model: string;
-  product_type: string;
-  size: string;
-  unit: string;
+  model: {
+    id: string;
+    name: string;
+    name_uz: string;
+    product_type: string;
+  };
+  product_type: {
+    id: string;
+    name: string;
+    name_uz: string;
+  };
+  size: {
+    id: string;
+    name: string;
+    name_uz: string;
+    product_type: string;
+    model: string;
+  };
+  unit: {
+    id: string;
+    name: string;
+    name_uz: string;
+  };
   quantity: number;
   order_type: string;
   description: string;
@@ -52,19 +71,17 @@ const initialFormData = {
 
 const defaultProductRow = {
   product: "",
-  model: "",
-  product_type: "",
-  size: "",
-  unit: "",
+  product_type: { id: "", name: "", name_uz: "" },
+  model: { id: "", name: "", name_uz: "", product_type: "" },
+  size: { id: "", name: "", name_uz: "", product_type: "", model: "" },
+  unit: { id: "", name: "", name_uz: "" },
   quantity: 1,
   order_type: "",
   description: "",
 }
 
-// Backend POST endpoint (o'zingizniki bilan almashtiring kerak bo'lsa)
 const CREATE_ENDPOINT = "/district-orders/create/";
 
-// Array yoki {results: [...] } uchun normalize
 function normalizeList(data: any): IDName[] {
   const items = Array.isArray(data) ? data : (data?.results ?? data?.data ?? []);
   if (!Array.isArray(items)) return [];
@@ -103,7 +120,7 @@ const OrderWIndow: React.FC<IDistrictOrderFormProps> = ({ setIsCreateFormModalOp
 
   // Redux
   const { currentUserInfo } = useAppSelector(state => state.info);
-  const { product_types, product_models, product_sizes, product_units, order_types } = useAppSelector(state => state.product)
+  const { product_types, product_units, order_types } = useAppSelector(state => state.product)
 
   const dispatch = useAppDispatch()
 
@@ -135,6 +152,8 @@ const OrderWIndow: React.FC<IDistrictOrderFormProps> = ({ setIsCreateFormModalOp
       products: updatedProducts,
     }));
   };
+
+  console.log(active)
 
 
   // 🔹 Hodimlar ro'yxatini olish
@@ -204,12 +223,12 @@ const OrderWIndow: React.FC<IDistrictOrderFormProps> = ({ setIsCreateFormModalOp
       products: formData.products.map((p) => ({
         raw_number: p.raw_number,
         product: p.product, // bu joyda product ID bo‘lsa, ID yuboramiz
-        model: p.model,
-        product_type: p.product_type,
-        size: p.size,
-        unit: p.unit,
+        model: p.model.id,
+        product_type: p.product_type.id,
+        size: p.size.id,
+        unit: p.unit.id,
         quantity: p.quantity,
-        order_type: p.order_type, // 🔹 endi id yuboradi
+        order_type: p.order_type,
         description: p.description || "",
       })),
       executors: executors.map((ex) => ({
@@ -377,9 +396,6 @@ const OrderWIndow: React.FC<IDistrictOrderFormProps> = ({ setIsCreateFormModalOp
                   <tbody className="bg-[#f2f2f2b6]">
                     {formData.products.length ? (
                       formData.products.map((r) => {
-                        const index = formData.products.findIndex(
-                          (x) => x.raw_number === r.raw_number
-                        );
                         return (
                           <tr
                             key={r.raw_number}
@@ -428,24 +444,24 @@ const OrderWIndow: React.FC<IDistrictOrderFormProps> = ({ setIsCreateFormModalOp
                             <td className="px-3 py-3 text-center">
                               <Button className="w-full" onClick={() => setActive({ field: "product_type", row: r.raw_number })}>
                                 <span className={r.product_type ? "text-gray-800" : "text-gray-400"}>
-                                  {r.product_type ? product_types.results.find((t) => String(t.id) === String(r.product_type))?.name : "Tanlang"}
+                                  {r.product_type.id ? r.product_type.name_uz : "Tanlang"}
                                 </span>
                               </Button>
 
-                              {active?.field === "product_type" && active.row === r.raw_number && (
+                              {(active?.field === "product_type" && active.row === r.raw_number) && (
                                 <FieldModal
                                   field_name="product_type"
-                                  selectedItem={{ id: String(r.product_type || ""), name: "" }}
+                                  selectedItem={{ id: String(r.product_type || ""), name: "", name_uz: "" }}
                                   setSelectedItem={(newItem) => {
                                     if (!newItem) { setActive(null); return; } // bekor -> hech narsa qilmaymiz
+                                    console.log(newItem)
                                     setFormData(prev => ({
                                       ...prev,
-                                      products: prev.products.map(p =>
-                                        p.raw_number === r.raw_number
-                                          ? { ...p, product_type: String(newItem.id), model: "", size: "" }
-                                          : p
-                                      ),
-                                    }));
+                                      products: prev.products.map(p => p.raw_number === active.row
+                                        ? { ...p, product_type: { id: newItem.id, name: newItem.name, name_uz: newItem.name_uz } }
+                                        : p
+                                      )
+                                    }))
                                     setActive(null);
                                   }}
                                 />
@@ -457,33 +473,82 @@ const OrderWIndow: React.FC<IDistrictOrderFormProps> = ({ setIsCreateFormModalOp
                             <td className="px-3 py-3 text-center">
                               <Button className="w-full" onClick={() => setActive({ field: "model", row: r.raw_number })}>
                                 <span className={r.model ? "text-gray-800" : "text-gray-400"}>
-                                  {r.model ? product_models.results.find((m) => String(m.id) === String(r.model))?.name : "Tanlang"}
+                                  {r.model.id ? r.model.name_uz : "Tanlang"}
                                 </span>
                               </Button>
 
                               {active?.field === "model" && active.row === r.raw_number && (
                                 <FieldModal
                                   field_name="model"
-                                  selectedItem={{ id: String(r.model || ""), name: "" }}
+                                  selectedItem={{ id: String(r.model || ""), name: "", name_uz: "" }}
                                   // FILTRGA NOM EMAS, **ID** yuboring!
-                                  selectedProductTypeId={product_types.results.find((t) => String(t.id) === String(r.product_type))?.name || ""}
+                                  selectedProductTypeId={r.product_type.name || ""}
                                   setSelectedItem={(newItem) => {
-                                    console.log(active)
                                     if (!newItem) { setActive(null); return; }
                                     setFormData(prev => ({
                                       ...prev,
-                                      products: prev.products.map(p =>
-                                        p.raw_number === active.row
-                                          ? { ...p, model: String(newItem.id), size: "" }
-                                          : p
-                                      ),
-                                    }));
+                                      products: prev.products.map(p => p.raw_number === active.row ? { ...p, model: { id: String(newItem.id), name: newItem.name, name_uz: newItem.name_uz, product_type: p.model.product_type } } : p),
+                                    }))
                                     setActive(null);
                                   }}
                                 />
                               )}
                             </td>
 
+                            {/* Size */}
+                            <td className="px-3 py-3 text-center">
+                              <Button className="w-full" onClick={() => setActive({ field: "size", row: r.raw_number })}>
+                                <span className={r.size ? "text-gray-800" : "text-gray-400"}>
+                                  {r.size.id ? r.size.name : "Tanlang"}
+                                </span>
+                              </Button>
+
+                              {active?.field === "size" && active.row === r.raw_number && (
+                                <FieldModal
+                                  field_name="size"
+                                  selectedItem={{ id: String(r.size || ""), name: "", name_uz: "" }}
+                                  // FILTRGA NOM EMAS, **ID** yuboring!
+                                  selectedProductTypeId={r.product_type.name}
+                                  selectedModelId={r.model.name || ""}
+                                  setSelectedItem={(newItem) => {
+                                    console.log(active)
+                                    if (!newItem) { setActive(null); return; }
+                                    setFormData(prev => ({
+                                      ...prev,
+                                      products: prev.products.map(p => p.raw_number === active.row ? { ...p, size: { id: String(newItem.id), name: newItem.name, name_uz: newItem.name_uz, product_type: p.size.product_type, model: p.size.model } } : p),
+                                    }))
+                                    setActive(null);
+                                  }}
+                                />
+                              )}
+                            </td>
+
+                            {/* Unit */}
+                            <td className="px-3 py-3 text-center">
+                              <Button className="w-full" onClick={() => setActive({ field: "unit", row: r.raw_number })}>
+                                <span className={r.unit ? "text-gray-800" : "text-gray-400"}>
+                                  {r.unit.id ? r.unit.name : "Tanlang"}
+                                </span>
+                              </Button>
+
+                              {active?.field === "unit" && active.row === r.raw_number && (
+                                <FieldModal
+                                  field_name="unit"
+                                  selectedItem={{ id: String(r.unit || ""), name: "", name_uz: "" }}
+                                  setSelectedItem={(newItem) => {
+                                    console.log(active)
+                                    if (!newItem) { setActive(null); return; }
+                                    setFormData(prev => ({
+                                      ...prev,
+                                      products: prev.products.map(p => p.raw_number === active.row
+                                        ? { ...p, unit: { id: newItem.id, name: newItem.name, name_uz: newItem.name_uz } } : p
+                                      )
+                                    }))
+                                    setActive(null);
+                                  }}
+                                />
+                              )}
+                            </td>
 
                             <td className="px-3 py-3 text-center">
                               <InputNumber

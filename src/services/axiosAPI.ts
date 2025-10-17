@@ -53,6 +53,7 @@ const fetchProductModelsPaginationData = async (
   offset: number,
   product_type?: string
 ) => {
+  console.log(product_type)
   try {
     const response = await axiosAPI.get(
       `models/list/?limit=${limit}&offset=${offset}${
