@@ -5,16 +5,57 @@ import { toast } from 'react-toastify';
 import { useAppDispatch, useAppSelector } from '@/store/hooks/hooks';
 import { setCounterParties, setCurrentCreatedCounterParty } from '@/store/infoSlice/infoSlice';
 
+interface ProductRow {
+  raw_number: number;
+  product: {
+    id: string;
+    name: string;
+    name_uz: string;
+    product_type: string;
+    model: string;
+    size: string;
+  };
+  date: string;
+  model: {
+    id: string;
+    name: string;
+    name_uz: string;
+    product_type: string;
+  };
+  product_type: {
+    id: string;
+    name: string;
+    name_uz: string;
+  };
+  size: {
+    id: string;
+    name: string;
+    name_uz: string;
+    product_type: string;
+    model: string;
+  };
+  unit: {
+    id: string;
+    name: string;
+    name_uz: string;
+  };
+  quantity: number;
+  price: number;
+  summa: number;
+}
+
+interface FormDataType {
+  date: string;
+  region: string;
+  warehouse: string;
+  counterparty: string;
+  type_goods: string;
+  responsible_person: string;
+  products: ProductRow[];
+}
+
 interface CounterPartyFormProps {
-  setFormData: React.Dispatch<React.SetStateAction<{
-    date: string;
-    region: string;
-    warehouse: string;
-    counterparty: string;
-    type_goods: string;
-    responsible_person: string;
-    products: Product[];
-  }>>;
+  setFormData: React.Dispatch<React.SetStateAction<FormDataType>>
   setCreateCounterPartyModal: React.Dispatch<React.SetStateAction<boolean>>;
   setSelectedCounterParty: React.Dispatch<React.SetStateAction<string>>;
 }

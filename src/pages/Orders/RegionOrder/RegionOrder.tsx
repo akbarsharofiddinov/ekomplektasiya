@@ -111,7 +111,6 @@ const RegionOrder: React.FC = () => {
         type_document_for_filter: orderType === 'outgoing' ? 'Вилоятдан' : 'Тумандан',
       });
 
-      // FIX: tumanni faqat queryga qo‘shamiz (local filter emas)
       if (selectedDistrict) params.append('from_district', selectedDistrict);
 
       const response = await axiosAPI.get<RegionOrdersResponse>(`region-orders/list/?${params.toString()}`);

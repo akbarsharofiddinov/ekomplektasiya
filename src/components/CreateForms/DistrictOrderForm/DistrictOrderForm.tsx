@@ -70,8 +70,8 @@ const initialFormData = {
 
 const defaultProductRow = {
   product: "",
-  model: { id: "", name: "", name_uz: "", product_type: "" },
   product_type: { id: "", name: "", name_uz: "" },
+  model: { id: "", name: "", name_uz: "", product_type: "" },
   size: { id: "", name: "", name_uz: "", product_type: "", model: "" },
   unit: { id: "", name: "", name_uz: "" },
   quantity: 1,
@@ -79,7 +79,6 @@ const defaultProductRow = {
   description: "",
 }
 
-// Backend POST endpoint (o'zingizniki bilan almashtiring kerak bo'lsa)
 const CREATE_ENDPOINT = "/district-orders/create/";
 
 type Executors = { id: string; name: string; number: number; position: string; region: string; district: string; };
@@ -402,7 +401,7 @@ const OrderWIndow: React.FC<IDistrictOrderFormProps> = ({ setIsCreateFormModalOp
   };
 
   useEffect(() => {
-    // handleCreateDefaultDocument();
+    handleCreateDefaultDocument();
     // console.log("first")
     getDistrictOrderFile(DocumentID)
     getDocumentTypes()

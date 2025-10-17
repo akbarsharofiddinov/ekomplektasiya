@@ -26,6 +26,7 @@ interface FieldModalProps {
   field_name: 'product' | 'product_type' | 'model' | 'size' | 'unit';
   selectedProductTypeId?: string;
   selectedModelId?: string;
+  selectedSizeId?: string;
   menuItems?: {
     count: number;
     limit: number;
@@ -41,6 +42,7 @@ const DEFAULT_PAGE_SIZE = 25;
 const FieldModal: React.FC<FieldModalProps> = ({
   field_name,
   selectedProductTypeId,
+  selectedSizeId,
   selectedModelId,
   menuItems = null,
   selectedItem,
@@ -140,6 +142,7 @@ const FieldModal: React.FC<FieldModalProps> = ({
             l,
             offset,
             selectedProductTypeId || undefined,
+            selectedSizeId || undefined,
           );
           break;
         case 'unit':

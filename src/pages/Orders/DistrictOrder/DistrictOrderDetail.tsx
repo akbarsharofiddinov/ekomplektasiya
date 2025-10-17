@@ -18,7 +18,6 @@ import { toast } from 'react-toastify';
 import { useAppSelector } from '@/store/hooks/hooks';
 import DistrictOrderSigning from './DistrictOrderSigning';
 
-
 interface IdName {
 	id: string;
 	name: string;

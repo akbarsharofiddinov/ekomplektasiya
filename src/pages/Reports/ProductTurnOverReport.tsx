@@ -72,20 +72,15 @@ const ProductTurnOverReport: React.FC = () => {
     size: '',
   });
   const [warehouses, setWarehouses] = React.useState<Array<{ id: string, name: string }>>([]);
-  const [sizes, setSizes] = React.useState<Array<{ id: string, name: string }>>([]);
-  const [productTypes, setProductTypes] = React.useState<Array<{ id: string, name: string, number: number }>>([]);
   const [productsReport, setProductsReport] = React.useState<WarehouseItem[]>([]);
   const [handleDownloadModal, setHandleDownloadModal] = React.useState<boolean>(false);
   const [open, setOpen] = useState(false);
-
+  const [fieldName, setFieldName] = useState<"size" | "product" | "product_type" | "model" | "">("");
+  const { product_types, products, product_sizes, product_models } = useAppSelector(state => state.product)
+  
   const { regions } = useAppSelector(state => state.info);
-
-  const { product_types, products, product_sizes } = useAppSelector(state => state.product)
   const dispatch = useAppDispatch();
 
-  const [fieldName, setFieldName] = useState<"size" | "product" | "product_type" | "">("");
-
-  // Generate PDF for printing
   const handlePrintPDF = () => {
     const printWindow = window.open("", "_blank");
     if (!printWindow) return;
@@ -248,6 +243,17 @@ const ProductTurnOverReport: React.FC = () => {
     }
   }
 
+  const getProducts = async () => {
+    try {
+      const response = await axiosAPI.get(`/products/list/?order_by=2`);
+      if (response.status === 200) {
+        dispatch(setProducts(response.data.results));
+      }
+    } catch (error) {
+      console.log(error)
+    }
+  }
+
   // Get product turnover report based on filterData
   const getProductTurnoverReport = async () => {
     try {
@@ -273,6 +279,7 @@ const ProductTurnOverReport: React.FC = () => {
 
   useEffect(() => {
     getRegions();
+    getProducts();
   }, [])
 
   useEffect(() => {
@@ -295,134 +302,255 @@ const ProductTurnOverReport: React.FC = () => {
               </AccordionSummary>
               <AccordionDetails>
                 {/* Grid */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 p-4">
                   {/* Date Range */}
                   <div className="flex flex-col gap-2">
                     <Label htmlFor="startDate">Sana</Label>
                     <RangePicker
-                      placeholder={['Boshlanish sanasi', 'Tugash sanasi']}
-                      showTime
-                      format={'DD-MM-YYYY HH:mm:ss'}
-                      value={[filterData.start_date ? dayjs(filterData.start_date) : null, filterData.end_date ? dayjs(filterData.end_date) : null]}
-                      onChange={(_, dateString) => {
-                        setFilterData({ ...filterData, start_date: dateString[0], end_date: dateString[1] })
-                      }}
-                    />
+                        placeholder={['Boshlanish sanasi', 'Tugash sanasi']}
+                        showTime
+                        format="DD-MM-YYYY HH:mm:ss"
+                        value={[
+                          filterData.start_date ? dayjs(filterData.start_date, 'YYYY-MM-DD HH:mm:ss') : null,
+                          filterData.end_date ? dayjs(filterData.end_date, 'YYYY-MM-DD HH:mm:ss') : null,
+                        ]}
+                        onChange={(dates) => {
+                          if (!dates || !dates[0] || !dates[1]) {
+                            setFilterData(prev => ({
+                              ...prev,
+                              start_date: '',
+                              end_date: '',
+                            }));
+                            return;
+                          }
+
+                          setFilterData(prev => ({
+                            ...prev,
+                            start_date: dates[0]!.format('YYYY-MM-DD HH:mm:ss'),
+                            end_date: dates[1]!.format('YYYY-MM-DD HH:mm:ss'),
+                          }));
+                        }}
+                      />
+
                   </div>
                   {/* Region */}
                   <div className="flex flex-col gap-2">
                     <Label htmlFor="endDate">Viloyat</Label>
-                    <Select
-                      placeholder="Viloyatni tanglang"
-                      allowClear value={filterData.region || null}
-                      onChange={(value) => setFilterData({ ...filterData, region: value })}>
-                      {regions.map(region => (
-                        <Select.Option key={region.id} value={region.id}>{region.name}</Select.Option>
-                      ))}
-                    </Select>
+                    <div className="flex">
+                      <Select
+                        placeholder="Viloyatni tanglang"
+                        allowClear 
+                        value={filterData.region || null}
+                        onChange={(value) => setFilterData({ ...filterData, region: value })}
+                        className="flex-1"
+                      >
+                        {regions.map(region => (
+                          <Select.Option key={region.id} value={region.id}>{region.name}</Select.Option>
+                        ))}
+                      </Select>
+                      <Button
+                        variant="outlined"
+                        className="rounded-l-none border-l-0"
+                        onClick={() => setFilterData(prev => ({ ...prev, region: "" }))}
+                        disabled={!filterData.region}
+                      >
+                        X
+                      </Button>
+                    </div>
                   </div>
                   {/* Warehouse */}
                   <div className="flex flex-col gap-2">
-                    <Label htmlFor="warehouse">Ombor</Label>
-                    <Select
-                      placeholder="Omborni tanglang"
-                      disabled={filterData.region ? false : true}
-                      allowClear value={filterData.warehouse || null}
-                      onChange={(value) => setFilterData({ ...filterData, warehouse: value })}>
-                      {warehouses.map(warehouse => (
-                        <Select.Option key={warehouse.id} value={warehouse.id}>{warehouse.name}</Select.Option>
-                      ))}
-                    </Select>
-                  </div>
-
-
-
-                  {/* Product type */}
-                  <div className="flex flex-col gap-2">
-                    <Label htmlFor="product_type">Tovar turi</Label>
-                    {/* <Select
-                      placeholder="Mahsulot turini tanglang"
-                      showSearch
-                      allowClear value={filterData.product_type || null}
-                      onChange={(value) => setFilterData({ ...filterData, product_type: value })}>
-                      {productTypes.map(productType => (
-                        <Select.Option key={productType.id} value={productType.id}>{productType.name}</Select.Option>
-                      ))}
-                    </Select> */}
-                    <Button className="w-full" onClick={() => setFieldName("product_type")}><span className={`${filterData.product_type ? "text-gray-800" : "text-gray-400"}`}>{filterData.product_type ? product_types.results.find((t) => t.id === filterData.product_type)?.name : "Tanlang"}</span>
-                    </Button>
-                    {fieldName === "product_type" && (
-                      <FieldModal
-                        field_name={fieldName}
-                        selectedItem={{ id: filterData.product_type, name: "" }}
-                        setSelectedItem={newItem => {
-                          if (newItem) setFilterData(prev => ({ ...prev, product_type: newItem.id }))
-                          setFieldName("")
-                        }}
-                      />
-                    )}
-                  </div>
-
+                      <Label htmlFor="warehouse">Ombor</Label>
+                      <div className="flex">
+                        <Select
+                          placeholder="Omborni tanglang"
+                          allowClear 
+                          value={filterData.warehouse || null}
+                          onChange={(value) => setFilterData({ ...filterData, warehouse: value })}
+                          className="flex-1" // ✅ Select komponentiga kenglik berish
+                        >
+                          {warehouses.map(warehouse => (
+                            <Select.Option key={warehouse.id} value={warehouse.id}>{warehouse.name}</Select.Option>
+                          ))}
+                        </Select>
+                        <Button
+                          variant="outlined"
+                          className="rounded-l-none border-l-0"
+                          onClick={() => {
+                            setFilterData(prev => ({ ...prev, warehouse: "" }));
+                          }}
+                          disabled={!filterData.warehouse} 
+                        >
+                          X
+                        </Button>
+                      </div>
+                    </div>
                   {/* Product */}
                   <div className="flex flex-col gap-2">
-                    <Label htmlFor="product">Tovar</Label>
-                    {/* <Select
-                      placeholder="Mahsulotni tanglang"
-                      showSearch
-                      allowClear value={filterData.product || null}
-                      onChange={(value) => setFilterData({ ...filterData, product: value })}>
-                      {products.map(product => (
-                        <Select.Option key={product.id} value={product.id}>{product.name}</Select.Option>
-                      ))}
-                    </Select> */}
-                    <Button className="w-full" onClick={() => setFieldName("product")}><span className={`${filterData.product ? "text-gray-800" : "text-gray-400"}`}>{filterData.product ? products.results.find((t) => t.id === filterData.product)?.name : "Tanlang"}</span>
-                    </Button>
-                    {fieldName === "product" && (
-                      <FieldModal
-                        field_name={fieldName}
-                        selectedItem={{ id: filterData.product, name: "" }}
-                        setSelectedItem={newItem => {
-                          if (newItem) setFilterData(prev => ({ ...prev, product: newItem.id }))
-                          setFieldName("")
-                        }}
-                      />
-                    )}
-                  </div>
-
-                  {/* Size */}
-                  <div className="flex flex-col gap-2">
-                    <Label htmlFor="size">O'lcham</Label>
-                    {/* <Select
-                      placeholder="O'lchamni tanglang"
-                      showSearch
-                      allowClear value={filterData.size || null}
-                      onChange={(value) => setFilterData({ ...filterData, size: value })}>
-                      {sizes.map(size => (
-                        <Select.Option key={size.id} value={size.id}>{size.name}</Select.Option>
-                      ))}
-                    </Select> */}
-                    <Button className="w-full" onClick={() => setFieldName("size")}><span className={`${filterData.size ? "text-gray-800" : "text-gray-400"}`}>{filterData.size ? products.results.find((t) => t.id === filterData.size)?.name : "Tanlang"}</span>
-                    </Button>
-                    {fieldName === "size" && (
-                      <FieldModal
-                        field_name={fieldName}
-                        selectedItem={{ id: filterData.size, name: "" }}
-                        setSelectedItem={newItem => {
-                          if (newItem) setFilterData(prev => ({ ...prev, size: newItem.id }))
-                          setFieldName("")
-                        }}
-                      />
-                    )}
-                  </div>
-
-                  {/* Bar code */}
-                  <div className="flex flex-col gap-2">
                     <Label htmlFor="bar_code">Shtrix kod</Label>
-                    <Input
+                    <div className="flex">
+                      <Input
                       placeholder="Shtrix kodni kiriting"
                       value={filterData.bar_code || ''}
                       onChange={(e) => setFilterData({ ...filterData, bar_code: e.target.value })}
                     />
+                      <Button
+                          variant="outlined"
+                          className="rounded-l-none border-l-0"
+                          onClick={() => {
+                            setFilterData(prev => ({ ...prev, bar_code: "" }));
+                          }}
+                          disabled={!filterData.bar_code}
+
+                        >
+                          X
+                      </Button>
+                    </div>
+                   
+                  </div>
+                  <div className="flex flex-col gap-2">
+                      <Label htmlFor="product_type">Tovar turi</Label>
+
+                      <div className="flex">
+                        <Button
+                          className="w-full rounded-r-none"
+                          onClick={() => setFieldName("product_type")}
+                        >
+                          <span
+                            className={`${
+                              filterData.product_type ? "text-gray-800" : "text-gray-400"
+                            }`}
+                          >
+                            {filterData.product_type
+                              ? product_types.results.find(
+                                  (t) => t.id === filterData.product_type
+                                )?.name
+                              : "Tanlang"}
+                          </span>
+                        </Button>
+
+                        <Button
+                          variant="outlined"
+                          className="rounded-l-none border-l-0"
+                          onClick={() => {
+                            setFilterData(prev => ({ ...prev, product_type: "" }));
+                          }}
+                          disabled={!filterData.product_type}
+
+                        >
+                          X
+                        </Button>
+                      </div>
+
+                      {fieldName === "product_type" && (
+                        <FieldModal
+                          field_name={fieldName}
+                          selectedItem={{ id: filterData.product_type, name: "" }}
+                          setSelectedItem={(newItem) => {
+                            if (newItem)
+                              setFilterData((prev) => ({ ...prev, product_type: newItem.id }));
+                            setFieldName("");
+                          }}
+                          
+                        />
+                      )}
+                    </div>
+
+
+                  {/* Model */}
+                  <div className="flex flex-col gap-2 ">
+                      <Label htmlFor="model">Model</Label>
+                      <div className="flex">
+                      <Button className="w-full" onClick={() => setFieldName("model")}><span className={`${filterData.model ? "text-gray-800" : "text-gray-400"}`}>{filterData.model ? product_models.results.find((t) => t.id === filterData.model)?.name : "Tanlang"}</span>
+                      </Button>
+                      <Button
+                          variant="outlined"
+                          className="rounded-l-none border-l-0"
+                          onClick={() => {
+                            setFilterData(prev => ({ ...prev, model: "" }));
+                          }}
+                          disabled={!filterData.model}
+
+                        >
+                          X
+                      </Button>
+                      </div>
+                      
+                      {fieldName === "model" && (
+                          <FieldModal
+                              field_name={fieldName}
+                              selectedItem={{ id: filterData.model, name: "" }}
+                              setSelectedItem={newItem => {
+                                  if (newItem)
+                                      setFilterData(prev => ({ ...prev, model: newItem.id }));
+                                  setFieldName("");
+                              }}
+                              selectedProductTypeId={product_types.results.find(item => item.id === filterData.product_type)?.name}
+                          />
+                      )}
+                  </div>
+                  <div className="flex flex-col gap-2 flex-1 min-w-[200px]">
+                        <Label htmlFor="size">O'lcham</Label>
+                        <div className="flex">
+                        <Button className="w-full" onClick={() => setFieldName("size")}><span className={`${filterData.size ? "text-gray-800" : "text-gray-400"}`}>{filterData.size ? product_sizes.results.find((t) => t.id === filterData.size)?.name : "Tanlang"}</span>
+                        </Button>
+                        <Button
+                          variant="outlined"
+                          className="rounded-l-none border-l-0"
+                          onClick={() => {
+                            setFilterData(prev => ({ ...prev, size: "" }));
+                          }}
+                          disabled={!filterData.size}
+                          
+                        >
+                          X
+                        </Button>
+                        </div>
+                        {fieldName === "size" && (
+                            <FieldModal
+                                field_name="size"
+                                selectedItem={{ id: filterData.size, name: "" }}
+                                setSelectedItem={newItem => {
+                                    if (newItem) setFilterData(prev => ({ ...prev, size: newItem.id }))
+                                    setFieldName("")
+                                }}
+                                selectedProductTypeId={product_types.results.find(item => item.id === filterData.product_type)?.name}
+                                selectedModelId={product_models.results.find(item => item.id === filterData.model)?.name}
+                            />
+                        )}
+                  </div>
+                  <div className="flex flex-col gap-2 flex-1 min-w-[200px]">
+                      <Label htmlFor="product">Tovar</Label>
+                      <div className="flex">
+                        <Button disabled={!filterData.product_type} className="w-full" onClick={() => setFieldName("product")}><span className={`${filterData.product ? "text-gray-800" : "text-gray-400"}`}>{filterData.product ? products.results.find((t) => t.id === filterData.product)?.name : "Tanlang"}</span>
+                        </Button>
+                        <Button
+                            variant="outlined"
+                            className="rounded-l-none border-l-0"
+                            onClick={() => {
+                              setFilterData(prev => ({ ...prev, product: "" }));
+                            }}
+                             disabled={!filterData.product}
+
+                          >
+                            X
+                        </Button>
+                      </div>
+                      
+                      {fieldName === "product" && (
+                          <FieldModal
+                              field_name="product"
+                              selectedItem={{ id: filterData.product, name: "" }}
+                              setSelectedItem={newItem => {
+                                  if (newItem) setFilterData(prev => ({ ...prev, product: newItem.id }))
+                                  setFieldName("")
+                              }}
+                              selectedProductTypeId={product_types.results.find(item => item.id === filterData.product_type)?.name}
+                              selectedModelId={product_models.results.find(item => item.id === filterData.model)?.name}
+                              selectedSizeId={product_sizes.results.find(item => item.id === filterData.size)?.name}
+                          />
+                      )
+                      }
                   </div>
                 </div>
               </AccordionDetails>
