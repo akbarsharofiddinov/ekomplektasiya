@@ -79,7 +79,7 @@ const defaultProductRow = {
   description: "",
 }
 
-const CREATE_ENDPOINT = "/district-orders/create/";
+const CREATE_ENDPOINT = "/region-orders/create/";
 
 function normalizeList(data: any): IDName[] {
   const items = Array.isArray(data) ? data : (data?.results ?? data?.data ?? []);
@@ -100,18 +100,19 @@ function normalizeList(data: any): IDName[] {
     .filter((x: IDName) => x.id && x.name);
 }
 
-type Executors = { id: string; name: string; number: number; position: string; region: string; district: string; };
+type Executors = { id: string; name: string; number: number; position: string; region: string; district: string; executor_type:string;};
 
-const OrderWIndow: React.FC<IDistrictOrderFormProps> = ({ setIsCreateFormModalOpen }) => {
+const RegionOrder: React.FC<IDistrictOrderFormProps> = ({ setIsCreateFormModalOpen }) => {
   // FormData
   const [formData, setFormData] = useState<FormDataType>(initialFormData);
   // yuqoriga qo'shing
   type FieldName = "product_type" | "model" | "size" | "unit" | "product";
   const [active, setActive] = useState<{ field: FieldName; row: number } | null>(null);
   const [documentID, setDocumentID] = useState("");
-
+  console.log(documentID)
   // Employee
   const [employees, setEmployees] = useState<any[]>([]);
+  const [executorType, setexecutorType] = useState<any[]>([]);
   const [showEmployeeModal, setShowEmployeeModal] = useState(false);
   // Document is Confirmed state
   const [documentConfirmed, setDocumentConfirmed] = useState(false);
@@ -183,9 +184,20 @@ const OrderWIndow: React.FC<IDistrictOrderFormProps> = ({ setIsCreateFormModalOp
   };
 
   // 🔹 Hodimlar ro'yxatini olish
+  // 🔹 Hodimlar ro'yxatini olish
   const fetchEmployees = async () => {
     try {
       const response = await axiosAPI.get("employees/list");
+      const type_response = await axiosAPI.get('enumerations/excuter_types');
+      
+      // Executor type larni to'g'ri olish
+      if (type_response.status === 200 && Array.isArray(type_response.data)) {
+        setexecutorType(type_response.data);
+      } else {
+        setexecutorType([]);
+      }
+      
+      // Hodimlarni olish
       if (response.status === 200 && Array.isArray(response.data.results)) {
         setEmployees(response.data.results);
       } else {
@@ -218,7 +230,7 @@ const OrderWIndow: React.FC<IDistrictOrderFormProps> = ({ setIsCreateFormModalOp
   const getDistrictOrderFile = async (id: string) => {
     if (id) {
       try {
-        const response = await axiosAPI.get(`district-orders/${id}/order-file`);
+        const response = await axiosAPI.get(`region-orders/${id}/order-file`);
         if (response.status === 200) {
           setMessageFileURL(response.data.file_url)
         }
@@ -229,84 +241,92 @@ const OrderWIndow: React.FC<IDistrictOrderFormProps> = ({ setIsCreateFormModalOp
   }
 
   const handleSaveData = async () => {
-    // Validate form first
-    const errors = validate();
-    if (errors.length) {
-      toast(errors.join("\n"), { type: "error" });
-      return;
-    }
-
-    const userId = currentUserInfo?.id ?? "";
-
-    // Build payload in the same shape as create/update expects
-    const payload = {
-      exit_date: formData.exit_date,
-      user: userId,
-      description: formData.description || "",
-      products: formData.products.map((p) => ({
-        raw_number: p.raw_number,
-        product: p.product,
-        model: p.model.id,
-        product_type: p.product_type.id,
-        size: p.size.id,
-        unit: p.unit.id,
-        quantity: p.quantity,
-        order_type: p.order_type,
-        description: p.description || "",
-      })),
-      executors: formData.executors.map((ex) => ({
-        executor: ex.id,
-      })),
-    };
-
-    try {
-      const response = await axiosAPI.post(`/district-orders/update/${documentID}`, payload);
-      if (response.status === 200) {
-        toast("Hujjat muvofaqqiyatli saqlandi", { type: "success" })
-        setIsCreateFormModalOpen(false)
-      }
-    } catch (error) {
-      console.log(error)
-    }
-
+  // Validate form first
+  const errors = validate();
+  if (errors.length) {
+    toast(errors.join("\n"), { type: "error" });
+    return;
   }
 
-  const handleCreateDefaultDocument = useCallback(async () => {
-    const userId = currentUserInfo?.id
-    const payload = {
-      exit_date: formData.exit_date,
-      user: userId,
-      description: formData.description || "",
-      products: formData.products.map((p) => ({
-        raw_number: p.raw_number,
-        product: p.product, // bu joyda product ID bo‘lsa, ID yuboramiz
-        model: p.model.id,
-        product_type: p.product_type.id,
-        size: p.size.id,
-        unit: p.unit.id,
-        quantity: p.quantity,
-        order_type: p.order_type,
-        description: p.description || "",
-      })),
-      executors: formData.executors.map((ex) => ({
-        executor: ex.id, // faqat ID yuboriladi
-      })),
-    };
+  const userId = currentUserInfo?.id ?? "";
 
-    try {
-      const response = await axiosAPI.post(CREATE_ENDPOINT, payload);
-      const documentID = response.data
-      // console.log(response)
-      if (response.status === 200) {
-        setDocumentConfirmed(false);
-        getDistrictOrderFile(documentID[0].id)
-        setDocumentID(documentID[0].id)
-      }
-    } catch (error: any) {
-      alert(error.response.data)
-      setIsCreateFormModalOpen(false)
+  const formattedExecutors = formData.executors.map((ex) => ({
+    executor: ex.id,
+    executor_type: ex.executor_type, 
+  }));
+
+  const payload = {
+    exit_date: formData.exit_date,
+    user: userId,
+    description: formData.description || "",
+    products: formData.products.map((p) => ({
+      raw_number: p.raw_number,
+      product: p.product,
+      model: p.model.id,
+      product_type: p.product_type.id,
+      size: p.size.id,
+      unit: p.unit.id,
+      quantity: p.quantity,
+      order_type: p.order_type,
+      description: p.description || "",
+    })),
+    executors: formattedExecutors,
+  };
+
+  try {
+    const response = await axiosAPI.post(`/region-orders/update/${documentID}`, payload);
+    console.log(documentID, 'aaa1')
+    if (response.status === 200) {
+      toast("Hujjat muvofaqqiyatli saqlandi", { type: "success" });
+      setIsCreateFormModalOpen(false);
     }
-  }, [currentUserInfo?.id, formData.executors, formData.description, formData.exit_date, formData.products, setIsCreateFormModalOpen]);
+  } catch (error) {
+    console.log(error);
+  }
+};
+
+const handleCreateDefaultDocument = useCallback(async () => {
+  const userId = currentUserInfo?.id;
+  
+  const formattedExecutors = formData.executors.map((ex) => ({
+    executor: ex.id,
+    executor_type: ex.executor_type, // ID sifatida
+  }));
+
+  const payload = {
+    exit_date: formData.exit_date,
+    user: userId,
+    description: formData.description || "",
+    products: formData.products.map((p) => ({
+      raw_number: p.raw_number,
+      product: p.product,
+      model: p.model.id,
+      product_type: p.product_type.id,
+      size: p.size.id,
+      unit: p.unit.id,
+      quantity: p.quantity,
+      order_type: p.order_type,
+      description: p.description || "",
+    })),
+    executors: formattedExecutors, 
+  };
+
+  try {
+    const response = await axiosAPI.post(CREATE_ENDPOINT, payload);
+    const documentData = response.data;
+    if (response.status === 200 && documentData.success) {
+      setDocumentConfirmed(false);
+      getDistrictOrderFile(documentData.document);
+      setDocumentID(documentData.document);
+
+    }
+  } catch (error: any) {
+    alert(error.response.data);
+    setIsCreateFormModalOpen(false);
+  }
+}, [currentUserInfo?.id, formData.executors, formData.description, formData.exit_date, formData.products, setIsCreateFormModalOpen]);
+
+
 
   const getDocumentTypes = async () => {
     try {
@@ -331,7 +351,7 @@ const OrderWIndow: React.FC<IDistrictOrderFormProps> = ({ setIsCreateFormModalOp
     try {
       const arrayBuffer = await file?.arrayBuffer();
       const binary = new Uint8Array(arrayBuffer!);
-      const response = await axiosAPI.post(`district-orders/files/create`, binary, {
+      const response = await axiosAPI.post(`region-orders/files/create`, binary, {
         params,
         headers: { 'Content-Type': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' }
       })
@@ -350,9 +370,8 @@ const OrderWIndow: React.FC<IDistrictOrderFormProps> = ({ setIsCreateFormModalOp
     }
   };
 
-
   useEffect(() => {
-    // handleCreateDefaultDocument();
+    handleCreateDefaultDocument();
     // console.log("first")
     getDistrictOrderFile(DocumentID)
     getDocumentTypes()
@@ -418,17 +437,7 @@ const OrderWIndow: React.FC<IDistrictOrderFormProps> = ({ setIsCreateFormModalOp
 
               <div className="text-center border-gray-200">
                 <p className="text-xs text-gray-500 uppercase font-semibold mb-2">
-                  Tumandan
-                </p>
-                <p>
-                  {currentUserInfo?.district?.name || "—"}
-                </p>
-                <p className="text-md font-semibold text-gray-800"></p>
-              </div>
-
-              <div className="text-center">
-                <p className="text-xs text-gray-500 uppercase font-semibold mb-2">
-                  Viloyatga
+                  Viloyatdan
                 </p>
                 <p>
                   {currentUserInfo?.region?.name || "—"}
@@ -436,9 +445,19 @@ const OrderWIndow: React.FC<IDistrictOrderFormProps> = ({ setIsCreateFormModalOp
                 <p className="text-md font-semibold text-gray-800"></p>
               </div>
 
+              <div className="text-center">
+                <p className="text-xs text-gray-500 uppercase font-semibold mb-2">
+                  Respublikaga
+                </p>
+                <p>
+                  Худудгазтаъминот
+                </p>
+                <p className="text-md font-semibold text-gray-800"></p>
+              </div>
+
               <div className="text-center border-gray-200">
                 <p className="text-xs text-gray-500 uppercase font-semibold mb-2">
-                  Tumandan junatuvchi
+                  Viloyatdan junatuvchi
                 </p>
                 <p className="text-md font-semibold text-gray-800">
                   {currentUserInfo?.name || "—"}
@@ -565,7 +584,7 @@ const OrderWIndow: React.FC<IDistrictOrderFormProps> = ({ setIsCreateFormModalOp
                                     setFormData(prev => ({
                                       ...prev,
                                       products: prev.products.map(p => p.raw_number === active.row
-                                        ? { ...p, product_type: { id: newItem.id, name: newItem.name, name_uz: newItem.name_uz } }
+                                        ? { ...p, product_type: { id: newItem.id, name: newItem.name, name_uz: newItem.name_uz }, model: { id: "", name: "", name_uz: "", product_type: "" }, size: { id: "", name: "", name_uz: "", product_type: "", model: "" } }
                                         : p
                                       )
                                     }))
@@ -594,7 +613,7 @@ const OrderWIndow: React.FC<IDistrictOrderFormProps> = ({ setIsCreateFormModalOp
                                     if (!newItem) { setActive(null); return; }
                                     setFormData(prev => ({
                                       ...prev,
-                                      products: prev.products.map(p => p.raw_number === active.row ? { ...p, model: { id: String(newItem.id), name: newItem.name, name_uz: newItem.name_uz, product_type: p.model.product_type } } : p),
+                                      products: prev.products.map(p => p.raw_number === active.row ? { ...p, model: { id: String(newItem.id), name: newItem.name, name_uz: newItem.name_uz, product_type: p.model.product_type }, size: { id: "", name: "", name_uz: "", product_type: "", model: "" } } : p),
                                     }))
                                     setActive(null);
                                   }}
@@ -718,71 +737,80 @@ const OrderWIndow: React.FC<IDistrictOrderFormProps> = ({ setIsCreateFormModalOp
           </div>
 
           {/* ===== Yuborilayotgan xat ===== */}
-          <div className='flex border shadow-md max-w-[700px] px-6 py-4 rounded-lg'>
-            <div className="flex items-center gap-4 mb-3 w-full">
-              <div className={`text-5xl p-6 flex items-center justify-center rounded-full text-blue-500 bg-blue-50`}>
-                <FileWordOutlined />
-              </div>
-              <div className="flex flex-col">
-                <h4 className="text-gray-800 font-semibold text-xl truncate w-40">
-                  {/* {file.file_name} */}
-                  {messageFile?.name}
-                </h4>
-                <p className="text-lg">{currentUserInfo?.name}</p>
-                <p className="text-gray-500 mt-1">{currentUserInfo?.type_user}</p>
-              </div>
+          <div className='border shadow-md max-w-[700px] px-5 py-2 rounded-lg'>
+            <div className="border-b pb-1 mb-2">
+              <h2 className="text-center text-2xl font-bold text-gray-600">
+                Viloyatdan Respublikaga xat
+              </h2>
             </div>
 
-            {/* 🔸 Action tugmalar */}
-            <div className="flex flex-col gap-2 min-w-[150px]">
-              <button
-                onClick={() => {
-                  const openWordURL = `ms-word:ofe|u|${messageFileURL}`;
-                  const link = document.createElement("a");
-                  link.href = openWordURL;
-                  document.body.appendChild(link);
-                  link.click();
-                  document.body.removeChild(link)
-                }}
-                className="p-1 rounded-md text-gray-600 hover:text-purple-700 hover:bg-gray-100 transition flex items-center justify-between gap-4 bg-gray-100 px-2 cursor-pointer"
-                title="Ko‘rish"
-              >
-                <span>Ko'rish</span>
-                <EyeOutlined className="text-[24px]" />
-              </button>
-              <button
-                onClick={() => {
-                  const openWordURL = `ms-word:ofe|u|${messageFileURL}`;
-                  const link = document.createElement("a");
-                  link.href = openWordURL;
-                  document.body.appendChild(link);
-                  link.click();
-                  document.body.removeChild(link)
-                }}
-                className="p-1 rounded-md text-gray-600 hover:text-purple-700 hover:bg-gray-100 transition flex items-center justify-between gap-4 bg-gray-100 px-2 cursor-pointer"
-                title="Yuklab olish"
-              >
-                <span>O'zgartirish</span>
-                <Pencil className="text-[24px]" />
-              </button>
-              <button
-                onClick={() => {
-                  const link = document.createElement('a');
-                  link.href = messageFileURL;
-                  link.setAttribute('download', messageFile?.name || 'file.docm');
-                  document.body.appendChild(link);
-                  link.click();
-                  document.body.removeChild(link);
-                }}
-                className="p-1 rounded-md text-gray-600 hover:text-purple-700 hover:bg-gray-100 transition flex items-center justify-between gap-4 bg-gray-100 px-2 cursor-pointer"
-                title="Yuklab olish"
-              >
-                <span>Yuklab olish</span>
-                <DownloadOutlined className="text-[24px]" />
-              </button>
-            </div>
+            <div className='flex items-center justify-between gap-6'>
+              <div className="flex items-center gap-4 w-full">
+                <div className="text-5xl p-6 flex items-center justify-center rounded-full text-blue-500 bg-blue-50">
+                  <FileWordOutlined />
+                </div>
+                <div className="flex flex-col">
+                  <h4 className="text-gray-800 font-semibold text-xl truncate w-40">
+                    {messageFile?.name}
+                  </h4>
+                  <p className="text-lg">{currentUserInfo?.name}</p>
+                  <p className="text-gray-500 mt-1">{currentUserInfo?.type_user}</p>
+                </div>
+              </div>
 
+              {/* 🔸 Action tugmalar */}
+              <div className="flex flex-col gap-2 min-w-[150px]">
+                <button
+                  onClick={() => {
+                    const openWordURL = `ms-word:ofe|u|${messageFileURL}`;
+                    const link = document.createElement("a");
+                    link.href = openWordURL;
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                  }}
+                  className="p-1 rounded-md text-gray-600 hover:text-purple-700 hover:bg-gray-100 transition flex items-center justify-between gap-4 bg-gray-100 px-2 cursor-pointer"
+                  title="Ko‘rish"
+                >
+                  <span>Ko'rish</span>
+                  <EyeOutlined className="text-[24px]" />
+                </button>
+
+                <button
+                  onClick={() => {
+                    const openWordURL = `ms-word:ofe|u|${messageFileURL}`;
+                    const link = document.createElement("a");
+                    link.href = openWordURL;
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                  }}
+                  className="p-1 rounded-md text-gray-600 hover:text-purple-700 hover:bg-gray-100 transition flex items-center justify-between gap-4 bg-gray-100 px-2 cursor-pointer"
+                  title="O‘zgartirish"
+                >
+                  <span>O'zgartirish</span>
+                  <Pencil className="text-[24px]" />
+                </button>
+
+                <button
+                  onClick={() => {
+                    const link = document.createElement('a');
+                    link.href = messageFileURL;
+                    link.setAttribute('download', messageFile?.name || 'file.docm');
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                  }}
+                  className="p-1 rounded-md text-gray-600 hover:text-purple-700 hover:bg-gray-100 transition flex items-center justify-between gap-4 bg-gray-100 px-2 cursor-pointer"
+                  title="Yuklab olish"
+                >
+                  <span>Yuklab olish</span>
+                  <DownloadOutlined className="text-[24px]" />
+                </button>
+              </div>
+            </div>
           </div>
+
 
           {/* ===== Imzolovchilar ro'yxati (skelet) ===== */}
           <div className="mt-12">
@@ -948,6 +976,7 @@ const OrderWIndow: React.FC<IDistrictOrderFormProps> = ({ setIsCreateFormModalOp
                     <tr>
                       <th className="text-left px-4 py-2 text-sm font-semibold">F.I.Sh.</th>
                       <th className="text-left px-4 py-2 text-sm font-semibold">Lavozimi</th>
+                      <th className="text-left px-4 py-2 text-sm font-semibold">Imzolovchi turi</th>
                       <th className="text-left px-4 py-2 text-sm font-semibold"></th>
                     </tr>
                   </thead>
@@ -961,6 +990,33 @@ const OrderWIndow: React.FC<IDistrictOrderFormProps> = ({ setIsCreateFormModalOp
                         >
                           <td className="px-4 py-2 text-sm text-gray-800">{emp.name}</td>
                           <td className="px-4 py-2 text-sm text-gray-800">{emp.position}</td>
+                          <td>
+                            <Select
+                              placeholder="Imzolovchi turini tanlang"
+                              // value={emp.executor_type || executorType[0]?.id || ""} 
+                              onChange={(value) => {
+                                const updatedEmployees = employees.map(e => 
+                                  e.id === emp.id ? { ...e, executor_type: value } : e
+                                );
+                                setEmployees(updatedEmployees);
+                                if (isChecked) {
+                                  setFormData(prev => ({
+                                    ...prev,
+                                    executors: prev.executors.map(ex => 
+                                      ex.id === emp.id ? { ...ex, executor_type: value } : ex
+                                    )
+                                  }));
+                                }
+                              }}
+                              style={{ width: 200 }}
+                            >
+                              {executorType.map((type) => (
+                                <Select.Option key={type.id} value={type.id}>
+                                  {type.name}
+                                </Select.Option>
+                              ))}
+                            </Select>
+                          </td>
                           <td className="px-4 py-2 text-center">
                             <input
                               type="checkbox"
@@ -1009,4 +1065,4 @@ const OrderWIndow: React.FC<IDistrictOrderFormProps> = ({ setIsCreateFormModalOp
 };
 
 
-export default OrderWIndow;
+export default RegionOrder;
