@@ -231,3 +231,11 @@ interface SpecialProductFieldType {
   name: string;
   name_uz: string;
 }
+
+interface FileData {
+  raw_number: string;
+  user: string;
+  file_name: string;
+  extension: string;
+  date: string;
+}

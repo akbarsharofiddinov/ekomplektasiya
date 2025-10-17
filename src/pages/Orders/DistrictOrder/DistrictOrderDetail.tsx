@@ -17,8 +17,6 @@ import SelectRemainsModal from '@/components/CreateForms/SelectRemainsModal';
 import { toast } from 'react-toastify';
 import { useAppSelector } from '@/store/hooks/hooks';
 import DistrictOrderSigning from './DistrictOrderSigning';
-import FilePreviewer from "@/components/files/FilePreviewer";
-
 
 interface IdName {
 	id: string;
@@ -79,14 +77,6 @@ interface ProductRow {
 	description: string;
 }
 
-interface FileData {
-	raw_number: string;
-	user: string;
-	file_name: string;
-	extension: string;
-	date: string;
-}
-
 
 const DistrictOrderDetail: React.FC = () => {
 	const [orderData, setOrderData] = useState<OrderDetail | null>(null);
@@ -118,7 +108,6 @@ const DistrictOrderDetail: React.FC = () => {
 	const { currentUserInfo } = useAppSelector(state => state.info);
 	const { order_types, product_models, product_sizes, product_types, product_units } = useAppSelector(state => state.product)
 
-	console.log(orderData?.for_purpose)
 
 	// 🔹 Modal uchun ro'yxat
 	const getModalList = () => {
@@ -152,7 +141,6 @@ const DistrictOrderDetail: React.FC = () => {
 	// 🔹 Modalda element tanlanganda
 	const handleSelectModalItem = (item: IdName) => {
 		if (!modalSelectedRow || !modalType) return;
-
 		updateRow(modalSelectedRow, modalType, item);
 		setModalVisible(false);
 		setModalSelectedRow(null);
@@ -179,6 +167,8 @@ const DistrictOrderDetail: React.FC = () => {
 			console.log(error);
 		}
 	}
+
+	console.log(documentFormData)
 
 	const fetchRemaindersUserWarehouse = async () => {
 		try {
@@ -376,7 +366,6 @@ const DistrictOrderDetail: React.FC = () => {
 		});
 	};
 
-
 	const handleAddProduct = () => {
 		setOrderData(prev => {
 			if (!prev) return prev; // ✅ null holatini tekshirish
@@ -437,8 +426,6 @@ const DistrictOrderDetail: React.FC = () => {
 			message.error("Xatolik yuz berdi!");
 		}
 	};
-
-
 
 	return (
 		<>
@@ -855,8 +842,6 @@ const DistrictOrderDetail: React.FC = () => {
 												</Button>
 											</div>
 										</div>
-
-
 									)}
 
 									<div className="p-4">
