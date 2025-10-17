@@ -468,6 +468,7 @@ const DistrictOrder: React.FC = () => {
 
                     {/* Table with Status-Based Row Colors */}
                     <div className="bg-white rounded-xl border border-slate-100 shadow-sm overflow-hidden transform transition-all hover:shadow-lg animate-in slide-in-from-bottom-4 fade-in duration-700">
+                        
                         <div className="overflow-x-auto">
                             <Table>
                                 <TableHeader>

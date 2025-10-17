@@ -473,7 +473,7 @@ const ProductMaterialsBalance: React.FC = () => {
                                             </div>
                                         </div>
 
-                                        {/* Shtrix kod */}
+                                        {/* Mahsulot */}
                                         <div className="flex flex-col gap-2 flex-1 min-w-[200px]">
                                             <Label htmlFor="bar_code">Shtrix kod</Label>
                                             <div className="flex">

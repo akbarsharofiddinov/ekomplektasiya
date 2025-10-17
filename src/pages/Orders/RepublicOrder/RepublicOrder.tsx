@@ -33,7 +33,7 @@ interface DocumentInfo {
   sender_from_region: string;
   sender_from_republic: string;
   recipient_republic: string;
-  application_status_republic:string;
+  application_status_republic: string;
 }
 
 interface RegionFilter {
@@ -45,11 +45,11 @@ interface RegionFilter {
 type FilterStatus = 'all' | 'approved' | 'approved_not_accepted' | 'not_approved' | "Canceled";
 
 const RepublicOrder: React.FC = () => {
-const [data, setData] = useState<DocumentInfo[]>([]); // ✅ API dan kelgan asl ma'lumotlar
-const [filteredData, setFilteredData] = useState<DocumentInfo[]>([]);
+  const [data, setData] = useState<DocumentInfo[]>([]); // ✅ API dan kelgan asl ma'lumotlar
+  const [filteredData, setFilteredData] = useState<DocumentInfo[]>([]);
   const [region_filter, setRegionFilter] = useState<RegionFilter[]>([]);
   const [selectedRegion, setSelectedRegion] = useState<string>("");
-  
+
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
@@ -97,22 +97,22 @@ const [filteredData, setFilteredData] = useState<DocumentInfo[]>([]);
 
   // API Requests
   const getRegionOrdersList = async () => {
-  try {
-    let url = `republic-orders/list/?limit=${itemsPerPage}&offset=${(currentPage - 1) * itemsPerPage}&type_document_for_filter=${orderType === "outgoing" ? encodeURIComponent("Вилоятга") : encodeURIComponent("Вилоятдан")}`;
-    
-    if (selectedRegion && selectedRegion !== 'Barchasi') {
-      url += `&from_region=${selectedRegion}`;
+    try {
+      let url = `republic-orders/list/?limit=${itemsPerPage}&offset=${(currentPage - 1) * itemsPerPage}&type_document_for_filter=${orderType === "outgoing" ? encodeURIComponent("Вилоятга") : encodeURIComponent("Вилоятдан")}`;
+
+      if (selectedRegion && selectedRegion !== 'Barchasi') {
+        url += `&from_region=${selectedRegion}`;
+      }
+
+      const response = await axiosAPI.get(url);
+      setData(response.data.results); // ✅ Asl ma'lumotlarni saqlaymiz
+      setFilteredData(response.data.results); // ✅ Ko'rsatiladigan ma'lumotlar
+      setRegionFilter(response.data.filter_by_regions);
+      setTotalItems(response.data);
+    } catch (error) {
+      console.error('Error fetching warehouse transfers:', error);
     }
-    
-    const response = await axiosAPI.get(url);
-    setData(response.data.results); // ✅ Asl ma'lumotlarni saqlaymiz
-    setFilteredData(response.data.results); // ✅ Ko'rsatiladigan ma'lumotlar
-    setRegionFilter(response.data.filter_by_regions);
-    setTotalItems(response.data);
-  } catch (error) {
-    console.error('Error fetching warehouse transfers:', error);
-  }
-};
+  };
 
   const handleDocumentClick = (id: string) => {
     navigate("order-details/" + id);
@@ -213,8 +213,8 @@ const [filteredData, setFilteredData] = useState<DocumentInfo[]>([]);
 
   const handleChange = (value) => {
     setSelectedRegion(value || "");
-    setCurrentPage(1); 
-    
+    setCurrentPage(1);
+
     getRegionOrdersList();
   };
 
@@ -335,38 +335,38 @@ const [filteredData, setFilteredData] = useState<DocumentInfo[]>([]);
                     }}
                   />
                 </div>
-                 <div className='w-[30%]'>
+                <div className='w-[30%]'>
                   <Select
-                        value={selectedRegion || ""}
-                        onChange={handleChange}
-                        allowClear
-                        placeholder="Barcha hujjatlar"
-                        className="w-[100%]"
-                        showSearch
-                        optionFilterProp="children"
-                        popupClassName="rounded-xl shadow-md"
-                      >
-                        <Option key="all" value="">
-                          <span className="text-gray-600">Barcha hujjatlar</span>
-                        </Option>
-                        {region_filter.map((item, index) => (
-                          <Option key={index} value={item.region}>
-                            <div className="flex justify-between items-center">
-                              <span>{item.region}</span>
-                              <Tag
-                                color={item.count > 0 ? "blue" : "default"}
-                                style={{
-                                  marginLeft: "auto",
-                                  fontSize: "12px",
-                                  borderRadius: "10px",
-                                }}
-                              >
-                                {item.count}
-                              </Tag>
-                            </div>
-                          </Option>
-                        ))}
-                      </Select>
+                    value={selectedRegion || ""}
+                    onChange={handleChange}
+                    allowClear
+                    placeholder="Barcha hujjatlar"
+                    className="w-[100%]"
+                    showSearch
+                    optionFilterProp="children"
+                    popupClassName="rounded-xl shadow-md"
+                  >
+                    <Option key="all" value="">
+                      <span className="text-gray-600">Barcha hujjatlar</span>
+                    </Option>
+                    {region_filter.map((item, index) => (
+                      <Option key={index} value={item.region}>
+                        <div className="flex justify-between items-center">
+                          <span>{item.region}</span>
+                          <Tag
+                            color={item.count > 0 ? "blue" : "default"}
+                            style={{
+                              marginLeft: "auto",
+                              fontSize: "12px",
+                              borderRadius: "10px",
+                            }}
+                          >
+                            {item.count}
+                          </Tag>
+                        </div>
+                      </Option>
+                    ))}
+                  </Select>
                 </div>
 
                 {/* Action Buttons - Right Side */}
@@ -398,6 +398,7 @@ const [filteredData, setFilteredData] = useState<DocumentInfo[]>([]);
 
           {/* Table with Status-Based Row Colors */}
           <div className="overflow-hidden transform transition-all hover:shadow-sm animate-in slide-in-from-bottom-4 fade-in duration-700">
+
             <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
@@ -436,7 +437,7 @@ const [filteredData, setFilteredData] = useState<DocumentInfo[]>([]);
                       </TableCell>
                     </TableRow>
                   ) : (
-                    filteredData.map((item, index) => ( 
+                    filteredData.map((item, index) => (
                       <TableRow
                         key={index}
                         onClick={() => handleDocumentClick(item.id)}
