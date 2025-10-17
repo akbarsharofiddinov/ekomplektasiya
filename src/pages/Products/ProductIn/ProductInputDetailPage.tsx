@@ -1071,20 +1071,33 @@ const ProductInputDetailPage: React.FC = () => {
                         <TableCell className="p-3 text-center">
                           <AntdButton className="w-full" onClick={() => setActive({ field: "product_type", row: item.row_number })}>
                             <span className={item.product_type ? "text-gray-800" : "text-gray-400"}>
-                              {item?.product_type?.id ? item.product.name: "Tanlang"}
-                            </span> 
+                              {item.product_type.id ? item.product_type.name : "Tanlang"}
+                            </span>
                           </AntdButton>
 
-                          {active?.field === "product_type" && active.row === item.row_number && (
+                          {(active?.field === "product_type" && active.row === item.row_number) && (
                             <FieldModal
                               field_name="product_type"
                               selectedItem={{ id: String(item.product_type.id || ""), name: "", name_uz: "" }}
                               setSelectedItem={(newItem) => {
-                                if (!newItem) { setActive(null); return; }
-                                updateProductField(index, (p) => {
-                                  p.product_type = product_types.results.find((t) => String(t.id) === String(newItem.id))!;
-                                  return p;
-                                });
+                                if (!newItem) { setActive(null); return; } // bekor -> hech narsa qilmaymiz3
+                                setDocumentData(prev => ({
+                                  ...prev!,
+                                  products: prev!.products.map(p => {
+                                    if (p.row_number === item.row_number) {
+                                      return {
+                                        ...p,
+                                        product_type: {
+                                          id: newItem.id,
+                                          name: newItem.name,
+                                        },
+                                        model: { id: "", name: "" }, // model va size ni tozalaymiz
+                                        size: { id: "", name: "" },
+                                      };
+                                    }
+                                    return p;
+                                  })
+                                }))
                                 setActive(null);
                               }}
                             />
@@ -1095,32 +1108,18 @@ const ProductInputDetailPage: React.FC = () => {
                         <TableCell className="p-3 text-center">
                           <AntdButton className="w-full" onClick={() => setActive({ field: "model", row: item.row_number })}>
                             <span className={item.model ? "text-gray-800" : "text-gray-400"}>
-                              {item?.model?.id ? product_models.results.find((m) => String(m.id) === String(item.model.id))?.name : "Tanlang"}
+                              {item.model.name ? item.model.name : "Tanlang"}
                             </span>
                           </AntdButton>
-
                           {active?.field === "model" && active.row === item.row_number && (
-                            // <FieldModal
-                            //   field_name="model"
-                            //   selectedItem={{ id: String(item.model.id || ""), name: "", name_uz: "" }}
-                            //   setSelectedItem={(newItem) => {
-                            //     if (!newItem) { setActive(null); return; } // bekor -> hech narsa qilmaymiz
-                            //     updateProductField(index, (p) => {
-                            //       p.model = product_models.results.find((t) => String(t.id) === String(newItem.id))!;
-                            //       return p;
-                            //     });
-                            //     setActive(null);
-                            //   }}
-                            //   selectedProductTypeId={product_types.results.find(item => item.id === documentData.product_type)?.name}
-                            // />
                             <FieldModal
                               field_name="model"
-                              selectedProductTypeId={String(item.product_type?.id || '')}
-                              selectedItem={{ id: String(item.model.id || ""), name: "", name_uz: "" }}
+                              selectedProductTypeId={String(item.product_type?.name || '')}
+                              selectedItem={{ id: String(item.model?.id || ""), name: "", name_uz: "" }}
                               setSelectedItem={(newItem) => {
                                 if (!newItem) { setActive(null); return; }
                                 updateProductField(index, (p) => {
-                                  p.model = product_models.results.find((t) => String(t.id) === String(newItem.id))!;
+                                  p.model = newItem;
                                   return p;
                                 });
                                 setActive(null);
@@ -1134,34 +1133,32 @@ const ProductInputDetailPage: React.FC = () => {
                         <TableCell className="p-3 text-center">
                           <AntdButton className="w-full" onClick={() => setActive({ field: "size", row: item.row_number })}>
                             <span className={item.size ? "text-gray-800" : "text-gray-400"}>
-                              {item?.size?.id ? item.size.name : "Tanlang"}
+                              {item?.size?.name ? item.size.name : "Tanlang"}
                             </span>
                           </AntdButton>
-
                           {active?.field === "size" && active.row === item.row_number && (
-                            // <FieldModal
-                            //   field_name="size"
-                            //   selectedItem={{ id: String(item.size.id || ""), name: "", name_uz: "" }}
-                            //   setSelectedItem={(newItem) => {
-                            //     if (!newItem) { setActive(null); return; } // bekor -> hech narsa qilmaymiz
-                            //     updateProductField(index, (p) => {
-                            //       p.size = product_sizes.results.find((t) => String(t.id) === String(newItem.id))!;
-                            //       return p;
-                            //     });
-                            //     setActive(null);
-                            //   }}
-                            // />
                             <FieldModal
                               field_name="size"
-                              selectedProductTypeId={String(item.product_type?.id || '')}
-                              selectedModelId={String(item.model?.id || '')}
+                              selectedProductTypeId={String(item.product_type?.name || '')}
+                              selectedModelId={String(item.model?.name || '')}
                               selectedItem={{ id: String(item.size.id || ""), name: "", name_uz: "" }}
                               setSelectedItem={(newItem) => {
-                                if (!newItem) { setActive(null); return; }
-                                updateProductField(index, (p) => {
-                                  p.size = product_sizes.results.find((t) => String(t.id) === String(newItem.id))!;
-                                  return p;
-                                });
+                                if (!newItem) { setActive(null); return; } // bekor -> hech narsa qilmaymiz3
+                                setDocumentData(prev => ({
+                                  ...prev!,
+                                  products: prev!.products.map(p => {
+                                    if (p.row_number === item.row_number) {
+                                      return {
+                                        ...p,
+                                        size: {
+                                          id: newItem.id,
+                                          name: newItem.name,
+                                        },
+                                      };
+                                    }
+                                    return p;
+                                  })
+                                }))
                                 setActive(null);
                               }}
                             />
@@ -1173,33 +1170,33 @@ const ProductInputDetailPage: React.FC = () => {
                         <TableCell className="p-3 text-center">
                           <AntdButton className="w-full" onClick={() => setActive({ field: "product", row: item.row_number })}>
                             <span className={item.product ? "text-gray-800" : "text-gray-400"}>
-                              {item?.product?.id ? products.results.find((m) => String(m.id) === String(item.product.id))?.name : "Tanlang"}
+                              {item?.product?.name ? item.product.name : "Tanlang"}
                             </span>
                           </AntdButton>
 
                           {active?.field === "product" && active.row === item.row_number && (
-                            // <FieldModal
-                            //   field_name="product"
-                            //   selectedItem={{ id: String(item.product.id || ""), name: "", name_uz: "" }}
-                            //   setSelectedItem={(newItem) => {
-                            //     if (!newItem) { setActive(null); return; } // bekor -> hech narsa qilmaymiz
-                            //     updateProductField(index, (p) => {
-                            //       p.product = products.results.find((t) => String(t.id) === String(newItem.id))!;
-                            //       return p;
-                            //     });
-                            //     setActive(null);
-                            //   }}
-                            // />
                             <FieldModal
                               field_name="product"
-                              selectedProductTypeId={String(item.product_type?.id || '')}
+                              selectedProductTypeId={String(item.product_type?.name || '')}
+                              selectedModelId={String(item.model?.name || '')}
                               selectedItem={{ id: String(item.product.id || ""), name: "", name_uz: "" }}
                               setSelectedItem={(newItem) => {
-                                if (!newItem) { setActive(null); return; }
-                                updateProductField(index, (p) => {
-                                  p.product = products.results.find((t) => String(t.id) === String(newItem.id))!;
-                                  return p;
-                                });
+                                if (!newItem) { setActive(null); return; } // bekor -> hech narsa qilmaymiz3
+                                setDocumentData(prev => ({
+                                  ...prev!,
+                                  products: prev!.products.map(p => {
+                                    if (p.row_number === item.row_number) {
+                                      return {
+                                        ...p,
+                                        product: {
+                                          id: newItem.id,
+                                          name: newItem.name,
+                                        },
+                                      };
+                                    }
+                                    return p;
+                                  })
+                                }))
                                 setActive(null);
                               }}
                             />

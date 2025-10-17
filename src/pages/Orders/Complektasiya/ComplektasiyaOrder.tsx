@@ -42,7 +42,7 @@ const KomplektasiyaOrder: React.FC = () => {
 
   const [orderType, setOrderType] = useState<"outgoing" | "incoming">("outgoing")
 
-  const [statusFilter] = useState<FilterStatus>('not_approved');
+  const [statusFilter, setStatusFilter] = useState<FilterStatus>('not_approved');
 
   const [isCreateFormModalOpen] = useState(false);
 
@@ -154,10 +154,27 @@ const KomplektasiyaOrder: React.FC = () => {
     getRegionOrdersList();
   };
 
+  // ✅ Filter status bo‘yicha data o‘zgartirish
+  useEffect(() => {
+    let filtered = data;
+
+    if (statusFilter === 'approved') {
+      filtered = data.filter((item) => item.is_approved === true);
+    } else if (statusFilter === 'not_approved') {
+      filtered = data.filter((item) => item.is_approved === false);
+    } else if (statusFilter === 'Canceled') {
+      filtered = data.filter((item) => item.application_status_sale === 'Bekor qilingan');
+    }
+
+    setFilteredData(filtered);
+  }, [statusFilter, data]);
+
+  // ✅ Status counts
   const statusCounts = {
-    all: totalItems.count,
-    approved: 0,
-    not_approved: 0,
+    all: totalItems.count || 0,
+    approved: totalItems.approved || 0,
+    not_approved: totalItems.unapproved || 0,
+    cancelled: totalItems.cancelled || 0,
   };
 
   return (
@@ -177,59 +194,54 @@ const KomplektasiyaOrder: React.FC = () => {
 
                 <div className="flex gap-4">
                   <button
-                    className={`flex items-center space-x-1 rounded-md transition-all duration-300 font-medium text-sm ${statusFilter === 'all'
-                      ? 'bg-slate-100 text-slate-900'
+                    onClick={() => setStatusFilter('all')}
+                    className={`flex items-center space-x-1 rounded-md px-2 py-1 transition-all duration-300 font-medium text-sm ${statusFilter === 'all'
+                      ? 'bg-slate-100 text-slate-900 border border-slate-200'
                       : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
                       }`}
                   >
                     <span>Barchasi</span>
-                    <span className={`px-2 py-0.5 text-xs font-medium ${statusFilter === 'all'
-                      ? 'bg-slate-200 text-slate-700'
-                      : 'bg-slate-100 text-slate-600'
-                      }`}>
+                    <span className="px-2 py-0.5 text-xs font-medium bg-slate-100 text-slate-600">
                       {statusCounts.all}
                     </span>
                   </button>
 
                   <button
-                    className={`flex items-center space-x-1 rounded-md transition-all duration-300 font-medium text-sm text-slate-600 hover:text-emerald-700 hover:bg-emerald-50
+                    onClick={() => setStatusFilter('approved')}
+                    className={`flex items-center space-x-1 rounded-md px-2 py-1 transition-all duration-300 font-medium text-sm ${statusFilter === 'approved'
+                      ? 'bg-emerald-50 text-emerald-800 border border-emerald-200'
+                      : 'text-slate-600 hover:text-emerald-700 hover:bg-emerald-50'
                       }`}
                   >
                     <span>Tasdiqlangan</span>
-                    <span className={`text-xs font-medium ${statusFilter === 'approved'
-                      ? 'bg-emerald-100 text-emerald-700'
-                      : 'bg-slate-100 text-slate-600'
-                      }`}>
+                    <span className="px-2 py-0.5 text-xs font-medium bg-emerald-100 text-emerald-700">
                       {statusCounts.approved}
                     </span>
                   </button>
 
                   <button
-                    className={`flex items-center space-x-1 px-2 py-1 rounded-md transition-all duration-300 font-medium text-sm ${statusFilter === 'not_approved'
-                      ? 'bg-red-50 text-red-800 shadow-sm border border-red-200'
+                    onClick={() => setStatusFilter('not_approved')}
+                    className={`flex items-center space-x-1 rounded-md px-2 py-1 transition-all duration-300 font-medium text-sm ${statusFilter === 'not_approved'
+                      ? 'bg-red-50 text-red-800 border border-red-200'
                       : 'text-slate-600 hover:text-red-700 hover:bg-red-50'
                       }`}
                   >
                     <span>Tasdiqlanmagan</span>
-                    <span className={`px-2 py-0.5 text-xs font-medium ${statusFilter === 'not_approved'
-                      ? 'bg-red-100 text-red-700'
-                      : 'bg-slate-100 text-slate-600'
-                      }`}>
+                    <span className="px-2 py-0.5 text-xs font-medium bg-red-100 text-red-700">
                       {statusCounts.not_approved}
                     </span>
                   </button>
 
                   <button
-                    // onClick={() => handleStatusFilter('Canceled')}
-                    className={`flex items-center space-x-1 px-2 py-1 rounded-md transition-all duration-300 font-medium text-sm text-slate-600 hover:text-emerald-700 hover:bg-emerald-50
+                    onClick={() => setStatusFilter('Canceled')}
+                    className={`flex items-center space-x-1 rounded-md px-2 py-1 transition-all duration-300 font-medium text-sm ${statusFilter === 'Canceled'
+                      ? 'bg-amber-50 text-amber-800 border border-amber-200'
+                      : 'text-slate-600 hover:text-amber-700 hover:bg-amber-50'
                       }`}
                   >
                     <span>Bekor qilingan</span>
-                    <span className={`px-2 py-0.5 text-xs font-medium ${statusFilter === 'Canceled'
-                      ? 'bg-amber-50 text-amber-800 shadow-sm border border-amber-200'
-                      : 'text-slate-600 hover:text-amber-700 hover:bg-amber-50'
-                      }`}>
-                      {/* {statusCounts.Canceled} */}
+                    <span className="px-2 py-0.5 text-xs font-medium bg-amber-100 text-amber-700">
+                      {statusCounts.cancelled}
                     </span>
                   </button>
 

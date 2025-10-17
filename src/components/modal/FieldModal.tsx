@@ -57,8 +57,6 @@ const FieldModal: React.FC<FieldModalProps> = ({
     selectedItem?.id ?? null
   );
 
-  console.log(selectedProductTypeId)
-
   const dispatch = useAppDispatch()
 
   useEffect(() => {
@@ -301,7 +299,7 @@ const FieldModal: React.FC<FieldModalProps> = ({
                 ) : filteredItems.length > 0 ? (
                   filteredItems.map((item) => {
                     const isSelected = String(selectedId) === String(item.id);
-                    const displayName = item.name_uz || item.name || '—';
+                    const displayName = item.name || '—';
                     const truncatedName =
                       displayName.length > 40 ? displayName.slice(0, 40) + '...' : displayName;
 
