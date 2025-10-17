@@ -350,9 +350,8 @@ const OrderWIndow: React.FC<IDistrictOrderFormProps> = ({ setIsCreateFormModalOp
     }
   };
 
-
   useEffect(() => {
-    // handleCreateDefaultDocument();
+    handleCreateDefaultDocument();
     // console.log("first")
     getDistrictOrderFile(DocumentID)
     getDocumentTypes()
@@ -565,7 +564,7 @@ const OrderWIndow: React.FC<IDistrictOrderFormProps> = ({ setIsCreateFormModalOp
                                     setFormData(prev => ({
                                       ...prev,
                                       products: prev.products.map(p => p.raw_number === active.row
-                                        ? { ...p, product_type: { id: newItem.id, name: newItem.name, name_uz: newItem.name_uz } }
+                                        ? { ...p, product_type: { id: newItem.id, name: newItem.name, name_uz: newItem.name_uz }, model: { id: "", name: "", name_uz: "", product_type: "" }, size: { id: "", name: "", name_uz: "", product_type: "", model: "" } }
                                         : p
                                       )
                                     }))
@@ -594,7 +593,7 @@ const OrderWIndow: React.FC<IDistrictOrderFormProps> = ({ setIsCreateFormModalOp
                                     if (!newItem) { setActive(null); return; }
                                     setFormData(prev => ({
                                       ...prev,
-                                      products: prev.products.map(p => p.raw_number === active.row ? { ...p, model: { id: String(newItem.id), name: newItem.name, name_uz: newItem.name_uz, product_type: p.model.product_type } } : p),
+                                      products: prev.products.map(p => p.raw_number === active.row ? { ...p, model: { id: String(newItem.id), name: newItem.name, name_uz: newItem.name_uz, product_type: p.model.product_type }, size: { id: "", name: "", name_uz: "", product_type: "", model: "" } } : p),
                                     }))
                                     setActive(null);
                                   }}
