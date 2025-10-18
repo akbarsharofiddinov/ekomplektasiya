@@ -1,7 +1,7 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useState, useEffect, useCallback } from 'react';
-import { FilePlus2, Plus, Search, Trash } from 'lucide-react';
+import { FilePlus2, Plus, Search, Trash, Pencil } from 'lucide-react';
 import { Input } from '@/components/UI/input';
 import { SaveOutlined } from '@ant-design/icons';
 
@@ -62,6 +62,7 @@ interface OrderDetail {
   sender_from_region: IdName;
   to_district: IdName;
   recipient_district: IdName;
+  recipient_republic:IdName;
   products: Product[];
   executors: Executor[];
   for_purpose: "signing" | "editing" | 'from_district' | 'for_agreement';
@@ -94,9 +95,16 @@ interface DocumentFormData {
   fileBinary: string;
 }
 
+interface SenderToRepublic {
+  order_id: string;
+  receiver_republic: string;
+  receiver_republic_name: string;
+}
+
 const RegionOrderDetail: React.FC = () => {
   // State variables
   const [orderData, setOrderData] = useState<OrderDetail | null>(null);
+  const [SenderToRepublic, setSenderToRepublic] = useState<SenderToRepublic | null>(null);
   const [loading, setLoading] = useState(true);
   const [fileUploadModal, setFileUploadModal] = useState(false);
   const [file, setFile] = useState<File | null>(null);
@@ -113,6 +121,7 @@ const RegionOrderDetail: React.FC = () => {
   });
   const [showEmployeeModal, setShowEmployeeModal] = useState(false);
   const [employees, setEmployees] = useState<any[]>([]);
+  const [sender_employees, setSenderEmployees] = useState<any[]>([]);
   const { id } = useParams<{ id: string }>();
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [deleteModalError, setDeleteModalError] = useState<string | null>(null);
@@ -120,6 +129,7 @@ const RegionOrderDetail: React.FC = () => {
   const [activeField, setActiveField] = useState<{ field: FieldName; row_number: number } | null>(null);
   const [executorType, setexecutorType] = useState<any[]>([]);
   const [messageFileURL, setMessageFileURL] = useState("");
+  const [showRecepModal, setshowRecepModal] = useState(false);
   
   
   const { currentUserInfo } = useAppSelector(state => state.info);
@@ -170,28 +180,17 @@ const RegionOrderDetail: React.FC = () => {
     }
   }, [currentUserInfo?.region.name, currentUserInfo?.district.name]);
 
-  // Fixed useEffect for file handling
   useEffect(() => {
-    if (file) {
-      setDocumentFormData(prev => ({ ...prev!, filename: file.name, extension: file.name.split('.').pop()! }))
-      setFiles(prev => {
-        const exists = prev.some(f => (f.file_name || "").toLowerCase() === file.name.toLowerCase());
-        if (exists) {
-          toast("Bu fayl allaqachon biriktirilgan", { type: "warning" });
-          return prev;
-        }
-        return [...prev, {
-          raw_number: (prev.length + 1) + "",
-          user: currentUserInfo?.id || "",
-          file_name: file.name,
-          extension: file.name.split('.').pop()!,
-          date: new Date().toISOString()
-        }];
-      })
-    }
+      if (file) {
+        setDocumentFormData(prev => ({
+          ...prev,
+          filename: file.name,
+          extension: file.name.split('.').pop() || ''
+        }));
+      }
   }, [file]);
 
-  // Handle file attach with proper error handling
+
   const handleFileAttach = useCallback(async () => {
     if (!file || !orderData?.id || !documentFormData.filename) {
       message.error('Fayl yoki ma\'lumotlar to\'liq emas!');
@@ -215,6 +214,23 @@ const RegionOrderDetail: React.FC = () => {
 
       if (response.status === 200) {
         await Promise.all([fetchOrderDetail(), fetchDocumentTypesList()]);
+        if (file) {
+          setDocumentFormData(prev => ({ ...prev!, filename: file.name, extension: file.name.split('.').pop()! }))
+          setFiles(prev => {
+            const exists = prev.some(f => (f.file_name || "").toLowerCase() === file.name.toLowerCase());
+            if (exists) {
+              toast("Bu fayl allaqachon biriktirilgan", { type: "warning" });
+              return prev;
+            }
+            return [...prev, {
+              raw_number: (prev.length + 1) + "",
+              user: currentUserInfo?.id || "",
+              file_name: file.name,
+              extension: file.name.split('.').pop()!,
+              date: new Date().toISOString()
+            }];
+          })
+        }
         setFile(null);
         setDocumentFormData({
           selectedDocumentType: '',
@@ -253,6 +269,20 @@ const RegionOrderDetail: React.FC = () => {
     }
   }, []);
 
+  const getDistrictOrderFile = async () => {
+      if (id) {
+        try {
+          const response = await axiosAPI.get(`region-orders/${orderData?.id}/order-file`);
+          console.log(response, 'aaa3')
+          if (response.status === 200) {
+            setMessageFileURL(response.data.file_url)
+          }
+        } catch (error) {
+          console.log(error)
+        }
+      }
+  }
+ 
   useEffect(() => {
     Promise.all([fetchOrderDetail(), fetchDocumentTypesList()]);
   }, [fetchOrderDetail, fetchDocumentTypesList]);
@@ -324,6 +354,42 @@ const RegionOrderDetail: React.FC = () => {
       console.error("Hodimlarni olishda xatolik:", error);
     }
   };
+
+  const fetchSenderEmployees = async () => {
+    try {
+      const response = await axiosAPI.get("employees/list?region=Худудгазтаъминот");
+      if (response.status === 200 && Array.isArray(response.data.results)) {
+        console.log('wqeqw')
+        console.log(response.data.results)
+
+        setSenderEmployees(response.data.results);
+      } else {
+        setSenderEmployees([]);
+      }
+    } catch (error) {
+      console.error("Hodimlarni olishda xatolik:", error);
+    }
+  };
+  const addSendToRepublic = async () => {
+    try{
+      if (!SenderToRepublic) return;
+      const response = await axiosAPI.post('/region-orders/send-to-republic/', {
+        ...SenderToRepublic,
+        order_id:orderData?.id,
+      })
+      if (response.status === 200) {
+        toast.success("Buyurtma muvaffaqiyatli yangilandi!");
+      }
+    }catch (err: any) {
+      console.error("Yangilashda xatolik:", err);
+      toast.error(err.response?.data?.error || "Buyurtmani yangilashda xatolik yuz berdi!");
+    }
+  };
+
+
+  useEffect(() => {
+    getDistrictOrderFile();
+  })
 
   const handleSelectEmployee = useCallback(() => {
     setShowEmployeeModal(false);
@@ -433,7 +499,7 @@ const RegionOrderDetail: React.FC = () => {
           ...e,
           executor: e.executor.id,
           executor_type: e.executor_type?.id || e.executor_type,
-          status: e.status?.id,
+          // status: e.status?.id,
         })),
       });
       if (res.status === 200) {
@@ -445,6 +511,8 @@ const RegionOrderDetail: React.FC = () => {
       toast.error(err.response?.data?.error || "Buyurtmani yangilashda xatolik yuz berdi!");
     }
   }, [orderData, fetchOrderDetail]);
+
+  
 
   // Loading state - remove duplicate
   if (loading) {
@@ -474,25 +542,24 @@ const RegionOrderDetail: React.FC = () => {
                 <div className="bg-white overflow-hidden mb-4">
                   <div className="flex items-center justify-between p-4">
                     <div className="text-center border-gray-200">
-                      <p className="text-xs text-gray-500 uppercase font-semibold mb-2">Chiqish</p>
+                      <p className="text-xs text-gray-500 uppercase font-semibold mb-2">{orderData.for_purpose === "editing"? "Chiqish" :'Kirish' }</p>
                       <p className="text-md font-semibold text-gray-800">{orderData.exit_number}</p>
                     </div>
 
                     <div className="text-center border-gray-200">
-                      <p className="text-xs text-gray-500 uppercase font-semibold mb-2">Chiqish Sana</p>
+                      <p className="text-xs text-gray-500 uppercase font-semibold mb-2">{orderData.for_purpose === "editing"? "Chiqish" :'Kirish' } Sana</p>
                       <p className="text-md font-semibold text-gray-800">{orderData.exit_date?.split("T").join(" ")}</p>
                     </div>
 
                     <div className="text-center">
-                      <p className="text-xs text-gray-500 uppercase font-semibold mb-2">Viloyatga junatuvchi</p>
-                      <p className="text-md font-semibold text-gray-800">{orderData.sender_from_region?.name}</p>
+                      <p className="text-xs text-gray-500 uppercase font-semibold mb-2">{orderData.for_purpose === "editing"? "Viloyatdan" :'Tumandan' } junatuvchi</p>
+                      <p className="text-md font-semibold text-gray-800">{orderData.for_purpose === "editing"? orderData.sender_from_region?.name : orderData.sender_from_district?.name } </p>
                     </div>
 
                     <div className="text-center border-gray-200">
-                      <p className="text-xs text-gray-500 uppercase font-semibold mb-2">Viloyatdan qabul qiluvchi</p>
-                      <p className="text-md font-semibold text-gray-800">{orderData.recipient_region?.name}</p>
+                      <p className="text-xs text-gray-500 uppercase font-semibold mb-2">{orderData.for_purpose === "editing"? "Viloyatdan" :'Respublikadan' } qabul qiluvchi</p>
+                      <p className="text-md font-semibold text-gray-800">{SenderToRepublic?.receiver_republic_name ? SenderToRepublic.receiver_republic_name : orderData.recipient_republic?.name}</p>
                     </div>
-
                   </div>
                 </div>
 
@@ -714,16 +781,78 @@ const RegionOrderDetail: React.FC = () => {
                       </table>
                     </div>
                   </div>
+                </div>
+                <div className='flex border shadow-md max-w-[700px] px-6 py-4 rounded-lg'>
+                  <div className="flex items-center gap-4 mb-3 w-full">
+                    <div className={`text-5xl p-6 flex items-center justify-center rounded-full text-blue-500 bg-blue-50`}>
+                      <FileWordOutlined />
+                    </div>
+                    <div className="flex flex-col">
+                      <h4 className="text-gray-800 font-semibold text-xl truncate w-40">
+                        {/* {file.file_name} */}
+                        {file?.name || "Hujjat fayli"}
+                      </h4>
+                      <p className="text-lg">{currentUserInfo?.name}</p>
+                      <p className="text-gray-500 mt-1">{currentUserInfo?.type_user}</p>
+                    </div>
+                  </div>
 
+                  {/* 🔸 Action tugmalar */}
+                  <div className="flex flex-col gap-2 min-w-[150px]">
+                    <button
+                      onClick={() => {
+                        const openWordURL = `ms-word:ofe|u|${messageFileURL}`;
+                        const link = document.createElement("a");
+                        link.href = openWordURL;
+                        document.body.appendChild(link);
+                        link.click();
+                        document.body.removeChild(link)
+                      }}
+                      className="p-1 rounded-md text-gray-600 hover:text-purple-700 hover:bg-gray-100 transition flex items-center justify-between gap-4 bg-gray-100 px-2 cursor-pointer"
+                      title="Ko‘rish"
+                    >
+                      <span>Ko'rish</span>
+                      <EyeOutlined className="text-[24px]" />
+                    </button>
+                    <button
+                      onClick={() => {
+                        const openWordURL = `ms-word:ofe|u|${messageFileURL}`;
+                        const link = document.createElement("a");
+                        link.href = openWordURL;
+                        document.body.appendChild(link);
+                        link.click();
+                        document.body.removeChild(link)
+                      }}
+                      className="p-1 rounded-md text-gray-600 hover:text-purple-700 hover:bg-gray-100 transition flex items-center justify-between gap-4 bg-gray-100 px-2 cursor-pointer"
+                      title="Yuklab olish"
+                    >
+                      <span>O'zgartirish</span>
+                      <Pencil className="text-[24px]" />
+                    </button>
+                    <button
+                      onClick={() => {
+                        const link = document.createElement('a');
+                        link.href = messageFileURL;
+                        link.setAttribute('download', file?.name || 'file.docm');
+                        document.body.appendChild(link);
+                        link.click();
+                        document.body.removeChild(link);
+                      }}
+                      className="p-1 rounded-md text-gray-600 hover:text-purple-700 hover:bg-gray-100 transition flex items-center justify-between gap-4 bg-gray-100 px-2 cursor-pointer"
+                      title="Yuklab olish"
+                    >
+                      <span>Yuklab olish</span>
+                      <DownloadOutlined className="text-[24px]" />
+                    </button>
+                  </div>
 
                 </div>
-
 
                 <div>
                   <div className="bg-transparent rounded-md p-2 flex justify-between mb-2">
                     <div className='flex items-center gap-3'>
                       <Button className='cursor-pointer'
-                        onClick={() => { fetchEmployees(); setShowEmployeeModal(true); }}
+                        onClick={() => {fetchEmployees(),setShowEmployeeModal(true); }}
                       >
                         <Plus />
                         Kiritish
@@ -802,7 +931,7 @@ const RegionOrderDetail: React.FC = () => {
                     <TextArea
                       placeholder='Qisqacha mazmun yozing...'
                       className='rounded-xl border-2 border-gray-200 focus:border-blue-400 hover:border-gray-300 transition-colors shadow-sm'
-                      style={{ height: "120px" }}
+                      style={{ height: "70px" }}
                     />
                   </div>
 
@@ -816,6 +945,17 @@ const RegionOrderDetail: React.FC = () => {
                       <SaveOutlined className='text-xl' />
                     </div>
                     <span>Saqlash</span>
+                  </button>
+
+                  <button
+                    className='group bg-gradient-to-r from-purple-500 to-purple-600 hover:from-green-600 hover:to-purple-700 text-white px-8 py-4 rounded-xl shadow-md hover:shadow-lg transition-all duration-300 flex items-center gap-3 font-medium cursor-pointer'
+                    onClick={() => {fetchSenderEmployees(),setshowRecepModal(true); }}
+                    aria-label="Saqlash"
+                  >
+                    <div className='bg-white/20 p-2 rounded-lg group-hover:bg-white/30 transition-colors'>
+                      <SaveOutlined className='text-xl' />
+                    </div>
+                    <span>Qaubul qilish</span>
                   </button>
 
                   <button
@@ -962,7 +1102,7 @@ const RegionOrderDetail: React.FC = () => {
           </div>
         ) : (
           <>
-            <RegionOrderSining />
+            <RegionOrderSining  for_purpose={orderData.for_purpose} />
           </>
         )
       }
@@ -992,7 +1132,7 @@ const RegionOrderDetail: React.FC = () => {
               </button>
             </div>
 
-            <div className="max-h-[600px] overflow-y-auto">
+            <div className="max-h-[400px] max-w-[700px] overflow-y-auto">
               {employees.length === 0 ? (
                 <div className="text-center py-6 text-gray-500">Ma'lumot topilmadi</div>
               ) : (
@@ -1094,6 +1234,83 @@ const RegionOrderDetail: React.FC = () => {
                 onClick={handleSelectEmployee}
               >
                 Tanlash
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+       {showRecepModal && (
+        <div
+          className="fixed inset-0 bg-black/40 flex items-center justify-center z-50"
+          onClick={() => setshowRecepModal(false)}
+        >
+          <div
+            className="bg-white rounded-lg w-[600px] p-6 shadow-lg"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between border-b pb-3 mb-4">
+              <h2 className="text-lg font-semibold">Respublikda qabul qiluvchi xodimdi tanlang</h2>
+              <button
+                className="text-xl font-bold hover:text-red-500"
+                onClick={() => setshowRecepModal(false)}
+              >
+                &times;
+              </button>
+            </div>
+
+            <div className="max-h-[400px] max-w-[700px] overflow-y-auto">
+              {sender_employees.length === 0 ? (
+                <div className="text-center py-6 text-gray-500">Ma'lumot topilmadi</div>
+              ) : (
+                <table className="w-full border-collapse">
+                  <thead className="bg-gray-50 border-b">
+                    <tr>
+                      <th className="text-center px-4 py-2 text-sm font-semibold">Tanlash</th>
+                      <th className="text-left px-4 py-2 text-sm font-semibold">F.I.Sh.</th>
+                      <th className="text-center px-4 py-2 text-sm font-semibold">Lavozimi</th>
+
+                    </tr>
+                  </thead>
+                  <tbody>
+                   {sender_employees.map((emp, index) => {
+                      return (
+                        <tr
+                          key={index}
+                          className={`hover:bg-blue-50 transition }`}
+                        >
+                          <td className="px-4 py-2 text-center">
+                            <input
+                              type="checkbox"
+                              onChange={(e) => {
+                                if (e.target.checked) {
+                                  setSenderToRepublic({
+                                    order_id: orderData?.id || "",
+                                    receiver_republic: emp.id , 
+                                    receiver_republic_name: emp.name ,
+                                  });
+                                } else {
+                                  setSenderToRepublic(null);
+                                }
+                              }}
+                              checked={SenderToRepublic?.receiver_republic === emp.id}
+                            />
+                          </td>
+                          <td className="px-4 py-2 text-sm text-gray-800">{emp.name}</td>
+                          <td className="px-4 py-2 text-sm text-gray-800">{emp.position}</td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              )}
+            </div>
+
+            <div className="flex justify-end mt-5">
+              <Button
+                type="primary"
+                onClick={addSendToRepublic}
+              >
+                Saqlash
               </Button>
             </div>
           </div>
