@@ -54,8 +54,30 @@ interface FormDataType {
   executors: Executors[]
 }
 
+interface DocumentInfo {
+  id: string;
+  type_document_for_filter: string; // "Вилоятдан" | "Тумандан"
+  application_status_district: string; // "Bekor qilingan" va h.k.
+  confirmation_date: string;
+  is_approved: boolean;
+  is_seen: boolean;
+  exit_date: string;
+  exit_number: string;
+  from_district: string;
+  sender_from_district: string;
+  to_region: string;
+  recipient_region: string;
+  reception_date: string;
+  reception_number: string;
+  from_region: string;
+  sender_from_region: string;
+  to_district: string;
+  recipient_district: string;
+}
+
 interface IDistrictOrderFormProps {
-  setIsCreateFormModalOpen: React.Dispatch<React.SetStateAction<boolean>>
+  setIsCreateFormModalOpen: React.Dispatch<React.SetStateAction<boolean>>;
+  setData: React.Dispatch<React.SetStateAction<DocumentInfo[]>>
 }
 
 const initialFormData = {
@@ -81,7 +103,7 @@ const CREATE_ENDPOINT = "/region-orders/create/";
 
 type Executors = { id: string; name: string; number: number; position: string; region: string; district: string; executor_type:string;};
 
-const OrderWIndow: React.FC<IDistrictOrderFormProps> = ({ setIsCreateFormModalOpen }) => {
+const OrderWIndow: React.FC<IDistrictOrderFormProps> = ({ setIsCreateFormModalOpen, setData }) => {
   // FormData
   const [formData, setFormData] = useState<FormDataType>(initialFormData);
   // yuqoriga qo'shing
@@ -308,6 +330,7 @@ const OrderWIndow: React.FC<IDistrictOrderFormProps> = ({ setIsCreateFormModalOp
     try {
       const response = await axiosAPI.post(`/region-orders/update/${documentID}`, payload);
       if (response.status === 200) {
+        setData(prev => [...prev, response.data])
         toast("Hujjat muvofaqqiyatli saqlandi", { type: "success" });
         setIsCreateFormModalOpen(false);
       }

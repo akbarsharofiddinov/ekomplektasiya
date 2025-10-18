@@ -17,8 +17,8 @@ import { setOrderTypes, setProductModels, setProductSizes, setProductTypes, setP
 
 interface DocumentInfo {
   id: string;
-  type_document_for_filter: string; // "Вилоятдан" | "Тумандан"
-  application_status_district: string; // "Bekor qilingan" va h.k.
+  type_document_for_filter: string;
+  application_status_district: string;
   confirmation_date: string;
   is_approved: boolean;
   is_seen: boolean;
@@ -79,8 +79,8 @@ const RegionOrder: React.FC = () => {
   const [statusCounts, setStatusCounts] = useState<{
     all: number;
     approved: number;
-    not_approved: number;           // maps to backend "unapproved"
-    Canceled: number;               // maps to backend "cancelled"
+    not_approved: number;          
+    Canceled: number;              
     approved_not_accepted: number;  // maps to backend "unseen"
   }>({
     all: 0,
