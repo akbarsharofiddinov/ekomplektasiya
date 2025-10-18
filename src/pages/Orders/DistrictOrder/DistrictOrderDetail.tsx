@@ -26,7 +26,7 @@ interface IdName {
 
 interface Product {
 	row_number: number;
-	product: IdName | null;
+	product: string;
 	model: IdName | null;
 	product_type: IdName | null;
 	size: IdName | null;
@@ -70,7 +70,7 @@ interface ProductRow {
 	row_number: number;
 	order_type: IdName | null;
 	product_type: IdName | null;
-	product: IdName | null;
+	product: string;
 	model: IdName | null;
 	size: IdName | null;
 	unit: IdName | null;
@@ -355,7 +355,7 @@ const DistrictOrderDetail: React.FC = () => {
 				row_number: newRowNumber,
 				order_type: null,
 				product_type: null,
-				product: { id: crypto.randomUUID(), name: "" },
+				product: "",
 				model: null,
 				size: null,
 				unit: null,
@@ -422,7 +422,7 @@ const DistrictOrderDetail: React.FC = () => {
 				recipient_region: orderData.recipient_region?.id,
 				products: orderData.products.map(p => ({
 					...p,
-					product: p.product?.id,
+					product: p.product || "",
 					model: p.model?.id,
 					size: p.size?.id,
 					unit: p.unit?.id,
@@ -575,13 +575,10 @@ const DistrictOrderDetail: React.FC = () => {
 															{/* 🟠 Mahsulot nomi (qo'lda Input) */}
 															<td className="px-3 py-2 text-center">
 																<Input
-																	value={p.product?.name || ""}
+																	value={p.product}
 																	placeholder='Tovar nomini kiriting'
 																	onChange={(e) =>
-																		updateRow(p.row_number, "product", {
-																			id: p.product?.id || crypto.randomUUID(),
-																			name: e.target.value,
-																		})
+																		updateRow(p.row_number, "product", e.target.value)
 																	}
 																	className="text-sm border border-gray-200 rounded-md w-full bg-white placeholder:text-gray-400"
 																/>
