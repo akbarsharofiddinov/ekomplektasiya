@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { FilePlus2, Plus, Search } from 'lucide-react';
+import { CircleCheckBig, FilePlus2, Plus, Save, Search, Trash } from 'lucide-react';
 import { Input } from '@/components/UI/input';
 import { SaveOutlined } from '@ant-design/icons';
 
@@ -110,6 +110,8 @@ const ComplektasiyaOrderDetail: React.FC = () => {
   const [modalPage, setModalPage] = useState(1);
   const [modalPageSize] = useState(15);
   const [modalSelectedRow, setModalSelectedRow] = useState<number | null>(null);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [deleteModalError, setDeleteModalError] = useState<string | null>(null);
 
   const { currentUserInfo } = useAppSelector(state => state.info);
   const { order_types, product_models, product_sizes, product_types, product_units } = useAppSelector(state => state.product)
@@ -363,6 +365,53 @@ const ComplektasiyaOrderDetail: React.FC = () => {
     });
   };
 
+
+
+  // 📌 O'chirish funksiyasi
+  const handleDeleteOrder = () => {
+    if (!orderData || !orderData.id) {
+      message.error("Buyurtma ID topilmadi!");
+      return;
+    }
+    setDeleteModalError(null);
+    setIsDeleteModalOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!orderData || !orderData.id) {
+      message.error("Buyurtma ma’lumoti topilmadi!");
+      return;
+    }
+
+    try {
+      const response = await axiosAPI.delete(
+        `sale-orders/delete/${orderData.id}/`
+      );
+
+      if (response.status === 200) {
+        message.success("Buyurtma muvaffaqiyatli o‘chirildi!");
+        setIsDeleteModalOpen(false);
+
+        setTimeout(() => {
+          window.history.back();
+        }, 1000);
+      }
+    } catch (error: any) {
+      console.error("O‘chirishda xatolik:", error);
+
+      // Agar backend "error" maydoni yuborsa, o‘sha xabarni modalga chiqaramiz
+      const backendError =
+        error?.response?.data?.error ||
+        "Buyurtmani o‘chirishda xatolik yuz berdi!";
+
+      setDeleteModalError(backendError);
+    }
+  };
+
+  const cancelDelete = () => {
+    setIsDeleteModalOpen(false);
+    setDeleteModalError(null);
+  };
 
 
   // 🟣 Yuklanayotgan holat    
@@ -718,32 +767,12 @@ const ComplektasiyaOrderDetail: React.FC = () => {
               {/* File Upload Button */}
               <button
                 onClick={() => setFileUploadModal(true)}
-                className='group relative bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white px-6 py-4 rounded-xl shadow-md hover:shadow-lg transition-all duration-300 flex items-center gap-3 font-medium cursor-pointer'
+                className='group relative bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white px-3 py-1.5 rounded-md shadow-md hover:shadow-lg transition-all duration-300 flex items-center gap-3 font-medium cursor-pointer'
               >
                 <div className='bg-white/20 p-2 rounded-lg group-hover:bg-white/30 transition-colors'>
-                  <FilePlus2 className='w-5 h-5' />
+                  <FilePlus2 className='w-3.5 h-3.5' />
                 </div>
                 <span>Hujjat biriktirish</span>
-              </button>
-
-              {/* Text Area */}
-              <div className='flex-1 max-w-md'>
-                <TextArea
-                  placeholder='Qisqacha mazmun yozing...'
-                  className='rounded-xl border-2 border-gray-200 focus:border-blue-400 hover:border-gray-300 transition-colors shadow-sm'
-                  style={{ height: "120px" }}
-                />
-              </div>
-
-              {/* Save Button */}
-              <button
-                className='group bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white px-8 py-4 rounded-xl shadow-md hover:shadow-lg transition-all duration-300 flex items-center gap-3 font-medium cursor-pointer'
-                // onClick={handleUpdateOrder}
-              >
-                <div className='bg-white/20 p-2 rounded-lg group-hover:bg-white/30 transition-colors'>
-                  <SaveOutlined className='text-xl' />
-                </div>
-                <span>Saqlash</span>
               </button>
             </div>
 
@@ -844,7 +873,7 @@ const ComplektasiyaOrderDetail: React.FC = () => {
                   })}
                 </div>
               ) : (
-                <p className="text-gray-900 font-bold text-2xl text-center">
+                <p className="text-gray-900 font-semibold text-xl text-center">
                   Hozircha fayllar mavjud emas.
                 </p>
               )}
@@ -875,6 +904,48 @@ const ComplektasiyaOrderDetail: React.FC = () => {
               )}
             </div>
           </div>
+
+        </div>
+
+      </div>
+      <div className="sticky bottom-0 right-0 left-0 bg-white border-t border-gray-200 shadow-sm z-40 px-6 py-4 flex flex-wrap md:flex-nowrap items-center justify-between gap-6">
+        {/* TextArea */}
+        <div className="flex-1 max-w-md w-full">
+          <TextArea
+            placeholder='Qisqacha mazmun yozing...'
+            className='rounded-xl border-2 border-gray-200 focus:border-blue-400 hover:border-gray-300 transition-colors shadow-sm'
+            style={{ height: "50px" }}
+          />
+        </div>
+
+        {/* Buttons */}
+        <div className="flex items-center gap-4">
+          <button
+            className='group bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white px-3 py-1.5 rounded-md shadow-md hover:shadow-lg transition-all duration-300 flex items-center gap-3 font-medium cursor-pointer'
+          >
+            <div className='bg-white/20 p-2 rounded-lg group-hover:bg-white/30 transition-colors'>
+              <CircleCheckBig className="w-3 h-3" />
+            </div>
+            <span>Tasdiqlash</span>
+          </button>
+
+          <button
+            className='group bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white px-3 py-1.5 rounded-md shadow-md hover:shadow-lg transition-all duration-300 flex items-center gap-3 font-medium cursor-pointer'
+          >
+            <div className='bg-white/20 p-2 rounded-lg group-hover:bg-white/30 transition-colors'>
+              <Save className="w-3 h-3" />
+            </div>
+            <span>Saqlash</span>
+          </button>
+          <button
+            className='group bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white px-3 py-1.5 rounded-md shadow-md hover:shadow-lg transition-all duration-300 flex items-center gap-3 font-medium cursor-pointer'
+            onClick={handleDeleteOrder}
+          >
+            <div className='bg-white/20 p-2 rounded-lg group-hover:bg-white/30 transition-colors'>
+              <Trash className="w-3 h-3" />
+            </div>
+            <span>O‘chirish</span>
+          </button>
         </div>
       </div>
 
@@ -996,7 +1067,72 @@ const ComplektasiyaOrderDetail: React.FC = () => {
         </div> */}
       </Modal>
 
-
+      {/* 🔴 O'chirish tasdiqlash modali */}
+      <Modal
+        title={
+          deleteModalError
+            ? null
+            : "Buyurtmani o‘chirishni tasdiqlaysizmi?"
+        }
+        open={isDeleteModalOpen}
+        closable={!deleteModalError}
+        maskClosable={!deleteModalError}
+        width={deleteModalError ? 520 : 420}
+        centered
+        footer={
+          deleteModalError
+            ? [
+              <Button
+                key="ok"
+                type="primary"
+                onClick={cancelDelete}
+                style={{
+                  width: 120,
+                  fontWeight: 600,
+                }}
+              >
+                OK
+              </Button>,
+            ]
+            : [
+              <Button key="cancel" onClick={cancelDelete}>
+                Bekor qilish
+              </Button>,
+              <Button key="delete" danger onClick={confirmDelete}>
+                Ha, o‘chirish
+              </Button>,
+            ]
+        }
+        bodyStyle={{
+          textAlign: "center",
+          padding: deleteModalError ? "16px 16px" : "16px",
+        }}
+      >
+        {deleteModalError ? (
+          <p
+            style={{
+              color: "#ff4d4f",
+              fontSize: "20px",
+              fontWeight: "700",
+              textAlign: "center",
+              lineHeight: "1.8",
+            }}
+          >
+            {deleteModalError}
+          </p>
+        ) : (
+          <p
+            style={{
+              fontSize: "16px",
+              color: "#555",
+              lineHeight: "1.6",
+              marginBottom: 0,
+            }}
+          >
+            Bu amalni qaytarib bo‘lmaydi. Davom etasizmi?
+          </p>
+        )}
+      </Modal>
 
     </>
   );

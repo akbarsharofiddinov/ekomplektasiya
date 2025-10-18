@@ -3,7 +3,8 @@ import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import { 
     DistrictOrder, DistrictOrderDetail, Home, Login, ProductInputDetailPage, ProductOutDetailPage,
     ProductOutput, ProductsInput, ProductTurnOverReport, RegionOrder, RegionOrderDetail, WarehouseTransfer,
-    WarehouseTransferDetail, KomplektasiyaOrder
+    WarehouseTransferDetail, KomplektasiyaOrder,
+    PriceAnalysis
 } from "@/pages";
 import { Layout } from "@/components";
 import { Toaster } from "react-hot-toast";
@@ -12,11 +13,7 @@ import ProductMaterialsBalance from "./pages/Reports/ProductMaterialsBalance";
 import RepublicOrder from "./pages/Orders/RepublicOrder/RepublicOrder";
 import RepublicOrderDetail from "./pages/Orders/RepublicOrder/RepublicOrderDetail";
 import Profile from "./pages/Profile/Profile";
-import FieldModal from "./components/modal/FieldModal";
-import { useAppSelector } from "./store/hooks/hooks";
 import ComplektasiyaOrderDetail from "./pages/Orders/Complektasiya/ComplektasiyaOrderDetail";
-// import CKEditorComponent from "./components/DocEditor/CKEditorComponent";
-// import TinyMCEComponent from "./components/DocEditor/TinyMCEComponent";
 
 const routes = createBrowserRouter([
   {
@@ -109,6 +106,10 @@ const routes = createBrowserRouter([
         path: 'profile',
         element: <Profile />
       },
+      {
+        path: "price-analysis",
+        element: <PriceAnalysis />
+      }
     ],
   },
   {

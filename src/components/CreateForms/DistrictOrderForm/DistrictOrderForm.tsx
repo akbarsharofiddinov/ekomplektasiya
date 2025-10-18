@@ -257,7 +257,7 @@ const OrderWIndow: React.FC<IDistrictOrderFormProps> = ({ setIsCreateFormModalOp
   const getDistrictOrderFile = async (id: string) => {
     if (id) {
       try {
-        const response = await axiosAPI.get(`district-orders/${DocumentID}/order-file`);
+        const response = await axiosAPI.get(`district-orders/${documentID}/order-file`);
         if (response.status === 200) {
           // const link = document.createElement('a');
           // link.href = response.data.file_url;
@@ -411,7 +411,7 @@ const OrderWIndow: React.FC<IDistrictOrderFormProps> = ({ setIsCreateFormModalOp
   };
 
   useEffect(() => {
-    // handleCreateDefaultDocument();
+    handleCreateDefaultDocument();
     // console.log("first")
     getDistrictOrderFile(DocumentID)
     getDocumentTypes()

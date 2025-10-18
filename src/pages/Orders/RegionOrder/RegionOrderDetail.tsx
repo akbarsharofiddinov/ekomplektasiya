@@ -1,5 +1,7 @@
+/* eslint-disable react-hooks/exhaustive-deps */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useState, useEffect, useCallback } from 'react';
-import { Delete, FilePlus2, Plus, Search, Trash } from 'lucide-react';
+import { FilePlus2, Plus, Search, Trash } from 'lucide-react';
 import { Input } from '@/components/UI/input';
 import { SaveOutlined } from '@ant-design/icons';
 
@@ -170,23 +172,23 @@ const RegionOrderDetail: React.FC = () => {
 
   // Fixed useEffect for file handling
   useEffect(() => {
-      if (file) {
-        setDocumentFormData(prev => ({ ...prev!, filename: file.name, extension: file.name.split('.').pop()! }))
-        setFiles(prev => {
-          const exists = prev.some(f => (f.file_name || "").toLowerCase() === file.name.toLowerCase());
-          if (exists) {
-            toast("Bu fayl allaqachon biriktirilgan", { type: "warning" });
-            return prev;
-          }
-          return [...prev, {
-            raw_number: (prev.length + 1) + "",
-            user: currentUserInfo?.id || "",
-            file_name: file.name,
-            extension: file.name.split('.').pop()!,
-            date: new Date().toISOString()
-          }];
-        })
-      }
+    if (file) {
+      setDocumentFormData(prev => ({ ...prev!, filename: file.name, extension: file.name.split('.').pop()! }))
+      setFiles(prev => {
+        const exists = prev.some(f => (f.file_name || "").toLowerCase() === file.name.toLowerCase());
+        if (exists) {
+          toast("Bu fayl allaqachon biriktirilgan", { type: "warning" });
+          return prev;
+        }
+        return [...prev, {
+          raw_number: (prev.length + 1) + "",
+          user: currentUserInfo?.id || "",
+          file_name: file.name,
+          extension: file.name.split('.').pop()!,
+          date: new Date().toISOString()
+        }];
+      })
+    }
   }, [file]);
 
   // Handle file attach with proper error handling
@@ -254,7 +256,7 @@ const RegionOrderDetail: React.FC = () => {
   useEffect(() => {
     Promise.all([fetchOrderDetail(), fetchDocumentTypesList()]);
   }, [fetchOrderDetail, fetchDocumentTypesList]);
-  
+
   useEffect(() => {
     if (id) {
       fetchFiles();
@@ -303,25 +305,25 @@ const RegionOrderDetail: React.FC = () => {
   }, []);
 
   const fetchEmployees = async () => {
-        try {
-          const response = await axiosAPI.get("employees/list");
-          const type_response = await axiosAPI.get('enumerations/excuter_types');
-          
-          if (type_response.status === 200 && Array.isArray(type_response.data)) {
-            setexecutorType(type_response.data);
-          } else {
-            setexecutorType([]);
-          }
-          
-          if (response.status === 200 && Array.isArray(response.data.results)) {
-            setEmployees(response.data.results);
-          } else {
-            setEmployees([]);
-          }
-        } catch (error) {
-          console.error("Hodimlarni olishda xatolik:", error);
-        }
-    };
+    try {
+      const response = await axiosAPI.get("employees/list");
+      const type_response = await axiosAPI.get('enumerations/excuter_types');
+
+      if (type_response.status === 200 && Array.isArray(type_response.data)) {
+        setexecutorType(type_response.data);
+      } else {
+        setexecutorType([]);
+      }
+
+      if (response.status === 200 && Array.isArray(response.data.results)) {
+        setEmployees(response.data.results);
+      } else {
+        setEmployees([]);
+      }
+    } catch (error) {
+      console.error("Hodimlarni olishda xatolik:", error);
+    }
+  };
 
   const handleSelectEmployee = useCallback(() => {
     setShowEmployeeModal(false);
@@ -401,48 +403,48 @@ const RegionOrderDetail: React.FC = () => {
   }, []);
 
   const handleUpdateOrder = useCallback(async () => {
-  try {
-    if (!orderData) return;
-    const res = await axiosAPI.post(`/region-orders/update/${orderData.id}`, {
-      ...orderData,
-      type_document_for_filter: orderData.type_document_for_filter?.id,
-      application_status_district: orderData.application_status_district?.id,
-      from_district: orderData.from_district?.id,
-      sender_from_district: orderData.sender_from_district?.id,
-      to_region: orderData.to_region?.id,
-      recipient_district: orderData.recipient_district?.id,
-      from_region: orderData.from_region?.id,
-      sender_from_region: orderData.sender_from_region?.id,
-      to_district: orderData.to_district?.id,
-      recipient_region: orderData.recipient_region?.id,
-      products: orderData.products.map(p => ({
-        ...p,
-        product: p.product || "",
-        model: p.model?.id,
-        size: p.size?.id,
-        unit: p.unit?.id,
-        quantity: p.quantity,
-        description: p.description,
-        order_type: p.order_type?.id,
-        product_type: p.product_type?.id,
-        row_number: p.row_number,
-      })),
-      executors: orderData.executors.map(e => ({
-        ...e,
-        executor: e.executor.id,
-        executor_type: e.executor_type?.id || e.executor_type,
-        status: e.status?.id,
-      })),
-    });
-    if (res.status === 200) {
-      toast.success("Buyurtma muvaffaqiyatli yangilandi!");
-      fetchOrderDetail();
+    try {
+      if (!orderData) return;
+      const res = await axiosAPI.post(`/region-orders/update/${orderData.id}`, {
+        ...orderData,
+        type_document_for_filter: orderData.type_document_for_filter?.id,
+        application_status_district: orderData.application_status_district?.id,
+        from_district: orderData.from_district?.id,
+        sender_from_district: orderData.sender_from_district?.id,
+        to_region: orderData.to_region?.id,
+        recipient_district: orderData.recipient_district?.id,
+        from_region: orderData.from_region?.id,
+        sender_from_region: orderData.sender_from_region?.id,
+        to_district: orderData.to_district?.id,
+        recipient_region: orderData.recipient_region?.id,
+        products: orderData.products.map(p => ({
+          ...p,
+          product: p.product || "",
+          model: p.model?.id,
+          size: p.size?.id,
+          unit: p.unit?.id,
+          quantity: p.quantity,
+          description: p.description,
+          order_type: p.order_type?.id,
+          product_type: p.product_type?.id,
+          row_number: p.row_number,
+        })),
+        executors: orderData.executors.map(e => ({
+          ...e,
+          executor: e.executor.id,
+          executor_type: e.executor_type?.id || e.executor_type,
+          status: e.status?.id,
+        })),
+      });
+      if (res.status === 200) {
+        toast.success("Buyurtma muvaffaqiyatli yangilandi!");
+        fetchOrderDetail();
+      }
+    } catch (err: any) {
+      console.error("Yangilashda xatolik:", err);
+      toast.error(err.response?.data?.error || "Buyurtmani yangilashda xatolik yuz berdi!");
     }
-  } catch (err: any) {
-    console.error("Yangilashda xatolik:", err);
-    toast.error(err.response?.data?.error || "Buyurtmani yangilashda xatolik yuz berdi!");
-  }
-}, [orderData, fetchOrderDetail]);
+  }, [orderData, fetchOrderDetail]);
 
   // Loading state - remove duplicate
   if (loading) {
@@ -464,7 +466,7 @@ const RegionOrderDetail: React.FC = () => {
   return (
     <>
       {
-        (orderData.for_purpose === "editing" || orderData.for_purpose === "from_district") ?(
+        (orderData.for_purpose === "editing" || orderData.for_purpose === "from_district") ? (
           <div className="min-h-screen py-2 px-2 bg-white">
             <div className="max-w-8xl mx-auto bg-white">
               <div>
@@ -897,7 +899,7 @@ const RegionOrderDetail: React.FC = () => {
                               </div>
 
                               <div className="flex flex-col gap-2">
-                                 <button
+                                <button
                                   onClick={() => deleteFile(file)}
                                   className="p-1 rounded-md text-gray-600 hover:text-purple-700 hover:bg-gray-100 transition"
                                   title="Ko'rish"
@@ -1005,82 +1007,82 @@ const RegionOrderDetail: React.FC = () => {
                     </tr>
                   </thead>
                   <tbody>
-                   {employees.map((emp, index) => {
-                        const existingExecutor = orderData?.executors?.find(e => e.executor.id === emp.id);
-                        return (
-                          <tr
-                            key={index}
-                            className={`hover:bg-blue-50 transition ${existingExecutor ? "bg-blue-100" : ""}`}
-                          >
-                            <td className="px-4 py-2 text-center">
-                              <input
-                                type="checkbox"
-                                checked={!!existingExecutor}
-                                onChange={(e) => {
-                                  if (e.target.checked) {
-                                    const newExecutor = {
-                                      executor: { 
-                                        id: emp.id, 
-                                        name: emp.name 
-                                      },
-                                      executor_type: emp.executor_type || executorType[0]?.id || "",
-                                      status: { id: '', name: '' },
-                                      message: "",
-                                      confirmation_date: new Date().toISOString(),
-                                    };
-                                    setOrderData(prev => prev ? {
-                                      ...prev,
-                                      executors: [...(prev.executors || []), newExecutor]
-                                    } : prev);
-                                  } else {
-                                    setOrderData(prev => prev ? {
-                                      ...prev,
-                                      executors: prev.executors.filter(e => e.executor.id !== emp.id)
-                                    } : prev);
-                                  }
-                                }}
-                              />
-                            </td>
-                            <td className="px-4 py-2 text-sm text-gray-800">{emp.name}</td>
-                            <td className="px-4 py-2 text-sm text-gray-800">{emp.position}</td>
-                            <td className="px-4 py-2 text-sm text-gray-800">{emp.message}</td>
-                            <td>
-                                <Select
-                                  placeholder="Imzolovchi turini tanlang"
-                                  style={{ width: 200 }}
-                                  value={
-                                    existingExecutor?.executor_type && typeof existingExecutor.executor_type === 'object' 
-                                      ? existingExecutor.executor_type.id 
-                                      : existingExecutor?.executor_type || undefined
-                                  }
-                                  onChange={(value) => {
-                                    setOrderData(prev => {
-                                      if (!prev) return prev;
-                                      return {
-                                        ...prev,
-                                        executors: prev.executors.map(e => 
-                                          e.executor.id === emp.id 
-                                            ? { 
-                                                ...e, 
-                                                executor_type: value 
-                                              } 
-                                            : e
-                                        )
-                                      };
-                                    });
-                                  }}
-                                >
-                                  {executorType.map((type) => (
-                                    <Select.Option key={type.id} value={type.id}>
-                                      {type.name}
-                                    </Select.Option>
-                                  ))}
-                                </Select>
-                              </td>
-                            
-                          </tr>
-                        );
-                      })}
+                    {employees.map((emp, index) => {
+                      const existingExecutor = orderData?.executors?.find(e => e.executor.id === emp.id);
+                      return (
+                        <tr
+                          key={index}
+                          className={`hover:bg-blue-50 transition ${existingExecutor ? "bg-blue-100" : ""}`}
+                        >
+                          <td className="px-4 py-2 text-center">
+                            <input
+                              type="checkbox"
+                              checked={!!existingExecutor}
+                              onChange={(e) => {
+                                if (e.target.checked) {
+                                  const newExecutor = {
+                                    executor: {
+                                      id: emp.id,
+                                      name: emp.name
+                                    },
+                                    executor_type: emp.executor_type || executorType[0]?.id || "",
+                                    status: { id: '', name: '' },
+                                    message: "",
+                                    confirmation_date: new Date().toISOString(),
+                                  };
+                                  setOrderData(prev => prev ? {
+                                    ...prev,
+                                    executors: [...(prev.executors || []), newExecutor]
+                                  } : prev);
+                                } else {
+                                  setOrderData(prev => prev ? {
+                                    ...prev,
+                                    executors: prev.executors.filter(e => e.executor.id !== emp.id)
+                                  } : prev);
+                                }
+                              }}
+                            />
+                          </td>
+                          <td className="px-4 py-2 text-sm text-gray-800">{emp.name}</td>
+                          <td className="px-4 py-2 text-sm text-gray-800">{emp.position}</td>
+                          <td className="px-4 py-2 text-sm text-gray-800">{emp.message}</td>
+                          <td>
+                            <Select
+                              placeholder="Imzolovchi turini tanlang"
+                              style={{ width: 200 }}
+                              value={
+                                existingExecutor?.executor_type && typeof existingExecutor.executor_type === 'object'
+                                  ? existingExecutor.executor_type.id
+                                  : existingExecutor?.executor_type || undefined
+                              }
+                              onChange={(value) => {
+                                setOrderData(prev => {
+                                  if (!prev) return prev;
+                                  return {
+                                    ...prev,
+                                    executors: prev.executors.map(e =>
+                                      e.executor.id === emp.id
+                                        ? {
+                                          ...e,
+                                          executor_type: value
+                                        }
+                                        : e
+                                    )
+                                  };
+                                });
+                              }}
+                            >
+                              {executorType.map((type) => (
+                                <Select.Option key={type.id} value={type.id}>
+                                  {type.name}
+                                </Select.Option>
+                              ))}
+                            </Select>
+                          </td>
+
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               )}
