@@ -12,3 +12,4 @@ export { default as DistrictOrderDetail } from "./Orders/DistrictOrder/DistrictO
 export { default as RegionOrder } from "./Orders/RegionOrder/RegionOrder";
 export { default as RegionOrderDetail } from "./Orders/RegionOrder/RegionOrderDetail";
 export { default as KomplektasiyaOrder } from "./Orders/Complektasiya/ComplektasiyaOrder";
+export { default as PriceAnalysis } from "./PriceAnalysis/PriceAnalysis";
