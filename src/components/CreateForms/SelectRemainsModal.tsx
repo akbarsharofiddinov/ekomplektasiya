@@ -1,3 +1,4 @@
+import { X } from 'lucide-react';
 import React, { useEffect } from 'react'
 
 interface SelectRemainsModalProps {
@@ -105,6 +106,12 @@ const SelectRemainsModal: React.FC<SelectRemainsModalProps> = ({
               <h2 className='text-xl font-semibold text-gray-800'>
                 Qoldiq tovarlar ro'yxati
               </h2>
+              <button
+                onClick={onClose}
+                className='cursor-pointer'
+              >
+              <X className="w-5 h-5"/>
+              </button>
             </div>
             <p className='text-sm text-gray-600 pt-1'>
               Tanlanganlar: {selectedRemaindersList?.length} / Filtrlangan: {filteredRemainders.length} / Jami: {remainders.length}
@@ -198,7 +205,7 @@ const SelectRemainsModal: React.FC<SelectRemainsModalProps> = ({
                           </td>
                         )}
                         <td className='px-4 py-3 text-sm font-medium text-gray-900'>
-                          {remainder.bar_code || '—'}
+                          {remainder.bar_code || ''}
                         </td>
                         <td className='px-4 py-3 text-sm text-gray-900'>
                           <div className='max-w-xs' title={remainder.product?.name}>
@@ -212,24 +219,24 @@ const SelectRemainsModal: React.FC<SelectRemainsModalProps> = ({
                                 )}
                               </span>
                             ) : (
-                              '—'
+                              ''
                             )}
                           </div>
                         </td>
                         <td className='px-4 py-3 text-sm text-gray-900'>
-                          {remainder.model?.name || '—'}
+                          {remainder.model?.name || ''}
                         </td>
                         <td className='px-4 py-3 text-sm text-gray-900'>
-                          {remainder.size?.name || '—'}
+                          {remainder.size?.name || ''}
                         </td>
                         <td className='px-4 py-3 text-sm text-gray-900 font-medium'>
                           {remainder.remaining_quantity || 0}
                         </td>
                         <td className='px-4 py-3 text-sm text-gray-900'>
-                          {remainder.unit?.name || '—'}
+                          {remainder.unit?.name || ''}
                         </td>
                         <td className='px-4 py-3 text-sm text-gray-900'>
-                          {remainder.price ? `${remainder.price.toLocaleString()} UZS` : '—'}
+                          {remainder.price ? `${remainder.price.toLocaleString()} UZS` : ''}
                         </td>
                       </tr>
                     ))
