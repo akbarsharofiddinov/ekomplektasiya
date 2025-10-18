@@ -18,7 +18,6 @@ import {
   FileSearch,
   Receipt,
   Users,
-  Barcode,
 } from "lucide-react";
 import { useState } from "react";
 import logo from "@/assets/hudud_logo.png";
@@ -41,8 +40,6 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed }: SidebarProps) => {
         : [...prev, menuId]
     );
   };
-
-
 
   const menuItems = [
     {
@@ -181,7 +178,7 @@ const Sidebar: React.FC<SidebarProps> = ({ collapsed }: SidebarProps) => {
           {/* Logo */}
           <div
             onClick={() => navigate("/")}
-            className="w-14 h-14 bg-white rounded-xl flex items-center justify-center shadow-xl border border-slate-200 transform transition-all duration-300 hover:scale-105 hover:shadow-2xl mx-auto overflow-hidden cursor-pointer">
+            className="w-14 h-14 rounded-xl flex items-center justify-center shadow-xl border transform transition-all duration-300 hover:scale-105 hover:shadow-2xl mx-auto overflow-hidden cursor-pointer">
             <img
               src={logo}
               alt="HGT Logo"

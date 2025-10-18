@@ -99,7 +99,8 @@ const OrderWIndow: React.FC<IDistrictOrderFormProps> = ({ setIsCreateFormModalOp
   const [documentConfirmed, setDocumentConfirmed] = useState(false);
   // Files
   const [files, setFiles] = useState<FileData[]>([]);
-  const [messageFileURL, setMessageFileURL] = useState("");
+  // const [messageFile, setMessageFile] = useState<File | null>(null);
+  const [messageFileURL, setMessageFileURL] = useState<string>("");
   const [file, setFile] = useState<File | null>(null);
   const [fileUploadModal, setFileUploadModal] = useState(false);
   const [documentTypes, setDocumentTypes] = useState<IDimension[]>([]);
@@ -256,9 +257,18 @@ const OrderWIndow: React.FC<IDistrictOrderFormProps> = ({ setIsCreateFormModalOp
   const getDistrictOrderFile = async (id: string) => {
     if (id) {
       try {
-        const response = await axiosAPI.get(`district-orders/${id}/order-file`);
+        const response = await axiosAPI.get(`district-orders/${DocumentID}/order-file`);
         if (response.status === 200) {
-          setMessageFileURL(response.data.file_url)
+          // const link = document.createElement('a');
+          // link.href = response.data.file_url;
+          // const fileName = response.data.file_url.split("/").pop() || "file";
+          // const fileExt = (fileName.split(".").pop() || "").toLowerCase();
+          // const mime = inferMimeFromExt(fileName) || inferMimeFromExt(fileExt) || "application/octet-stream";
+          // const res = await fetch(link.href);
+          // const arrayBuffer = await res.arrayBuffer();
+          // const fileObj = arrayBufferToFile(arrayBuffer, fileName, mime);
+          // setMessageFile(fileObj);
+          setMessageFileURL(response.data.file_url);
         }
       } catch (error) {
         console.log(error)
@@ -401,7 +411,7 @@ const OrderWIndow: React.FC<IDistrictOrderFormProps> = ({ setIsCreateFormModalOp
   };
 
   useEffect(() => {
-    handleCreateDefaultDocument();
+    // handleCreateDefaultDocument();
     // console.log("first")
     getDistrictOrderFile(DocumentID)
     getDocumentTypes()
@@ -779,6 +789,17 @@ const OrderWIndow: React.FC<IDistrictOrderFormProps> = ({ setIsCreateFormModalOp
           </div>
 
           {/* ===== Yuborilayotgan xat ===== */}
+          {/* <div className='flex border shadow-md px-6 py-4 rounded-lg'>
+            {
+              messageFile && (
+                <div style={{ width: "100%", height: "80vh", display: "flex", flexDirection: "column" }}>
+                  <div style={{ flex: 1, overflow: "auto" }}>
+                    <FilePreviewer file={messageFile!} />
+                  </div>
+                </div>
+              )
+            }
+          </div> */}
           <div className='flex border shadow-md max-w-[700px] px-6 py-4 rounded-lg'>
             <div className="flex items-center gap-4 mb-3 w-full">
               <div className={`text-5xl p-6 flex items-center justify-center rounded-full text-blue-500 bg-blue-50`}>

@@ -468,7 +468,7 @@ const DistrictOrder: React.FC = () => {
 
                     {/* Table with Status-Based Row Colors */}
                     <div className="bg-white rounded-xl border border-slate-100 shadow-sm overflow-hidden transform transition-all hover:shadow-lg animate-in slide-in-from-bottom-4 fade-in duration-700">
-                        
+
                         <div className="overflow-x-auto">
                             <Table>
                                 <TableHeader>
@@ -499,41 +499,43 @@ const DistrictOrder: React.FC = () => {
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
-                                    {filteredData.map((item, index) => {
-                                        const documentStyle = getDocumentStyling(
-                                            item.is_approved
-                                        );
-                                        const StatusIcon = documentStyle.icon;
-                                        return (
-                                            <TableRow
-                                                key={`${index}`}
-                                                onClick={() => handleDocumentClick(item.id)}
-                                                className={getRowStyling(item)}
-                                            >
-                                                <TableCell className="py-3 px-4">
-                                                    <div className="flex items-center gap-2">
-                                                        <StatusIcon
-                                                            className={`w-5 h-5 ${documentStyle.iconColor} transition-all duration-200`}
-                                                        />
-                                                        <span
-                                                            className={`font-bold hover:underline transition-all duration-300 cursor-pointer ${documentStyle.color}`}
-                                                        >
-                                                            {item.exit_number}
-                                                        </span>
-                                                    </div>
-                                                </TableCell>
-                                                <TableCell className="py-3 px-4">
-                                                    {item.exit_date.split("T").join("  ")}
-                                                </TableCell>
-                                                <TableCell className="text-slate-700 py-3 px-4">{item.application_status_district}</TableCell>
-                                                <TableCell className="text-slate-700 py-3 px-4">{item.from_district}</TableCell>
-                                                <TableCell className="text-slate-700 py-3 px-4">{item.to_region}</TableCell>
-                                                <TableCell className="py-3 px-4">{item.sender_from_district}</TableCell>
-                                                <TableCell className="text-slate-700 py-3 px-4">{item.recipient_region}</TableCell>
-                                                <TableCell className="text-slate-700 py-3 px-4">{item.confirmation_date}</TableCell>
-                                            </TableRow>
-                                        );
-                                    })}
+                                    {filteredData?.length ? (
+                                        filteredData.map((item, index) => {
+                                            const documentStyle = getDocumentStyling(
+                                                item.is_approved
+                                            );
+                                            const StatusIcon = documentStyle.icon;
+                                            return (
+                                                <TableRow
+                                                    key={`${index}`}
+                                                    onClick={() => handleDocumentClick(item.id)}
+                                                    className={getRowStyling(item)}
+                                                >
+                                                    <TableCell className="py-3 px-4">
+                                                        <div className="flex items-center gap-2">
+                                                            <StatusIcon
+                                                                className={`w-5 h-5 ${documentStyle.iconColor} transition-all duration-200`}
+                                                            />
+                                                            <span
+                                                                className={`font-bold hover:underline transition-all duration-300 cursor-pointer ${documentStyle.color}`}
+                                                            >
+                                                                {item.exit_number}
+                                                            </span>
+                                                        </div>
+                                                    </TableCell>
+                                                    <TableCell className="py-3 px-4">
+                                                        {item.exit_date.split("T").join("  ")}
+                                                    </TableCell>
+                                                    <TableCell className="text-slate-700 py-3 px-4">{item.application_status_district}</TableCell>
+                                                    <TableCell className="text-slate-700 py-3 px-4">{item.from_district}</TableCell>
+                                                    <TableCell className="text-slate-700 py-3 px-4">{item.to_region}</TableCell>
+                                                    <TableCell className="py-3 px-4">{item.sender_from_district}</TableCell>
+                                                    <TableCell className="text-slate-700 py-3 px-4">{item.recipient_region}</TableCell>
+                                                    <TableCell className="text-slate-700 py-3 px-4">{item.confirmation_date}</TableCell>
+                                                </TableRow>
+                                            );
+                                        })
+                                    ) : ""}
                                 </TableBody>
                             </Table>
                         </div>

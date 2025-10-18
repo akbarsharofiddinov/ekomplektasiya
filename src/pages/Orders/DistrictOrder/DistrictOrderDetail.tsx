@@ -7,7 +7,7 @@ import { SaveOutlined } from '@ant-design/icons';
 
 import { axiosAPI } from '@/services/axiosAPI';
 import { useParams } from 'react-router-dom';
-import { Button, message, Modal, Pagination, Select } from 'antd';
+import { Button, message, Modal, Select } from 'antd';
 import TextArea from 'antd/es/input/TextArea';
 import FileDropZone from '@/components/FileDropZone';
 import {
@@ -17,6 +17,7 @@ import SelectRemainsModal from '@/components/CreateForms/SelectRemainsModal';
 import { toast } from 'react-toastify';
 import { useAppSelector } from '@/store/hooks/hooks';
 import DistrictOrderSigning from './DistrictOrderSigning';
+import FieldModal from '@/components/modal/FieldModal';
 
 interface IdName {
 	id: string;
@@ -25,14 +26,14 @@ interface IdName {
 
 interface Product {
 	row_number: number;
-	product: IdName;
-	model: IdName;
-	product_type: IdName;
-	size: IdName;
-	unit: IdName;
+	product: IdName | null;
+	model: IdName | null;
+	product_type: IdName | null;
+	size: IdName | null;
+	unit: IdName | null;
 	quantity: number;
-	order_type: IdName;
-	description: string;
+	order_type: IdName | null;
+	description?: string | null;
 }
 
 interface Executor {
@@ -67,18 +68,35 @@ interface OrderDetail {
 
 interface ProductRow {
 	row_number: number;
-	order_type: { id: string; name: string } | null;
-	product_type: { id: string; name: string } | null;
-	product: { id: string; name: string } | null;
-	model: { id: string; name: string } | null;
-	size: { id: string; name: string } | null;
-	unit: { id: string; name: string } | null;
+	order_type: IdName | null;
+	product_type: IdName | null;
+	product: IdName | null;
+	model: IdName | null;
+	size: IdName | null;
+	unit: IdName | null;
 	quantity: number;
-	description: string;
+	description?: string | null;
 }
 
+// Add missing interfaces
+interface FileData {
+	file_name: string;
+	raw_number: string;
+	date: string;
+	user: string;
+}
+
+// ProductRemainder type is imported from SelectRemainsModal to ensure consistent typing across components.
+
+interface DocumentFormData {
+	selectedDocumentType: string;
+	filename: string;
+	extension: string;
+	fileBinary: string;
+}
 
 const DistrictOrderDetail: React.FC = () => {
+	// State variables
 	const [orderData, setOrderData] = useState<OrderDetail | null>(null);
 	const [loading, setLoading] = useState(true);
 	const [fileUploadModal, setFileUploadModal] = useState(false);
@@ -88,88 +106,51 @@ const DistrictOrderDetail: React.FC = () => {
 	const [selectedFile, setSelectedFile] = useState<FileData | null>(null);
 	const [remainders, setRemainders] = useState<ProductRemainder[]>([]);
 	const [showRemainders, setShowRemainders] = useState(false);
-	const [documentFormData, setDocumentFormData] = useState<{
-		selectedDocumentType: string;
-		filename: string;
-		extension: string;
-		fileBinary: string;
-	}>();
+	const [documentFormData, setDocumentFormData] = useState<DocumentFormData>({
+		selectedDocumentType: '',
+		filename: '',
+		extension: '',
+		fileBinary: ''
+	});
 	const [showEmployeeModal, setShowEmployeeModal] = useState(false);
 	const [employees, setEmployees] = useState<any[]>([]);
 	const [selectedEmployee, setSelectedEmployee] = useState<any | null>(null);
-	const { id } = useParams();
-	const [modalVisible, setModalVisible] = useState(false);
-	const [modalType, setModalType] = useState<"model" | "size" | "unit" | "product_type" | null>(null);
-	const [modalPage, setModalPage] = useState(1);
-	const [modalPageSize] = useState(15);
-	const [modalSelectedRow, setModalSelectedRow] = useState<number | null>(null);
+	const { id } = useParams<{ id: string }>();
 	const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 	const [deleteModalError, setDeleteModalError] = useState<string | null>(null);
+	type FieldName = "product_type" | "model" | "size" | "unit" | "product";
+	const [activeField, setActiveField] = useState<{ field: FieldName; row_number: number } | null>(null);
 
+	// Redux selectors
 	const { currentUserInfo } = useAppSelector(state => state.info);
-	const { order_types, product_models, product_sizes, product_types, product_units } = useAppSelector(state => state.product)
-
-
-	// 🔹 Modal uchun ro'yxat
-	const getModalList = () => {
-		switch (modalType) {
-			case "model":
-				return product_models;
-			case "size":
-				return product_sizes;
-			case "unit":
-				return product_units;
-			case "product_type":
-				return product_types;
-			default:
-				return [];
-		}
-	};
-
-	// 🔹 Paginatsiyalangan ro'yxat
-	const paginatedList = getModalList().slice(
-		(modalPage - 1) * modalPageSize,
-		modalPage * modalPageSize
-	);
-
-	const openModal = (type: "model" | "size" | "unit" | "product_type", row_number: number) => {
-		setModalType(type);
-		setModalSelectedRow(row_number);
-		setModalVisible(true);
-		setModalPage(1);
-	};
-
-	// 🔹 Modalda element tanlanganda
-	const handleSelectModalItem = (item: IdName) => {
-		if (!modalSelectedRow || !modalType) return;
-		updateRow(modalSelectedRow, modalType, item);
-		setModalVisible(false);
-		setModalSelectedRow(null);
-		setModalType(null);
-	};
-
+	const { order_types } = useAppSelector(state => state.product);
 
 	const fetchOrderDetail = useCallback(async () => {
+		if (!id) return;
+
 		try {
+			setLoading(true);
 			const response = await axiosAPI.get(`district-orders/detail/${id}`);
-			setOrderData(response.data[0])
+			setOrderData(response.data[0]);
 		} catch (error) {
-			console.log(error)
+			console.error('Error fetching order detail:', error);
+			message.error('Buyurtma ma\'lumotlarini olishda xatolik yuz berdi!');
 		} finally {
-			setLoading(false)
+			setLoading(false);
 		}
 	}, [id]);
 
-	const fetchDocumentTypesList = async () => {
+	const fetchDocumentTypesList = useCallback(async () => {
 		try {
 			const response = await axiosAPI.get('enumerations/document_types');
 			setDocumentTypes(response.data);
 		} catch (error) {
-			console.log(error);
+			console.error('Error fetching document types:', error);
+			message.error('Hujjat turlarini olishda xatolik yuz berdi!');
 		}
-	}
+	}, []);
 
-	const fetchRemaindersUserWarehouse = async () => {
+	const fetchRemaindersUserWarehouse = useCallback(async () => {
 		try {
 			const response = await axiosAPI.get(`/warehouses/list?region=${currentUserInfo?.region.name}&district=${currentUserInfo?.district.name}`);
 			if (response.status === 200) {
@@ -184,77 +165,89 @@ const DistrictOrderDetail: React.FC = () => {
 				}
 			}
 		} catch (error) {
-			console.log(error)
+			console.error('Error fetching remainders:', error);
+			message.error('Qoldiqlarni olishda xatolik yuz berdi!');
 		}
-	}
+	}, [currentUserInfo?.region.name, currentUserInfo?.district.name]);
 
+	// Fixed useEffect for file handling
 	useEffect(() => {
 		if (file) {
-			setDocumentFormData(prev => ({ ...prev!, filename: file.name, extension: file.name.split('.').pop()! }))
-			console.log(documentFormData)
+			setDocumentFormData(prev => ({
+				...prev,
+				filename: file.name,
+				extension: file.name.split('.').pop() || ''
+			}));
+		}
+	}, [file]); // Removed documentFormData from dependencies
+
+	// Handle file attach with proper error handling
+	const handleFileAttach = useCallback(async () => {
+		if (!file || !orderData?.id || !documentFormData.filename) {
+			message.error('Fayl yoki ma\'lumotlar to\'liq emas!');
+			return;
 		}
 
-	}, [file, documentFormData?.filename, documentFormData?.extension]);
-
-	// Handle file attach
-	const handleFileAttach = async () => {
-		// Params
 		const params = {
-			id: orderData?.id,
-			file_name: documentFormData?.filename,
-			extension: documentFormData?.extension,
+			id: orderData.id,
+			file_name: documentFormData.filename,
+			extension: documentFormData.extension,
 			file_type: "ЗаявкаДокументПоРайон"
-		}
+		};
+
 		try {
-			const arrayBuffer = await file?.arrayBuffer();
-			const binary = new Uint8Array(arrayBuffer!);
+			const arrayBuffer = await file.arrayBuffer();
+			const binary = new Uint8Array(arrayBuffer);
 			const response = await axiosAPI.post(`district-orders/files/create`, binary, {
 				params,
 				headers: { 'Content-Type': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' }
-			})
+			});
+
 			if (response.status === 200) {
-				fetchOrderDetail();
-				fetchDocumentTypesList();
+				await Promise.all([fetchOrderDetail(), fetchDocumentTypesList()]);
 				setFile(null);
-				setDocumentFormData({} as {
-					selectedDocumentType: string;
-					filename: string;
-					extension: string;
-					fileBinary: string;
+				setDocumentFormData({
+					selectedDocumentType: '',
+					filename: '',
+					extension: '',
+					fileBinary: ''
 				});
 				toast("Fayl muvaffaqiyatli yuklandi", { type: "success" });
+				setFileUploadModal(false);
 			}
 		} catch (error) {
-			console.log(error)
+			console.error('Error uploading file:', error);
+			message.error('Fayl yuklashda xatolik yuz berdi!');
 		}
-	};
+	}, [file, orderData?.id, documentFormData, fetchOrderDetail, fetchDocumentTypesList]);
 
-	useEffect(() => {
-		fetchOrderDetail();
-		fetchDocumentTypesList();
-	}, [fetchOrderDetail]);
+	// Fetch files with error handling
+	const fetchFiles = useCallback(async () => {
+		if (!id) return;
 
-	// 🟢 Fayllarni olish
-	useEffect(() => {
-		const fetchFiles = async () => {
-			try {
-				const response = await axiosAPI.get(`district-orders/${id}/files/list`);
-				if (response.status === 200) {
-					setFiles(response.data);
-				}
-				console.log(response)
-			} catch (error) {
-				console.error("Fayllarni olishda xato:", error);
-			} finally {
-				setLoading(false);
+		try {
+			const response = await axiosAPI.get(`district-orders/${id}/files/list`);
+			if (response.status === 200) {
+				setFiles(response.data);
 			}
-		};
-
-		if (id) fetchFiles();
+		} catch (error) {
+			console.error("Fayllarni olishda xato:", error);
+			message.error('Fayllarni olishda xatolik yuz berdi!');
+		}
 	}, [id]);
 
+	useEffect(() => {
+		Promise.all([fetchOrderDetail(), fetchDocumentTypesList()]);
+	}, [fetchOrderDetail, fetchDocumentTypesList]);
+
+	useEffect(() => {
+		if (id) {
+			fetchFiles();
+		}
+	}, [fetchFiles]);
+
 	// 📅 Sana formatlash
-	const formatDate = (iso: string): string => {
+	const formatDate = useCallback((iso: string): string => {
 		const date = new Date(iso);
 		return date.toLocaleString("uz-UZ", {
 			year: "numeric",
@@ -263,21 +256,21 @@ const DistrictOrderDetail: React.FC = () => {
 			hour: "2-digit",
 			minute: "2-digit",
 		});
-	};
+	}, []);
 
 	// 📥 Yuklab olish
-	const handleDownload = (file: FileData) => {
+	const handleDownload = useCallback((file: FileData) => {
 		const link = document.createElement("a");
 		link.href = `https://ekomplektasiya.uz/ekomplektasiya_backend/hs/district-orders/${id}/files/${file.file_name}`;
 		link.download = file.file_name;
 		document.body.appendChild(link);
 		link.click();
 		document.body.removeChild(link);
-	};
+	}, [id]);
 
 	// 📁 Fayl turiga qarab icon va rang qaytaruvchi funksiya
-	const getFileIcon = (fileName: any) => {
-		const ext = fileName.split(".").pop().toLowerCase();
+	const getFileIcon = useCallback((fileName: string) => {
+		const ext = fileName.split(".").pop()?.toLowerCase();
 
 		switch (ext) {
 			case "pdf":
@@ -295,10 +288,10 @@ const DistrictOrderDetail: React.FC = () => {
 			default:
 				return { icon: <FileTextOutlined />, color: "text-gray-500", bg: "bg-gray-100" };
 		}
-	};
+	}, []);
 
 	// 🔹 Hodimlar ro'yxatini olish
-	const fetchEmployees = async () => {
+	const fetchEmployees = useCallback(async () => {
 		try {
 			const response = await axiosAPI.get("employees/list");
 			if (response.status === 200 && Array.isArray(response.data.results)) {
@@ -308,10 +301,11 @@ const DistrictOrderDetail: React.FC = () => {
 			}
 		} catch (error) {
 			console.error("Hodimlarni olishda xatolik:", error);
+			message.error('Hodimlarni olishda xatolik yuz berdi!');
 		}
-	};
+	}, []);
 
-	const handleSelectEmployee = () => {
+	const handleSelectEmployee = useCallback(() => {
 		if (!selectedEmployee) {
 			message.warning("Iltimos, hodimni tanlang!");
 			return;
@@ -319,6 +313,7 @@ const DistrictOrderDetail: React.FC = () => {
 
 		const newExecutor = {
 			executor: { id: selectedEmployee.id, name: selectedEmployee.name },
+			status: { id: '', name: '' }, // Add default status
 			message: "",
 			confirmation_date: new Date().toISOString(),
 		};
@@ -334,41 +329,26 @@ const DistrictOrderDetail: React.FC = () => {
 
 		setShowEmployeeModal(false);
 		setSelectedEmployee(null);
-	};
+	}, [selectedEmployee]);
 
-	// const updateRow = <K extends keyof Product>(
-	//     row_number: number,
-	//     key: K,
-	//     value: Product[K]
-	// ) => {
-	//     setOrderData(prev => {
-	//         if (!prev) return prev;
-	//         const updatedProducts = prev.products.map(p =>
-	//             p.row_number === row_number ? { ...p, [key]: value } : p
-	//         );
-	//         return { ...prev, products: updatedProducts };
-	//     });
-	// };
-
-
-
-	const updateRow = <K extends keyof ProductRow>(
+	// Fixed updateRow function with proper typing
+	const updateRow = useCallback(<K extends keyof ProductRow>(
 		row_number: number,
 		key: K,
 		value: ProductRow[K]
 	) => {
 		setOrderData(prev => {
-			if (!prev) return prev; // ✅ null holatini tekshirish
+			if (!prev) return prev;
 			const updatedProducts = prev.products.map(p =>
 				p.row_number === row_number ? { ...p, [key]: value } : p
 			);
 			return { ...prev, products: updatedProducts };
 		});
-	};
+	}, []);
 
-	const handleAddProduct = () => {
+	const handleAddProduct = useCallback(() => {
 		setOrderData(prev => {
-			if (!prev) return prev; // ✅ null holatini tekshirish
+			if (!prev) return prev;
 
 			const newRowNumber = (prev.products?.length || 0) + 1;
 			const newProduct: ProductRow = {
@@ -384,31 +364,29 @@ const DistrictOrderDetail: React.FC = () => {
 			};
 			return { ...prev, products: [...(prev.products || []), newProduct] };
 		});
-	};
+	}, []);
 
 	// 📌 O'chirish funksiyasi
-	const handleDeleteOrder = () => {
+	const handleDeleteOrder = useCallback(() => {
 		if (!orderData || !orderData.id) {
 			message.error("Buyurtma ID topilmadi!");
 			return;
 		}
 		setDeleteModalError(null);
 		setIsDeleteModalOpen(true);
-	};
+	}, [orderData]);
 
-	const confirmDelete = async () => {
+	const confirmDelete = useCallback(async () => {
 		if (!orderData || !orderData.id) {
-			message.error("Buyurtma ma’lumoti topilmadi!");
+			message.error("Buyurtma ma'lumoti topilmadi!");
 			return;
 		}
 
 		try {
-			const response = await axiosAPI.delete(
-				`district-orders/delete/${orderData.id}/`
-			);
+			const response = await axiosAPI.delete(`district-orders/delete/${orderData.id}/`);
 
 			if (response.status === 200) {
-				message.success("Buyurtma muvaffaqiyatli o‘chirildi!");
+				message.success("Buyurtma muvaffaqiyatli o'chirildi!");
 				setIsDeleteModalOpen(false);
 
 				setTimeout(() => {
@@ -416,36 +394,61 @@ const DistrictOrderDetail: React.FC = () => {
 				}, 1000);
 			}
 		} catch (error: any) {
-			console.error("O‘chirishda xatolik:", error);
-
-			// Agar backend "error" maydoni yuborsa, o‘sha xabarni modalga chiqaramiz
-			const backendError =
-				error?.response?.data?.error ||
-				"Buyurtmani o‘chirishda xatolik yuz berdi!";
-
+			console.error("O'chirishda xatolik:", error);
+			const backendError = error?.response?.data?.error || "Buyurtmani o'chirishda xatolik yuz berdi!";
 			setDeleteModalError(backendError);
 		}
-	};
+	}, [orderData]);
 
-	const cancelDelete = () => {
+	const cancelDelete = useCallback(() => {
 		setIsDeleteModalOpen(false);
 		setDeleteModalError(null);
-	};
+	}, []);
 
+	const handleUpdateOrder = useCallback(async () => {
+		try {
+			if (!orderData) return;
+			const res = await axiosAPI.post(`/district-orders/update/${orderData.id}`, {
+				...orderData,
+				type_document_for_filter: orderData.type_document_for_filter?.id,
+				application_status_district: orderData.application_status_district?.id,
+				from_district: orderData.from_district?.id,
+				sender_from_district: orderData.sender_from_district?.id,
+				to_region: orderData.to_region?.id,
+				recipient_district: orderData.recipient_district?.id,
+				from_region: orderData.from_region?.id,
+				sender_from_region: orderData.sender_from_region?.id,
+				to_district: orderData.to_district?.id,
+				recipient_region: orderData.recipient_region?.id,
+				products: orderData.products.map(p => ({
+					...p,
+					product: p.product?.id,
+					model: p.model?.id,
+					size: p.size?.id,
+					unit: p.unit?.id,
+					quantity: p.quantity,
+					description: p.description,
+					order_type: p.order_type?.id,
+					product_type: p.product_type?.id,
+					row_number: p.row_number,
+				})),
+				executors: orderData.executors.map(e => ({
+					...e,
+					executor: e.executor.id,
+					status: e.status.id,
+				})),
+			});
+			if (res.status === 200) {
+				toast.success("Buyurtma muvaffaqiyatli yangilandi!");
+				fetchOrderDetail();
+			}
+		} catch (err: any) {
+			console.error("Yangilashda xatolik:", err);
+			toast.error(err.response?.data?.error || "Buyurtmani yangilashda xatolik yuz berdi!");
+		}
+	}, [orderData, fetchOrderDetail]);
 
-
-
-
-
-	// 🟣 Yuklanayotgan holat    
-	if (loading) {
-		return (
-			<div className="flex justify-center items-center h-64">
-				<div className="animate-spin rounded-full h-10 w-10 border-t-4 border-b-4 border-purple-600"></div>
-			</div>
-		);
-	}
-
+	// Loading state - remove duplicate
 	if (loading) {
 		return (
 			<div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
@@ -461,20 +464,6 @@ const DistrictOrderDetail: React.FC = () => {
 			</div>
 		);
 	}
-
-	const handleUpdateOrder = async () => {
-		try {
-			if (!orderData) return;
-			const res = await axiosAPI.put(`/district-orders/update/${orderData.id}`, orderData);
-			if (res.status === 200) {
-				message.success("Buyurtma muvaffaqiyatli yangilandi!");
-				fetchOrderDetail();
-			}
-		} catch (err) {
-			console.error("Yangilashda xatolik:", err);
-			message.error("Xatolik yuz berdi!");
-		}
-	};
 
 	return (
 		<>
@@ -528,7 +517,7 @@ const DistrictOrderDetail: React.FC = () => {
 												<Plus></Plus>
 												Kiritish
 											</Button>
-											<Button className='cursor-pointer' onClick={() => fetchRemaindersUserWarehouse()}>
+											<Button className='cursor-pointer' onClick={fetchRemaindersUserWarehouse}>
 												Qoldiqlar
 											</Button>
 										</div>
@@ -552,7 +541,7 @@ const DistrictOrderDetail: React.FC = () => {
 														<th className="px-3 py-2 text-center text-sm font-semibold text-gray-600">Tovar</th>
 														<th className="px-3 py-2 text-center text-sm font-semibold text-gray-600">Tovar turi</th>
 														<th className="px-3 py-2 text-center text-sm font-semibold text-gray-600">Model</th>
-														<th className="px-3 py-2 text-center text-sm font-semibold text-gray-600">O‘lcham</th>
+														<th className="px-3 py-2 text-center text-sm font-semibold text-gray-600">O'lcham</th>
 														<th className="px-3 py-2 text-center text-sm font-semibold text-gray-600">O'lchov birligi</th>
 														<th className="px-3 py-2 text-center text-sm font-semibold text-gray-600">Soni</th>
 														<th className="px-3 py-2 text-center text-sm font-semibold text-gray-600">Izoh</th>
@@ -582,121 +571,133 @@ const DistrictOrderDetail: React.FC = () => {
 																	placeholder="Tanlang"
 																/>
 															</td>
-															{/* <td className="px-3 py-2 text-center">
-																	<Button
-																		size="small"
-																		onClick={() => setModalData({ type: "order_type", row: p.row_number })}
-																	>
-																		{p.order_type?.name || "Tanlang"}
-																	</Button>
-																</td> */}
 
-															{/* 🟠 Mahsulot nomi (qo‘lda Input) */}
+															{/* 🟠 Mahsulot nomi (qo'lda Input) */}
 															<td className="px-3 py-2 text-center">
 																<Input
 																	value={p.product?.name || ""}
+																	placeholder='Tovar nomini kiriting'
 																	onChange={(e) =>
 																		updateRow(p.row_number, "product", {
 																			id: p.product?.id || crypto.randomUUID(),
 																			name: e.target.value,
 																		})
 																	}
-																	className="text-sm"
+																	className="text-sm border border-gray-200 rounded-md w-full bg-white placeholder:text-gray-400"
 																/>
 															</td>
 
-															{/* <td className="px-3 py-2 text-center">
-																	<Select
-																		value={p.product_type?.name}
-																		onChange={(val) => {
-																			const found = product_types.find(pt => pt.id === val);
-																			if (found) updateRow(p.row_number, "product_type", found);
-																		}}
-																		style={{ width: 160 }}
-																		options={product_types.map(pt => ({ value: pt.id, label: pt.name }))}
-																		placeholder="Tanlang"
-																	/>
-																</td> */}
-
 															<td className="px-3 py-2 text-center">
 																<Button
-																	onClick={() => openModal("product_type", p.row_number)}
+																	onClick={() => setActiveField({ field: "product_type", row_number: p.row_number })}
 																	size="small"
 																	className="text-blue-600 border-blue-400"
 																>
 																	{p.product_type?.name || "Tovar turini tanlash"}
 																</Button>
+																{activeField?.field === "product_type"
+																	&& activeField?.row_number === p.row_number
+																	&& (
+																		<FieldModal
+																			field_name={activeField.field}
+																			selectedItem={{ id: p.product_type?.id || '', name: p.product_type?.name || '', name_uz: p.product_type?.name || '' }}
+																			setSelectedItem={newItem => {
+																				if (!newItem) {
+																					setActiveField(null);
+																					return;
+																				}
+																				setOrderData(prev => ({
+																					...prev!,
+																					products: prev!.products.map(prod => prod.row_number === p.row_number ? { ...prod, product_type: { id: newItem.id, name: newItem.name }, model: { id: '', name: '' }, size: { id: '', name: '' }, unit: { id: '', name: '' } } : prod)
+																				}))
+																				setActiveField(null)
+																			}}
+																		/>
+																	)}
 															</td>
-
-															{/* 🔵 Model (useAppSelector dan Select) */}
-															{/* <td className="px-3 py-2 text-center">
-																	<Select
-																		value={p.model?.name}
-																		onChange={(val) => {
-																			const found = product_models.find(m => m.id === val);
-																			if (found) updateRow(p.row_number, "model", found);
-																		}}
-																		style={{ width: 150 }}
-																		options={product_models.map(m => ({ value: m.id, label: m.name }))}
-																		placeholder="Model"
-																	/>
-																</td> */}
 
 															<td className="px-3 py-2 text-center">
 																<Button
-																	onClick={() => openModal("model", p.row_number)}
+																	onClick={() => setActiveField({ field: "model", row_number: p.row_number })}
 																	size="small"
 																	className="text-blue-600 border-blue-400"
 																>
 																	{p.model?.name || "Modelni tanlash"}
 																</Button>
-															</td>
-
-															{/* 🟣 O‘lcham */}
-															{/* <td className="px-3 py-2 text-center">
-																	<Select
-																		value={p.size?.name}
-																		onChange={(val) => {
-																			const found = product_sizes.find(s => s.id === val);
-																			if (found) updateRow(p.row_number, "size", found);
+																{activeField?.field === "model" && activeField?.row_number === p.row_number && (
+																	<FieldModal
+																		field_name={activeField.field}
+																		selectedItem={{ id: p.model?.id || '', name: p.model?.name || '', name_uz: p.model?.name || '' }}
+																		selectedProductTypeId={p.product_type?.name || ''}
+																		setSelectedItem={newItem => {
+																			if (!newItem) {
+																				setActiveField(null);
+																				return;
+																			}
+																			setOrderData(prev => ({
+																				...prev!,
+																				products: prev!.products.map(prod => prod.row_number === p.row_number ? { ...prod, model: { id: newItem.id, name: newItem.name }, size: { id: '', name: '' }, unit: { id: '', name: '' } } : prod)
+																			}))
+																			setActiveField(null)
 																		}}
-																		style={{ width: 120 }}
-																		options={product_sizes.map(s => ({ value: s.id, label: s.name }))}
-																		placeholder="O‘lcham"
 																	/>
-																</td> */}
+																)}
+															</td>
 
 															<td className="px-3 py-2 text-center">
 																<Button
-																	onClick={() => openModal("size", p.row_number)}
+																	onClick={() => setActiveField({ field: "size", row_number: p.row_number })}
 																	size="small"
 																	className="text-blue-600 border-blue-400"
 																>
-																	{p.size?.name || "O‘lchamni tanlash"}
+																	{p.size?.name || "O'lchamni tanlash"}
 																</Button>
+																{activeField?.field === "size" && activeField?.row_number === p.row_number && (
+																	<FieldModal
+																		field_name={activeField.field}
+																		selectedItem={{ id: p.size?.id || '', name: p.size?.name || '', name_uz: p.size?.name || '' }}
+																		selectedProductTypeId={p.product_type?.name || ''}
+																		selectedModelId={p.model?.name || ''}
+																		setSelectedItem={newItem => {
+																			if (!newItem) {
+																				setActiveField(null);
+																				return;
+																			}
+																			setOrderData(prev => ({
+																				...prev!,
+																				products: prev!.products.map(prod => prod.row_number === p.row_number ? { ...prod, size: { id: newItem.id, name: newItem.name }, unit: { id: '', name: '' } } : prod)
+																			}))
+																			setActiveField(null)
+																		}}
+																	/>
+																)}
 															</td>
 
-															{/* ⚪ Birlik */}
-															{/* <td className="px-3 py-2 text-center">
-																	<Select
-																		value={p.unit?.id}
-																		onChange={(val) => {
-																			const found = product_units.find(u => u.id === val);
-																			if (found) updateRow(p.row_number, "unit", found);
-																		}}
-																		style={{ width: 100 }}
-																		options={product_units.map(u => ({ value: u.id, label: u.name }))}
-																		placeholder="Birlik"
-																	/>
-																</td> */}
 															<td className="px-3 py-2 text-center">
 																<Button
-																	onClick={() => openModal("unit", p.row_number)}
+																	onClick={() => setActiveField({ field: "unit", row_number: p.row_number })}
 																	size="small"
 																	className="text-blue-600 border-blue-400"
 																>
 																	{p.unit?.name || "Birlikni tanlash"}
 																</Button>
+																{activeField?.field === "unit" && activeField?.row_number === p.row_number && (
+																	<FieldModal
+																		field_name={activeField.field}
+																		selectedItem={{ id: p.unit?.id || '', name: p.unit?.name || '', name_uz: p.unit?.name || '' }}
+																		setSelectedItem={newItem => {
+																			if (!newItem) {
+																				setActiveField(null);
+																				return;
+																			}
+																			setOrderData(prev => ({
+																				...prev!,
+																				products: prev!.products.map(prod => prod.row_number === p.row_number ? { ...prod, unit: { id: newItem.id, name: newItem.name } } : prod)
+																			}))
+																			setActiveField(null)
+																		}}
+																	/>
+																)}
 															</td>
 
 															{/* 🔢 Soni (Input number) */}
@@ -707,7 +708,7 @@ const DistrictOrderDetail: React.FC = () => {
 																	onChange={(e) =>
 																		updateRow(p.row_number, "quantity", Number(e.target.value))
 																	}
-																	className="text-sm text-center w-24"
+																	className="text-sm border border-gray-200 rounded-md w-full bg-white placeholder:text-gray-400"
 																/>
 															</td>
 
@@ -719,7 +720,7 @@ const DistrictOrderDetail: React.FC = () => {
 																	onChange={(e) =>
 																		updateRow(p.row_number, "description", e.target.value)
 																	}
-																	className="text-sm"
+																	className="text-sm border border-gray-200 rounded-md w-full bg-white placeholder:text-gray-400"
 																/>
 															</td>
 														</tr>
@@ -803,6 +804,7 @@ const DistrictOrderDetail: React.FC = () => {
 									<button
 										onClick={() => setFileUploadModal(true)}
 										className='group relative bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white px-6 py-4 rounded-xl shadow-md hover:shadow-lg transition-all duration-300 flex items-center gap-3 font-medium cursor-pointer'
+										aria-label="Hujjat biriktirish"
 									>
 										<div className='bg-white/20 p-2 rounded-lg group-hover:bg-white/30 transition-colors'>
 											<FilePlus2 className='w-5 h-5' />
@@ -823,6 +825,7 @@ const DistrictOrderDetail: React.FC = () => {
 									<button
 										className='group bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white px-8 py-4 rounded-xl shadow-md hover:shadow-lg transition-all duration-300 flex items-center gap-3 font-medium cursor-pointer'
 										onClick={handleUpdateOrder}
+										aria-label="Saqlash"
 									>
 										<div className='bg-white/20 p-2 rounded-lg group-hover:bg-white/30 transition-colors'>
 											<SaveOutlined className='text-xl' />
@@ -833,6 +836,7 @@ const DistrictOrderDetail: React.FC = () => {
 									<button
 										className='group bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white px-8 py-4 rounded-xl shadow-md hover:shadow-lg transition-all duration-300 flex items-center gap-3 font-medium cursor-pointer'
 										onClick={handleDeleteOrder}
+										aria-label="O'chirish"
 									>
 										<div className='bg-white/20 p-2 rounded-lg group-hover:bg-white/30 transition-colors'>
 											<SaveOutlined className='text-xl' />
@@ -854,9 +858,9 @@ const DistrictOrderDetail: React.FC = () => {
 												<Select
 													style={{ width: '100%' }}
 													placeholder="Hujjat turini tanlang"
+													value={documentFormData.selectedDocumentType || undefined}
 													onChange={(value) => {
-														console.log(value)
-														// setDocumentFormData(prev => ({ ...prev!, selectedDocumentType: value }))
+														setDocumentFormData(prev => ({ ...prev, selectedDocumentType: value }))
 													}}
 													options={documentTypes.map(docType => ({ value: docType.id, label: docType.name }))}
 												/>
@@ -867,20 +871,16 @@ const DistrictOrderDetail: React.FC = () => {
 
 											<Button
 												className="bg-gray-100 p-2 rounded-lg text-sm cursor-pointer hover:bg-blue-400 hover:text-white ml-auto"
-												onClick={() => {
-													setFileUploadModal(false);
-													handleFileAttach()
-												}}
-												disabled={!file && !documentFormData?.selectedDocumentType}>
+												onClick={handleFileAttach}
+												disabled={!file || !documentFormData?.selectedDocumentType}
+											>
 												Yuklash
 											</Button>
 										</div>
 									</div>
-
-
 								)}
 
-								<div className="p-4">
+								<div className="bg-white rounded-xl mb-6 overflow-x-auto">
 									{files.length !== 0 ? (
 										<div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
 											{files.map((file, index) => {
@@ -898,7 +898,7 @@ const DistrictOrderDetail: React.FC = () => {
 															</span>
 														</div>
 
-														{/* 🔸 Fayl ma’lumotlari */}
+														{/* 🔸 Fayl ma'lumotlari */}
 														<div className='flex '>
 
 															<div className="flex items-center gap-4 mb-3">
@@ -919,7 +919,7 @@ const DistrictOrderDetail: React.FC = () => {
 																<button
 																	onClick={() => setSelectedFile(file)}
 																	className="p-1 rounded-md text-gray-600 hover:text-purple-700 hover:bg-gray-100 transition"
-																	title="Ko‘rish"
+																	title="Ko'rish"
 																>
 																	<EyeOutlined className="text-lg" />
 																</button>
@@ -1033,8 +1033,6 @@ const DistrictOrderDetail: React.FC = () => {
 														onChange={() => setSelectedEmployee(emp)}
 													/>
 												</td>
-												<td className="px-4 py-2 text-sm text-gray-800"></td>
-												<td className="px-4 py-2 text-sm text-gray-800"></td>
 											</tr>
 										))}
 									</tbody>
@@ -1049,52 +1047,10 @@ const DistrictOrderDetail: React.FC = () => {
 							>
 								Tanlash
 							</Button>
-
 						</div>
 					</div>
 				</div>
 			)}
-
-			{/* 🔹 Tanlov modali */}
-			<Modal
-				title={
-					modalType === "model"
-						? "Modelni tanlang"
-						: modalType === "size"
-							? "O‘lchamni tanlang"
-							: modalType === "unit"
-								? "Birlikni tanlang"
-								: modalType === "product_type"
-									? "Tovar turini tanlang"
-									: ""
-				}
-				open={modalVisible}
-				onCancel={() => setModalVisible(false)}
-				footer={null}
-				width={600}
-			>
-				<div className="space-y-2">
-					{paginatedList.map((item) => (
-						<div
-							key={item.id}
-							onClick={() => handleSelectModalItem(item)}
-							className="border rounded-md p-2 hover:bg-blue-100 cursor-pointer"
-						>
-							{item.name}
-						</div>
-					))}
-				</div>
-
-				<div className="flex justify-center mt-4">
-					<Pagination
-						current={modalPage}
-						pageSize={modalPageSize}
-						total={getModalList().length}
-						onChange={(page) => setModalPage(page)}
-						size="small"
-					/>
-				</div>
-			</Modal>
 			<Modal
 				title={
 					deleteModalError

@@ -12,6 +12,7 @@ export default function FilePreviewer({ file, className, style }: Props) {
   // Blob URL lifecycle
   useEffect(() => {
     const u = URL.createObjectURL(file);
+    console.log(u)
     setUrl(u);
     return () => URL.revokeObjectURL(u);
   }, [file]);
