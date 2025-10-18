@@ -206,7 +206,6 @@ const RegionOrder: React.FC = () => {
     return rows;
   }, [data, orderType, statusFilter, searchTerm]);
 
-  // filteredData faqat mana shu manbadan keladi
   useEffect(() => {
     setFilteredData(filteredRows);
   }, [filteredRows]);
@@ -245,7 +244,6 @@ const RegionOrder: React.FC = () => {
 
   const handleStatusFilter = (status: FilterStatus) => {
     setStatusFilter(status);
-    // FIX: endi alohida setFilteredData qilmaymiz — pipeline o‘zi yangilanadi
   };
 
   const getDocumentStyling = (status: boolean) => {
@@ -299,6 +297,7 @@ const RegionOrder: React.FC = () => {
         dispatch(setProductSizes(sizeRes.data))
         dispatch(setProductUnits(unitRes.data))
         dispatch(setProductModels(modelRes.data))
+        
       } catch (err) {
         console.error(err);
         message.error("Ma’lumotlarni yuklashda xatolik!");

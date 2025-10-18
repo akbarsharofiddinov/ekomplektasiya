@@ -10,3 +10,5 @@ export { default as CounterPartyForm } from "./CreateForms/CounterPartyForm";
 export { default as WarehouseTransferForm } from "./CreateForms/WarehouseTransform/WarehouseTransferForm";
 export { default as DistrictOrderForm } from "./CreateForms/DistrictOrderForm/DistrictOrderForm";
 export { default as RegionOrderForm } from "./CreateForms/RegionOrderForm/RegionOrderForm";
+export { default as RespublicOrderForm } from "./CreateForms/RespublicOrderForm/RespublicOrderForm";
+export { default as SaleOrderForm } from "./CreateForms/SaleOrderForm/SaleOrderForm";

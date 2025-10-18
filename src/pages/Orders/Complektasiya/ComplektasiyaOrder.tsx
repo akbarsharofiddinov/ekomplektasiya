@@ -5,7 +5,11 @@ import { Input } from '@/components/UI/input';
 import { Plus, RefreshCw, Calendar as Search, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react';
 import { axiosAPI } from '@/services/axiosAPI';
 import { Outlet, useNavigate, useParams } from 'react-router-dom';
-import { Select, Tag } from 'antd';
+import { Select, Tag, message } from 'antd';
+import { SaleOrderForm } from '@/components';
+import { setOrderTypes, setProductModels, setProductSizes, setProductTypes, setProductUnits } from '@/store/productSlice/productSlice';
+import { useAppDispatch } from '@/store/hooks/hooks';
+
 
 interface DocumentInfo {
   id: string;
@@ -20,6 +24,7 @@ interface DocumentInfo {
   exit_number: string;
   from_region: string;
   sender_from_republic: string;
+  sender_from_sale: string;
   recipient_sale: string;
 }
 
@@ -31,6 +36,8 @@ interface RegionFilter {
 type FilterStatus = 'all' | 'approved' | 'approved_not_accepted' | 'not_approved' | "Canceled";
 
 const KomplektasiyaOrder: React.FC = () => {
+  const dispatch = useAppDispatch()
+  
   const [data, setData] = useState<DocumentInfo[]>([]);
   const [filteredData, setFilteredData] = useState<DocumentInfo[]>([]);
   const [region_filter, setRegionFilter] = useState<RegionFilter[]>([]);
@@ -39,22 +46,36 @@ const KomplektasiyaOrder: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
 
-
+  const [isCreateFormModalOpen, setIsCreateFormModalOpen] = useState(false);
+  
   const [orderType, setOrderType] = useState<"outgoing" | "incoming">("outgoing")
 
   const [statusFilter, setStatusFilter] = useState<FilterStatus>('not_approved');
 
-  const [isCreateFormModalOpen] = useState(false);
 
   const [totalItems, setTotalItems] = useState<{
-    count: number;
-    limit: number;
-    offset: number;
-  }>({
-    count: 0,
-    limit: itemsPerPage,
-    offset: 0,
-  });
+      count: number;
+      limit: number;
+      offset: number;
+      totalItems: number;
+      cancelled: number;
+      seen: number;
+      unseen: number;
+      approved: number;
+      not_approved: number;
+      unapproved:number;
+    }>({
+      count: 0,
+      limit: itemsPerPage,
+      offset: 0,
+      totalItems: 0,
+      cancelled: 0,
+      seen: 0,
+      unseen: 0,
+      approved: 0,
+      not_approved: 0,
+      unapproved:0,
+    });
 
   const [searchValue] = useState("");
 
@@ -76,8 +97,6 @@ const KomplektasiyaOrder: React.FC = () => {
       setFilteredData(response.data.results);
       setRegionFilter(response.data.filter_by_regions);
       setTotalItems(response.data);
-      console.log(data)
-      console.log(filteredData, 'aaa')
     } catch (error) {
       console.error('Error fetching warehouse transfers:', error);
     }
@@ -110,7 +129,8 @@ const KomplektasiyaOrder: React.FC = () => {
         (item) =>
           item.exit_number?.toLowerCase().includes(query) ||
           item.from_region?.toLowerCase().includes(query) ||
-          item.sender_from_republic?.toLowerCase().includes(query)
+          item.sender_from_republic?.toLowerCase().includes(query) || 
+          item.sender_from_sale?.toLowerCase().includes(query) 
       );
     }
 
@@ -154,7 +174,6 @@ const KomplektasiyaOrder: React.FC = () => {
     getRegionOrdersList();
   };
 
-  // ✅ Filter status bo‘yicha data o‘zgartirish
   useEffect(() => {
     let filtered = data;
 
@@ -169,18 +188,49 @@ const KomplektasiyaOrder: React.FC = () => {
     setFilteredData(filtered);
   }, [statusFilter, data]);
 
-  // ✅ Status counts
   const statusCounts = {
     all: totalItems.count || 0,
     approved: totalItems.approved || 0,
     not_approved: totalItems.unapproved || 0,
     cancelled: totalItems.cancelled || 0,
+    seen: totalItems.seen || 0,
+    unseen: totalItems.unseen || 0,
   };
 
+  useEffect(() => {
+      let mounted = true;
+      (async () => {
+        try {
+          const [orderTypeRes, productTypeRes, sizeRes, unitRes, modelRes] =
+            await Promise.all([
+              axiosAPI.get("/enumerations/order_types"),
+              axiosAPI.get("/product_types/list", { params: { limit: 200 } }),
+              axiosAPI.get("/sizes/list"),
+              axiosAPI.get("/units/list"),
+              axiosAPI.get("/models/list", { params: { limit: 200 } }), 
+            ]);
+  
+          if (!mounted) return;
+          dispatch(setOrderTypes(orderTypeRes.data))
+          dispatch(setProductTypes(productTypeRes.data))
+          dispatch(setProductSizes(sizeRes.data))
+          dispatch(setProductUnits(unitRes.data))
+          dispatch(setProductModels(modelRes.data))
+          
+        } catch (err) {
+          console.error(err);
+          message.error("Ma’lumotlarni yuklashda xatolik!");
+        }
+      })();
+      return () => {
+        mounted = false;
+      };
+    }, [dispatch]);
   return (
     <>
       {isCreateFormModalOpen ? (
         <>
+          <SaleOrderForm setIsCreateFormModalOpen={setIsCreateFormModalOpen} />
         </>
       ) : id ? (
         <Outlet />
@@ -324,8 +374,8 @@ const KomplektasiyaOrder: React.FC = () => {
           </div>
           <div className="bg-white py-3 flex justify-between">
             <div className='flex items-center gap-3'>
-              <Button className='cursor-pointer'>
-                <Plus></Plus>
+              <Button className="cursor-pointer" onClick={() => setIsCreateFormModalOpen(true)}>
+                <Plus />
                 Yaratish
               </Button>
 
@@ -353,11 +403,9 @@ const KomplektasiyaOrder: React.FC = () => {
                     <>
                       <TableHead>{orderType === "outgoing" ? "Chiqish" : "Kirish"} №</TableHead>
                       <TableHead>{orderType === "outgoing" ? "Chiqish" : "Kirish"} sanasi</TableHead>
-                      <TableHead>{orderType === "outgoing" ? "Kirish" : "Chiqish"} №</TableHead>
-                      <TableHead>{orderType === "outgoing" ? "Chiqish" : "Chiqish"} sanasi</TableHead>
-                      <TableHead>Komplektasiyadan qabul qiluvchi </TableHead>
-                      <TableHead>Respublikadan jonatuchi </TableHead>
-                      <TableHead>Hujjaat holati</TableHead>
+                      <TableHead>Komplektasiyadan yuboruvchi </TableHead>
+                      <TableHead>Buyurtma holati </TableHead>
+                      <TableHead>Tasdiklangan sana</TableHead>
                     </>
                   </TableRow>
                 </TableHeader>
@@ -401,9 +449,12 @@ const KomplektasiyaOrder: React.FC = () => {
                             })
                             .replace(",", ". ")}
                         </TableCell>
-                        <TableCell className="py-3 px-4">{item.input_number}</TableCell>
+                        <TableCell className="py-3 px-4">{item.sender_from_sale}</TableCell>
+                         <TableCell className="text-slate-700 py-3 px-4">
+                          {item.application_status_sale}
+                        </TableCell>
                         <TableCell className="py-3 px-4">
-                          {new Date(item.input_date)
+                          { item.confirmation_date ? new Date(item.confirmation_date)
                             .toLocaleString("uz-UZ", {
                               day: "2-digit",
                               month: "2-digit",
@@ -411,17 +462,9 @@ const KomplektasiyaOrder: React.FC = () => {
                               hour: "2-digit",
                               minute: "2-digit",
                             })
-                            .replace(",", ". ")}
+                            .replace(",", ". ") : ''}
                         </TableCell>
-                        <TableCell className="text-slate-700 py-3 px-4">
-                          {item.recipient_sale}
-                        </TableCell>
-                        <TableCell className="text-slate-700 py-3 px-4">
-                          {item.sender_from_republic}
-                        </TableCell>
-                        <TableCell className="text-slate-700 py-3 px-4">
-                          {item.application_status_sale}
-                        </TableCell>
+                       
                       </TableRow>
                     ))
                   )}

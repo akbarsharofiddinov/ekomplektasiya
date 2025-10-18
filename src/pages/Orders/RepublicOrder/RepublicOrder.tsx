@@ -12,7 +12,10 @@ import { useAppDispatch } from '@/store/hooks/hooks';
 import { Outlet, useNavigate, useParams } from 'react-router-dom';
 // import { SearchOutlined } from '@ant-design/icons';
 import { setRegions } from '@/store/infoSlice/infoSlice';
-import { Select, Tag } from 'antd';
+import { Select, Tag, message } from 'antd';
+import { RespublicOrderForm } from '@/components';
+import { setOrderTypes, setProductModels, setProductSizes, setProductTypes, setProductUnits } from '@/store/productSlice/productSlice';
+import { number } from 'framer-motion';
 
 interface DocumentInfo {
   id: string;
@@ -49,7 +52,8 @@ const RepublicOrder: React.FC = () => {
   const [filteredData, setFilteredData] = useState<DocumentInfo[]>([]);
   const [region_filter, setRegionFilter] = useState<RegionFilter[]>([]);
   const [selectedRegion, setSelectedRegion] = useState<string>("");
-
+  const [isCreateFormModalOpen, setIsCreateFormModalOpen] = useState(false);
+  
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
@@ -68,18 +72,31 @@ const RepublicOrder: React.FC = () => {
   // const [isToDateOpen, setIsToDateOpen] = useState(false);
 
   // Create Transfer modal state
-  const [isCreateFormModalOpen] = useState(false);
 
   const [totalItems, setTotalItems] = useState<{
     count: number;
     limit: number;
     offset: number;
+    totalItems: number;
+    cancelled: number;
+    seen: number;
+    unseen: number;
+    approved: number;
+    not_approved: number;
+    unapproved:number;
     // filter_by_regions: RegionFilter[];
     // results: DocumentInfo[];
   }>({
     count: 0,
     limit: itemsPerPage,
     offset: 0,
+    totalItems: 0,
+    cancelled: 0,
+    seen: 0,
+    unseen: 0,
+    approved: 0,
+    not_approved: 0,
+    unapproved:0,
     // filter_by_regions: [],
     // results: [],
   });
@@ -99,7 +116,7 @@ const RepublicOrder: React.FC = () => {
   // API Requests
   const getRegionOrdersList = async () => {
     try {
-      let url = `republic-orders/list/?limit=${itemsPerPage}&offset=${(currentPage - 1) * itemsPerPage}&type_document_for_filter=${orderType === "outgoing" ? encodeURIComponent("Вилоятга") : encodeURIComponent("Вилоятдан")}`;
+      let url = `republic-orders/list/?limit=${itemsPerPage}&offset=${(currentPage - 1) * itemsPerPage}&type_document_for_filter=${orderType === "outgoing" ? encodeURIComponent("Республикадан") : encodeURIComponent("Вилоятдан")}`;
 
       if (selectedRegion && selectedRegion !== 'Barchasi') {
         url += `&from_region=${selectedRegion}`;
@@ -127,38 +144,37 @@ const RepublicOrder: React.FC = () => {
   const navigate = useNavigate();
   const { id } = useParams()
 
-  // 🔹 ViewMode bo‘yicha filter
-  // useEffect(() => {
-  //   let filtered = data;
-  //   if (orderType === "outgoing") {
-  //     filtered = data.filter(
-  //       (item) => item.type_document_for_filter === "Вилоятга"
-  //     );
-  //   } else {
-  //     filtered = data.filter(
-  //       (item) => item.type_document_for_filter === "Вилоятдан"
-  //     );
-  //   }
+  useEffect(() => {
+    let filtered = data;
+    if (orderType === "outgoing") {
+      filtered = data.filter(
+        (item) => item.type_document_for_filter === "Республикадан"
+      );
+    } else {
+      filtered = data.filter(
+        (item) => item.type_document_for_filter === "Вилоятдан"
+      );
+    }
 
-  //   // 🔸 Search qo‘llanadi
-  //   if (searchValue.trim() !== "") {
-  //     const query = searchValue.toLowerCase();
-  //     filtered = filtered.filter(
-  //       (item) =>
-  //         item.exit_number?.toLowerCase().includes(query) ||
-  //         item.reception_number?.toLowerCase().includes(query) ||
-  //         item.from_district?.toLowerCase().includes(query) ||
-  //         item.to_region?.toLowerCase().includes(query) ||
-  //         item.application_status_district?.toLowerCase().includes(query) ||
-  //         item.from_region?.toLowerCase().includes(query) ||
-  //         item.sender_from_republic?.toLowerCase().includes(query) ||
-  //         item.recipient_republic?.toLowerCase().includes(query)
-  //     );
-  //   }
+    // 🔸 Search qo‘llanadi
+    if (searchValue.trim() !== "") {
+      const query = searchValue.toLowerCase();
+      filtered = filtered.filter(
+        (item) =>
+          item.exit_number?.toLowerCase().includes(query) ||
+          item.reception_number?.toLowerCase().includes(query) ||
+          item.from_district?.toLowerCase().includes(query) ||
+          item.to_region?.toLowerCase().includes(query) ||
+          item.application_status_district?.toLowerCase().includes(query) ||
+          item.from_region?.toLowerCase().includes(query) ||
+          item.sender_from_republic?.toLowerCase().includes(query) ||
+          item.recipient_republic?.toLowerCase().includes(query)
+      );
+    }
 
-  //   setFilteredData(filtered);
-  //   setCurrentPage(1);
-  // }, [orderType, searchValue, data]);
+    setFilteredData(filtered);
+    setCurrentPage(1);
+  }, [orderType, searchValue, data]);
 
 
   // Pagination handlers
@@ -244,12 +260,42 @@ const RepublicOrder: React.FC = () => {
     unseen: totalItems.unseen || 0,
   };
 
+    useEffect(() => {
+      let mounted = true;
+      (async () => {
+        try {
+          const [orderTypeRes, productTypeRes, sizeRes, unitRes, modelRes] =
+            await Promise.all([
+              axiosAPI.get("/enumerations/order_types"),
+              axiosAPI.get("/product_types/list", { params: { limit: 200 } }),
+              axiosAPI.get("/sizes/list"),
+              axiosAPI.get("/units/list"),
+              axiosAPI.get("/models/list", { params: { limit: 200 } }), // <— model mustaqil
+            ]);
+  
+          if (!mounted) return;
+          dispatch(setOrderTypes(orderTypeRes.data))
+          dispatch(setProductTypes(productTypeRes.data))
+          dispatch(setProductSizes(sizeRes.data))
+          dispatch(setProductUnits(unitRes.data))
+          dispatch(setProductModels(modelRes.data))
+          
+        } catch (err) {
+          console.error(err);
+          message.error("Ma’lumotlarni yuklashda xatolik!");
+        }
+      })();
+      return () => {
+        mounted = false;
+      };
+    }, [dispatch]);
 
 
   return (
     <>
       {isCreateFormModalOpen ? (
         <>
+          <RespublicOrderForm setIsCreateFormModalOpen={setIsCreateFormModalOpen} />
         </>
       ) : id ? (
         <Outlet />
@@ -392,8 +438,8 @@ const RepublicOrder: React.FC = () => {
           </div>
           <div className="bg-white py-3 flex justify-between">
             <div className='flex items-center gap-3'>
-              <Button className='cursor-pointer'>
-                <Plus></Plus>
+              <Button className="cursor-pointer" onClick={() => setIsCreateFormModalOpen(true)}>
+                <Plus />
                 Yaratish
               </Button>
 
@@ -474,7 +520,7 @@ const RepublicOrder: React.FC = () => {
                           {item.from_region}
                         </TableCell>
                         <TableCell className="text-slate-700 py-3 px-4">
-                          {item.sender_from_region}
+                          {item.sender_from_republic}
                         </TableCell>
                         <TableCell className="text-slate-700 py-3 px-4">
                           {item.recipient_republic}
