@@ -470,7 +470,7 @@
               </tbody>
               <tfoot>
                 <tr style="background-color: #f3f4f6; font-weight: bold;">
-                  <td colspan="8" style="text-align: right;">JAMI:</td>
+                  <td colSpan={9} style="text-align: right;">JAMI:</td>
                   <td>${(transferDetail.products?.reduce((acc, product) => acc + (product.summa || 0), 0) || 0).toLocaleString()} UZS</td>
                   <td></td>
                 </tr>

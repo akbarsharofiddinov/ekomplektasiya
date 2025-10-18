@@ -337,7 +337,7 @@ const RegionOrder: React.FC = () => {
                 <div className="flex flex-wrap gap-2">
                   <button
                     onClick={() => handleStatusFilter('all')}
-                    className={`flex items-center space-x-1 px-3 py-1.5 rounded-md text-sm font-medium transition-all duration-200 ${statusFilter === 'all' ? 'bg-slate-100 text-slate-900 shadow-sm' : 'text-slate-600 hover:bg-slate-50'
+                    className={`flex items-center space-x-1 px-2 py-1.5 rounded-md text-sm font-medium transition-all duration-200 ${statusFilter === 'all' ? 'bg-slate-100 text-slate-900 shadow-sm' : 'text-slate-600 hover:bg-slate-50'
                       }`}
                   >
                     <span>Barchasi</span>
@@ -351,7 +351,7 @@ const RegionOrder: React.FC = () => {
 
                   <button
                     onClick={() => handleStatusFilter('approved')}
-                    className={`flex items-center space-x-1 px-3 py-1.5 rounded-md text-sm font-medium transition-all duration-200 ${statusFilter === 'approved'
+                    className={`flex items-center space-x-1 px-2 py-1.5 rounded-md text-sm font-medium transition-all duration-200 ${statusFilter === 'approved'
                       ? 'bg-emerald-50 text-emerald-800 shadow-sm border border-emerald-200'
                       : 'text-slate-600 hover:text-emerald-700 hover:bg-emerald-50'
                       }`}
@@ -367,7 +367,7 @@ const RegionOrder: React.FC = () => {
 
                   <button
                     onClick={() => handleStatusFilter('not_approved')}
-                    className={`flex items-center space-x-1 px-3 py-1.5 rounded-md text-sm font-medium transition-all duration-200 ${statusFilter === 'not_approved'
+                    className={`flex items-center space-x-1 px-2 py-1.5 rounded-md text-sm font-medium transition-all duration-200 ${statusFilter === 'not_approved'
                       ? 'bg-red-50 text-red-800 shadow-sm border border-red-200'
                       : 'text-slate-600 hover:text-red-700 hover:bg-red-50'
                       }`}
@@ -383,7 +383,7 @@ const RegionOrder: React.FC = () => {
 
                   <button
                     onClick={() => handleStatusFilter('Canceled')}
-                    className={`flex items-center space-x-1 px-3 py-1.5 rounded-md text-sm font-medium transition-all duration-200 ${statusFilter === 'Canceled'
+                    className={`flex items-center space-x-1 px-2 py-1.5 rounded-md text-sm font-medium transition-all duration-200 ${statusFilter === 'Canceled'
                       ? 'bg-slate-200 text-slate-900 shadow-sm border border-slate-300'
                       : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
                       }`}
@@ -399,7 +399,7 @@ const RegionOrder: React.FC = () => {
 
                   <button
                     onClick={() => handleStatusFilter('approved_not_accepted')}
-                    className={`flex items-center space-x-1 px-3 py-1.5 rounded-md text-sm font-medium transition-all duration-200 ${statusFilter === 'approved_not_accepted'
+                    className={`flex items-center space-x-1 px-2 py-1.5 rounded-md text-sm font-medium transition-all duration-200 ${statusFilter === 'approved_not_accepted'
                       ? 'bg-amber-50 text-amber-800 shadow-sm border border-amber-200'
                       : 'text-slate-600 hover:text-amber-700 hover:bg-amber-50'
                       }`}

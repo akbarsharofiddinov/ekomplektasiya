@@ -1,17 +1,11 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 import React, { useState, useEffect } from 'react';
 // import { FileText, User, MapPin, Calendar, Package, CheckCircle, Clock } from 'lucide-react';
-import { FilePlus2, Plus, Search } from 'lucide-react';
+import { CircleCheckBig, FilePlus2, Layers, Plus, Save, Search, Trash, X } from 'lucide-react';
 import { Input } from '@/components/UI/input';
-import { Button } from '@/components/UI/button';
-import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import { axiosAPI } from '@/services/axiosAPI';
-import { useParams } from 'react-router-dom';
-import Accordion from '@mui/material/Accordion';
-import AccordionSummary from '@mui/material/AccordionSummary';
-import Typography from '@mui/material/Typography';
-import AccordionDetails from '@mui/material/AccordionDetails';
-import { Select, Modal } from 'antd';
+import { useNavigate, useParams } from 'react-router-dom';
+import { Select, Button, Modal, message } from 'antd';
 import TextArea from 'antd/es/input/TextArea';
 import FileDropZone from '@/components/FileDropZone';
 import { SaveOutlined } from '@ant-design/icons';
@@ -22,6 +16,7 @@ import {
 import { arrayBufferToFile, inferMimeFromExt } from "@/utils/file_preview";
 import { toast } from 'react-toastify';
 import FilePreviewModal from "@/components/files/FilePreviewModal";
+
 
 interface IdName {
   id: string;
@@ -153,6 +148,9 @@ const RegionOrderDetail: React.FC = () => {
   const [selectedFileMeta, setSelectedFileMeta] = useState<FileData | null>(null);
   const [previewFile, setPreviewFile] = useState<File | null>(null);
   const [previewOpen, setPreviewOpen] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [deleteModalError, setDeleteModalError] = useState<string | null>(null);
+  const navigate = useNavigate();
 
   const fetchOrderDetail = async () => {
     try {
@@ -419,6 +417,52 @@ const RegionOrderDetail: React.FC = () => {
     }
   };
 
+  // 📌 O'chirish funksiyasi
+  const handleDeleteOrder = () => {
+    if (!regionData || !regionData.id) {
+      message.error("Buyurtma ID topilmadi!");
+      return;
+    }
+    setDeleteModalError(null);
+    setIsDeleteModalOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!regionData || !regionData.id) {
+      message.error("Buyurtma ma’lumoti topilmadi!");
+      return;
+    }
+
+    try {
+      const response = await axiosAPI.delete(
+        `region-orders/delete/${regionData.id}/`
+      );
+
+      if (response.status === 200) {
+        message.success("Buyurtma muvaffaqiyatli o‘chirildi!");
+        setIsDeleteModalOpen(false);
+
+        setTimeout(() => {
+          window.history.back();
+        }, 1000);
+      }
+    } catch (error: any) {
+      console.error("O‘chirishda xatolik:", error);
+
+      // Agar backend "error" maydoni yuborsa, o‘sha xabarni modalga chiqaramiz
+      const backendError =
+        error?.response?.data?.error ||
+        "Buyurtmani o‘chirishda xatolik yuz berdi!";
+
+      setDeleteModalError(backendError);
+    }
+  };
+
+  const cancelDelete = () => {
+    setIsDeleteModalOpen(false);
+    setDeleteModalError(null);
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
@@ -437,15 +481,20 @@ const RegionOrderDetail: React.FC = () => {
 
   return (
     <div className="min-h-screen py-2 px-2 bg-white">
+
       <div className="max-w-8xl mx-auto bg-white">
-
-
         {/* 🔸 1. BUYURTMALAR OYNASI */}
-
         <div>
-
-          <div className="bg-white mb-6 overflow-hidden">
+          <div className="bg-white overflow-hidden">
             <div className="flex items-center justify-between p-4">
+              <Button
+                type='text'
+                size="small"
+                onClick={() => navigate(-1)}
+                className="w-8 h-8 p-0 hover:bg-slate-100 transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </Button>
               <div className="text-center border-gray-200">
                 <p className="text-xs text-gray-500 uppercase font-semibold mb-2">Chiqish</p>
                 <p className="text-md font-semibold text-gray-800">{regionData.exit_number}</p>
@@ -472,28 +521,33 @@ const RegionOrderDetail: React.FC = () => {
           </div>
 
           <div>
-
-            <div className="bg-transparent rounded-md p-2 flex justify-between mb-6">
+            <div className="bg-transparent rounded-md p-2 flex justify-between mb-1">
+              <div>
+                <h1 className='font-semibold text-xl text-[#000]'>Buyurtma uchun berilgan tovarlar ruyhati</h1>
+              </div>
               <div className='flex items-center gap-3'>
-                <Button className='cursor-pointer'>
-                  <Plus></Plus>
+                <button className='group relative bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white text-sm px-2 py-1.5 rounded-md shadow-md hover:shadow-lg transition-all duration-300 flex items-center gap-3 font-normal cursor-pointer'>
+                  <div className='bg-white/20 p-1 rounded-md group-hover:bg-white/30 transition-colors'>
+                    <Plus className='w-3 h-3' />
+                  </div>
                   Kiritish
-                </Button>
-
-                <Button className='cursor-pointer'
+                </button>
+                <button className='group relative bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white text-sm px-2.5 py-1.5 rounded-md shadow-md hover:shadow-lg transition-all duration-300 flex items-center gap-3 font-normal cursor-pointer'
                   onClick={() => setShowWarehouseSelect(true)}
                 >
+                  <div className='bg-white/20 p-1 rounded-md group-hover:bg-white/30 transition-colors'>
+                    <Layers className='w-3 h-3' />
+                  </div>
                   Qoldiqlar
-                </Button>
-
-              </div>
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4" />
-                <Input
-                  type="text"
-                  placeholder="Qidirish (Ctrl+F)"
-                  className="w-64 h-9 pl-9 text-sm border-slate-200 bg-white"
-                />
+                </button>
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4" />
+                  <Input
+                    type="text"
+                    placeholder="Qidirish (Ctrl+F)"
+                    className="w-64 h-9 pl-9 text-sm border-slate-200 bg-white"
+                  />
+                </div>
               </div>
             </div>
 
@@ -517,33 +571,52 @@ const RegionOrderDetail: React.FC = () => {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-100">
-                    {regionData.products?.map((product, index) => (
-                      <tr key={index} className="hover:bg-gray-50 transition-all duration-200">
-                        <td className="px-6 py-4 text-sm text-gray-900 font-medium">
-                          <span className="inline-flex items-center justify-center w-8 h-8 rounded-xl bg-gradient-to-r from-purple-500 to-blue-500 text-white font-semibold text-sm">
-                            {product.row_number}
-                          </span>
+                    {regionData.products && regionData.products.length > 0 ? (
+                      regionData.products.map((product, index) => (
+                        <tr key={index} className="hover:bg-gray-50 transition-all duration-200">
+                          <td className="px-6 py-4 text-sm text-gray-900 font-medium">
+                            <span className="inline-flex items-center justify-center w-8 h-8 rounded-xl bg-gradient-to-r from-purple-500 to-blue-500 text-white font-semibold text-sm">
+                              {product.row_number}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 text-sm text-gray-900 font-medium">{product.order_type?.name}</td>
+                          <td className="px-6 py-4 text-sm text-gray-900">{product.product?.name}</td>
+                          <td className="px-6 py-4 text-sm text-gray-900">{product.product_type?.name}</td>
+                          <td className="px-6 py-4 text-sm text-gray-900 font-medium">{product.model?.name}</td>
+                          <td className="px-6 py-4 text-sm text-gray-700">{product.size?.name}</td>
+                          <td className="px-6 py-4 text-sm text-gray-700">{product.unit?.name}</td>
+                          <td className="px-6 py-4 text-sm text-gray-900 text-right font-bold">{product.quantity}</td>
+                          <th className="px-6 py-4 text-right text-sm font-semibold text-gray-700"></th>
+                          <th className="px-6 py-4 text-right text-sm font-semibold text-gray-700"></th>
+                          <td className="px-6 py-4 text-sm text-gray-900 text-right font-bold">{product.description}</td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td colSpan={11} className="py-6 text-center text-gray-500 text-sm font-semibold">
+                          Tovar qo'shilmagan
                         </td>
-                        <td className="px-6 py-4 text-sm text-gray-900 font-medium">{product.order_type?.name}</td>
-                        <td className="px-6 py-4 text-sm text-gray-900">{product.product?.name}</td>
-                        <td className="px-6 py-4 text-sm text-gray-900">{product.product_type?.name}</td>
-                        <td className="px-6 py-4 text-sm text-gray-900 font-medium">{product.model?.name}</td>
-                        <td className="px-6 py-4 text-sm text-gray-700">{product.size?.name}</td>
-                        <td className="px-6 py-4 text-sm text-gray-700">{product.unit?.name}</td>
-                        <td className="px-6 py-4 text-sm text-gray-900 text-right font-bold">{product.quantity}</td>
-                        <th className="px-6 py-4 text-right text-sm font-semibold text-gray-700"></th>
-                        <th className="px-6 py-4 text-right text-sm font-semibold text-gray-700"></th>
-                        <td className="px-6 py-4 text-sm text-gray-900 text-right font-bold">{product.description}</td>
                       </tr>
-                    ))}
+                    )}
                   </tbody>
+
                 </table>
               </div>
             </div>
           </div>
 
           <div>
-
+            <div className='mb-2 flex items-center justify-between'>
+              <h1 className='font-semibold text-xl text-[#000]'>Bekor qilingan tovarlar ruyhati</h1>
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4" />
+                <Input
+                  type="text"
+                  placeholder="Qidirish (Ctrl+F)"
+                  className="w-64 h-9 pl-9 text-sm border-slate-200 bg-white"
+                />
+              </div>
+            </div>
             <div className="bg-white rounded-xl border border-gray-200 overflow-y-auto mb-8">
               <div className="overflow-x-auto">
                 <table className="w-full caption-bottom text-sm">
@@ -562,7 +635,8 @@ const RegionOrderDetail: React.FC = () => {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-100">
-                    {/* {regionData.cancelled_products?.map((cancelledproduct, index) => (
+                    {regionData.cancelled_products && regionData.cancelled_products.length > 0 ? (
+                      regionData.cancelled_products.map((cancelledproduct, index) => (
                         <tr key={index} className="hover:bg-gray-50 transition-all duration-200">
                           <td className="px-6 py-4 text-sm text-gray-900 font-medium">{cancelledproduct.row_number}</td>
                           <td className="px-6 py-4 text-sm text-gray-900 font-medium">{cancelledproduct.order_type?.name}</td>
@@ -576,11 +650,16 @@ const RegionOrderDetail: React.FC = () => {
                           <th className="px-6 py-4 text-right text-sm font-semibold text-gray-700"></th>
                           <td className="px-6 py-4 text-sm text-gray-900 text-right font-bold">{cancelledproduct.description}</td>
                         </tr>
-                      ))} */}
-                    <tr>
-                      <td></td>
-                    </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td colSpan={11} className="py-6 text-center text-gray-500 text-sm font-semibold">
+                          Bekor qilingan tovarlar mavjud emas
+                        </td>
+                      </tr>
+                    )}
                   </tbody>
+
                 </table>
               </div>
             </div>
@@ -588,23 +667,17 @@ const RegionOrderDetail: React.FC = () => {
           </div>
 
           <div>
-            <div className="bg-transparent rounded-md p-2 flex justify-between mb-6">
-              <div className='flex items-center gap-3'>
-                <Button className='cursor-pointer'>
-                  <Plus></Plus>
-                  Kiritish
-                </Button>
-                <Button className='cursor-pointer'>
-                  Yuborish
-                </Button>
+            <div className="bg-transparent rounded-md p-2 flex items-center justify-between mb-2">
+              <div>
+                <h1 className='text-xl text-[#000] font-semibold'>Imzolovchilar</h1>
               </div>
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4" />
-                <Input
-                  type="text"
-                  placeholder="Qidirish (Ctrl+F)"
-                  className="w-64 h-9 pl-9 text-sm border-slate-200 bg-white"
-                />
+              <div className='flex items-center gap-3'>
+                <button className='group relative bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white text-sm px-2 py-1.5 rounded-md shadow-md hover:shadow-lg transition-all duration-300 flex items-center gap-3 font-normal cursor-pointer'>
+                  <div className='bg-white/20 p-1 rounded-md group-hover:bg-white/30 transition-colors'>
+                    <Plus className='w-3 h-3' />
+                  </div>
+                  Kiritish
+                </button>
               </div>
             </div>
 
@@ -641,81 +714,65 @@ const RegionOrderDetail: React.FC = () => {
             </div>
           </div>
 
-          {/* Attach document */}
-          <div className='flex items-center justify-center gap-6 p-6'>
-            {/* File Upload Button */}
-            <button
-              onClick={() => setFileUploadModal(true)}
-              className='group relative bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white px-6 py-4 rounded-xl shadow-md hover:shadow-lg transition-all duration-300 flex items-center gap-3 font-medium cursor-pointer'
-            >
-              <div className='bg-white/20 p-2 rounded-lg group-hover:bg-white/30 transition-colors'>
-                <FilePlus2 className='w-5 h-5' />
-              </div>
-              <span>Hujjat biriktirish</span>
-            </button>
-
-            {/* Text Area */}
-            <div className='flex-1 max-w-md'>
-              <TextArea
-                placeholder='Qisqacha mazmun yozing...'
-                className='rounded-xl border-2 border-gray-200 focus:border-blue-400 hover:border-gray-300 transition-colors shadow-sm'
-                style={{ height: "120px" }}
-              />
+          <div className='flex items-center justify-between'>
+            <div>
+              <h1 className='font-semibold text-xl text-[#000]'>Hujjatlar ruyhati</h1>
+            </div>
+            {/* Attach document */}
+            <div className='flex items-center justify-center gap-6 p-6'>
+              {/* File Upload Button */}
+              <button
+                onClick={() => setFileUploadModal(true)}
+                className='group relative bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white px-2 py-1.5 rounded-md shadow-md hover:shadow-lg transition-all duration-300 flex items-center gap-3 font-medium cursor-pointer'
+              >
+                <div className='bg-white/20 p-2 rounded-lg group-hover:bg-white/30 transition-colors'>
+                  <FilePlus2 className='w-3.5 h-3.5' />
+                </div>
+                <span>Hujjat biriktirish</span>
+              </button>
             </div>
 
-            {/* Save Button */}
-            <button
-              className='group bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white px-8 py-4 rounded-xl shadow-md hover:shadow-lg transition-all duration-300 flex items-center gap-3 font-medium cursor-pointer'
+            {fileUploadModal && (
+              <div className="fixed inset-0 bg-black/20 bg-opacity-50 flex items-center justify-center z-50" onClick={() => setFileUploadModal(false)}>
+                <div className="bg-white rounded-lg p-6 w-96 flex flex-col" onClick={(e) => e.stopPropagation()}>
+                  {/* Top */}
+                  <div className='flex items-center justify-between mb-4 pb-2 border-b'>
+                    <h2 className="text-xl font-semibold">Hujjat biriktirish</h2>
+                    <button className='text-2xl' onClick={() => setFileUploadModal(false)}>&times;</button>
+                  </div>
+                  <div className="mb-4">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Hujjat turi</label>
+                    <Select
+                      style={{ width: '100%' }}
+                      placeholder="Hujjat turini tanlang"
+                      onChange={(value) => {
+                        console.log(value)
+                        // setDocumentFormData(prev => ({ ...prev!, selectedDocumentType: value }))
+                      }}
+                      options={documentTypes.map(docType => ({ value: docType.id, label: docType.name }))}
+                    />
+                  </div>
+                  <div className="mb-4">
+                    <FileDropZone file={file} setFile={setFile} />
+                  </div>
 
-            >
-              <div className='bg-white/20 p-2 rounded-lg group-hover:bg-white/30 transition-colors'>
-                <SaveOutlined className='text-xl' />
-              </div>
-              <span>Saqlash</span>
-            </button>
-          </div>
-
-          {fileUploadModal && (
-            <div className="fixed inset-0 bg-black/20 bg-opacity-50 flex items-center justify-center z-50" onClick={() => setFileUploadModal(false)}>
-              <div className="bg-white rounded-lg p-6 w-96 flex flex-col" onClick={(e) => e.stopPropagation()}>
-                {/* Top */}
-                <div className='flex items-center justify-between mb-4 pb-2 border-b'>
-                  <h2 className="text-xl font-semibold">Hujjat biriktirish</h2>
-                  <button className='text-2xl' onClick={() => setFileUploadModal(false)}>&times;</button>
-                </div>
-                <div className="mb-4">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Hujjat turi</label>
-                  <Select
-                    style={{ width: '100%' }}
-                    placeholder="Hujjat turini tanlang"
-                    onChange={(value) => {
-                      console.log(value)
-                      // setDocumentFormData(prev => ({ ...prev!, selectedDocumentType: value }))
+                  <Button
+                    className="bg-blue-500 p-2 rounded-lg text-sm cursor-pointer hover:bg-blue-600 ml-auto"
+                    onClick={() => {
+                      setFileUploadModal(false);
+                      handleFileAttach()
                     }}
-                    options={documentTypes.map(docType => ({ value: docType.id, label: docType.name }))}
-                  />
+                    disabled={!file && !documentFormData?.selectedDocumentType}>
+                    Yuklash
+                  </Button>
                 </div>
-                <div className="mb-4">
-                  <FileDropZone file={file} setFile={setFile} />
-                </div>
-
-                <Button
-                  className="bg-blue-500 p-2 rounded-lg text-sm cursor-pointer hover:bg-blue-600 ml-auto"
-                  onClick={() => {
-                    setFileUploadModal(false);
-                    handleFileAttach()
-                  }}
-                  disabled={!file && !documentFormData?.selectedDocumentType}>
-                  Yuklash
-                </Button>
               </div>
-            </div>
-          )}
+            )}
+          </div>
 
         </div>
 
         {/* 🔸 3. FAYLLAR RO‘YXATI */}
-
         <div className="p-4">
           {files.length !== 0 ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
@@ -771,8 +828,8 @@ const RegionOrderDetail: React.FC = () => {
               })}
             </div>
           ) : (
-            <p className="text-gray-900 font-bold text-2xl text-center">
-              Hozircha fayllar mavjud emas.
+            <p className="text-gray-500 font-semibold text-lg text-center">
+              Hozircha fayllar mavjud emas
             </p>
           )}
           {selectedFileMeta && (
@@ -785,11 +842,52 @@ const RegionOrderDetail: React.FC = () => {
           )}
         </div>
 
+        <div className="sticky bottom-0 right-0 left-0 bg-white border-t border-gray-200 shadow-sm z-40 px-6 py-4 flex flex-wrap md:flex-nowrap items-center justify-between gap-6">
+          {/* TextArea */}
+          <div className="flex-1 max-w-md w-full">
+            <TextArea
+              placeholder='Qisqacha mazmun yozing...'
+              className='rounded-xl border-2 border-gray-200 focus:border-blue-400 hover:border-gray-300 transition-colors'
+              style={{ height: "30px" }}
+            />
+          </div>
+
+          {/* Buttons */}
+          <div className="flex items-center gap-4">
+            <button
+              className='group bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white px-3 py-1.5 rounded-md shadow-md hover:shadow-lg transition-all duration-300 flex items-center gap-3 font-medium cursor-pointer'
+            >
+              <div className='bg-white/20 p-2 rounded-lg group-hover:bg-white/30 transition-colors'>
+                <CircleCheckBig className="w-3 h-3" />
+              </div>
+              <span>Tasdiqlash</span>
+            </button>
+
+            <button
+              className='group bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white px-3 py-1.5 rounded-md shadow-md hover:shadow-lg transition-all duration-300 flex items-center gap-3 font-medium cursor-pointer'
+            >
+              <div className='bg-white/20 p-2 rounded-lg group-hover:bg-white/30 transition-colors'>
+                <Save className="w-3 h-3" />
+              </div>
+              <span>Saqlash</span>
+            </button>
+
+            <button
+              className='group bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white px-3 py-1.5 rounded-md shadow-md hover:shadow-lg transition-all duration-300 flex items-center gap-3 font-medium cursor-pointer'
+              onClick={handleDeleteOrder}
+            >
+              <div className='bg-white/20 p-2 rounded-lg group-hover:bg-white/30 transition-colors'>
+                <Trash className="w-3 h-3" />
+              </div>
+              <span>O‘chirish</span>
+            </button>
+
+          </div>
+        </div>
 
       </div>
 
       {/* 🔹 1 - Modal: Ombor tanlash oynasi */}
-
       <Modal
         title="Tuman tanlash"
         open={showWarehouseSelect}
@@ -817,6 +915,140 @@ const RegionOrderDetail: React.FC = () => {
           />
         </div>
       </Modal>
+
+      {/* 🔴 O'chirish tasdiqlash modali */}
+      {/* <Modal
+        title={
+          deleteModalError
+            ? null
+            : "Buyurtmani o‘chirishni tasdiqlaysizmi?"
+        }
+        open={isDeleteModalOpen}
+        closable={!deleteModalError}
+        maskClosable={!deleteModalError}
+        width={deleteModalError ? 520 : 420}
+        centered
+        footer={
+          deleteModalError
+            ? [
+              <Button
+                key="ok"
+                type="primary"
+                onClick={cancelDelete}
+                style={{
+                  width: 120,
+                  fontWeight: 600,
+                }}
+              >
+                OK
+              </Button>,
+            ]
+            : [
+              <Button key="cancel" onClick={cancelDelete}>
+                Bekor qilish
+              </Button>,
+              <Button key="delete" danger onClick={confirmDelete}>
+                Ha, o‘chirish
+              </Button>,
+            ]
+        }
+        bodyStyle={{
+          textAlign: "center",
+          padding: deleteModalError ? "16px 16px" : "16px",
+        }}
+      >
+        {deleteModalError ? (
+          <p
+            style={{
+              color: "#ff4d4f",
+              fontSize: "20px",
+              fontWeight: "700",
+              textAlign: "center",
+              lineHeight: "1.8",
+            }}
+          >
+            {deleteModalError}
+          </p>
+        ) : (
+          <p
+            style={{
+              fontSize: "16px",
+              color: "#555",
+              lineHeight: "1.6",
+              marginBottom: 0,
+            }}
+          >
+            Bu amalni qaytarib bo‘lmaydi. Davom etasizmi?
+          </p>
+        )}
+      </Modal> */}
+      <Modal
+        title={
+          deleteModalError
+            ? null
+            : "Buyurtmani o‘chirishni tasdiqlaysizmi?"
+        }
+        open={isDeleteModalOpen}
+        closable={!deleteModalError}
+        maskClosable={!deleteModalError}
+        width={deleteModalError ? 520 : 420}
+        centered
+        onCancel={cancelDelete} // ✅ shu qator “X” bosilganda modalni yopadi
+        footer={
+          deleteModalError
+            ? [
+              <Button
+                key="ok"
+                type="primary"
+                onClick={cancelDelete}
+                style={{
+                  width: 120,
+                  fontWeight: 600,
+                }}
+              >
+                OK
+              </Button>,
+            ]
+            : [
+              <Button key="cancel" onClick={cancelDelete}>
+                Bekor qilish
+              </Button>,
+              <Button key="delete" danger onClick={confirmDelete}>
+                Ha, o‘chirish
+              </Button>,
+            ]
+        }
+        bodyStyle={{
+          textAlign: "center",
+          padding: deleteModalError ? "16px 16px" : "16px",
+        }}
+      >
+        {deleteModalError ? (
+          <p
+            style={{
+              color: "#ff4d4f",
+              fontSize: "20px",
+              fontWeight: "700",
+              textAlign: "center",
+              lineHeight: "1.8",
+            }}
+          >
+            {deleteModalError}
+          </p>
+        ) : (
+          <p
+            style={{
+              fontSize: "16px",
+              color: "#555",
+              lineHeight: "1.6",
+              marginBottom: 0,
+            }}
+          >
+            Bu amalni qaytarib bo‘lmaydi. Davom etasizmi?
+          </p>
+        )}
+      </Modal>
+
 
       {/* 🔹 2 - Modal: Qoldiqlarni ko‘rsatish oynasi */}
       {showRemaindersModal && (

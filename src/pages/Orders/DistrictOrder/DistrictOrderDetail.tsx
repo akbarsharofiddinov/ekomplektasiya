@@ -1,12 +1,12 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable react-hooks/exhaustive-deps */
 import React, { useState, useEffect, useCallback } from 'react';
-import { FilePlus2, Plus, Search } from 'lucide-react';
+import { CircleCheckBig, FilePlus2, Plus, Save, Search, Trash, Trash2, Layers, X } from 'lucide-react';
 import { Input } from '@/components/UI/input';
 import { SaveOutlined } from '@ant-design/icons';
 
 import { axiosAPI } from '@/services/axiosAPI';
-import { useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { Button, message, Modal, Pagination, Select } from 'antd';
 import TextArea from 'antd/es/input/TextArea';
 import FileDropZone from '@/components/FileDropZone';
@@ -108,7 +108,7 @@ const DistrictOrderDetail: React.FC = () => {
 
 	const { currentUserInfo } = useAppSelector(state => state.info);
 	const { order_types, product_models, product_sizes, product_types, product_units } = useAppSelector(state => state.product)
-
+	const navigate = useNavigate();
 
 	// 🔹 Modal uchun ro'yxat
 	const getModalList = () => {
@@ -480,12 +480,20 @@ const DistrictOrderDetail: React.FC = () => {
 		<>
 			{
 				orderData.for_purpose === "editing" ? (
-					<div className="min-h-screen py-2 px-2 bg-white">
+					<div className="py-2 px-2 bg-white">
 						<div className="max-w-8xl mx-auto bg-white">
 							<div>
 								{/* Header */}
 								<div className="bg-white overflow-hidden mb-4">
-									<div className="flex items-center justify-between p-4">
+									<div className="flex items-center justify-between p-3">
+										<button
+											variant="ghost"
+											size="sm"
+											onClick={() => navigate(-1)}
+											className="w-8 h-8 p-0 hover:bg-slate-100 transition-colors"
+										>
+											<X className="w-5 h-5" />
+										</button>
 										<div className="text-center border-gray-200">
 											<p className="text-xs text-gray-500 uppercase font-semibold mb-2">Chiqish</p>
 											<p className="text-md font-semibold text-gray-800">{orderData.exit_number}</p>
@@ -521,24 +529,36 @@ const DistrictOrderDetail: React.FC = () => {
 
 								<div>
 									<div className="bg-transparent rounded-md flex justify-between mb-4">
-										<div className='flex items-center gap-3'>
-											<Button
-												onClick={handleAddProduct}
-												className='cursor-pointer'>
-												<Plus></Plus>
-												Kiritish
-											</Button>
-											<Button className='cursor-pointer' onClick={() => fetchRemaindersUserWarehouse()}>
-												Qoldiqlar
-											</Button>
+										<div>
+											<h1 className='font-semibold text-xl text-[#000]'>Buyurtma uchun berilgan tovarlar ruyhati</h1>
 										</div>
-										<div className="relative">
-											<Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4" />
-											<Input
-												type="text"
-												placeholder="Qidirish (Ctrl+F)"
-												className="w-64 h-9 pl-9 text-sm border-slate-200 bg-white"
-											/>
+										<div className='flex items-center gap-3'>
+											<button
+												onClick={handleAddProduct}
+												className='group relative bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white px-2 py-1.5 rounded-md shadow-md hover:shadow-lg transition-all duration-300 flex items-center gap-3 font-medium cursor-pointer'
+											>
+												<div className='bg-white/20 p-2 rounded-lg group-hover:bg-white/30 transition-colors'>
+													<Plus className='w-3.5 h-3.5' />
+												</div>
+												Tovar kiritish
+											</button>
+											<button
+												className='group relative bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white text-md px-2 py-1.5 rounded-md shadow-md hover:shadow-lg transition-all duration-300 flex items-center gap-3 font-medium cursor-pointer'
+												onClick={() => fetchRemaindersUserWarehouse()}
+											>
+												<div className='bg-white/20 p-2 rounded-lg group-hover:bg-white/30 transition-colors'>
+													<Layers className='w-3.5 h-3.5' />
+												</div>
+												Qoldiqlar
+											</button>
+											<div className="relative">
+												<Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4" />
+												<Input
+													type="text"
+													placeholder="Qidirish (Ctrl+F)"
+													className="w-64 h-9 pl-9 text-sm border-slate-200 bg-white"
+												/>
+											</div>
 										</div>
 									</div>
 
@@ -558,233 +578,176 @@ const DistrictOrderDetail: React.FC = () => {
 														<th className="px-3 py-2 text-center text-sm font-semibold text-gray-600">Izoh</th>
 													</tr>
 												</thead>
-
 												<tbody className="divide-y divide-gray-100">
-													{orderData?.products?.map((p, idx) => (
-														<tr key={idx} className="hover:bg-gray-50 transition-all duration-200">
-															{/* № */}
-															<td className="px-3 py-2 text-center">
-																<span className="inline-flex items-center justify-center w-8 h-8 rounded-xl bg-gradient-to-r from-purple-500 to-blue-500 text-white font-semibold text-sm">
-																	{p.row_number}
-																</span>
-															</td>
+													{orderData?.products?.length ? (
+														orderData.products.map((p, idx) => (
+															<tr key={idx} className="hover:bg-gray-50 transition-all duration-200">
+																{/* № */}
+																<td className="px-3 py-2 text-center">
+																	<span className="inline-flex items-center justify-center w-8 h-8 rounded-xl bg-gradient-to-r from-purple-500 to-blue-500 text-white font-semibold text-sm">
+																		{p.row_number}
+																	</span>
+																</td>
 
-															{/* 🟢 Buyurtma turi (API dan kelgan SELECT) */}
-															<td className="px-3 py-2 text-center">
-																<Select
-																	value={p.order_type?.id}
-																	onChange={(val) => {
-																		const found = order_types.find(o => o.id === val);
-																		if (found) updateRow(p.row_number, "order_type", found);
-																	}}
-																	style={{ width: 160 }}
-																	options={order_types.map(o => ({ value: o.id, label: o.name }))}
-																	placeholder="Tanlang"
-																/>
-															</td>
-															{/* <td className="px-3 py-2 text-center">
-																	<Button
-																		size="small"
-																		onClick={() => setModalData({ type: "order_type", row: p.row_number })}
-																	>
-																		{p.order_type?.name || "Tanlang"}
-																	</Button>
-																</td> */}
-
-															{/* 🟠 Mahsulot nomi (qo‘lda Input) */}
-															<td className="px-3 py-2 text-center">
-																<Input
-																	value={p.product?.name || ""}
-																	onChange={(e) =>
-																		updateRow(p.row_number, "product", {
-																			id: p.product?.id || crypto.randomUUID(),
-																			name: e.target.value,
-																		})
-																	}
-																	className="text-sm"
-																/>
-															</td>
-
-															{/* <td className="px-3 py-2 text-center">
+																{/* 🟢 Buyurtma turi */}
+																<td className="px-3 py-2 text-center">
 																	<Select
-																		value={p.product_type?.name}
+																		value={p.order_type?.id}
 																		onChange={(val) => {
-																			const found = product_types.find(pt => pt.id === val);
-																			if (found) updateRow(p.row_number, "product_type", found);
+																			const found = order_types.find(o => o.id === val);
+																			if (found) updateRow(p.row_number, "order_type", found);
 																		}}
 																		style={{ width: 160 }}
-																		options={product_types.map(pt => ({ value: pt.id, label: pt.name }))}
+																		options={order_types.map(o => ({ value: o.id, label: o.name }))}
 																		placeholder="Tanlang"
 																	/>
-																</td> */}
+																</td>
 
-															<td className="px-3 py-2 text-center">
-																<Button
-																	onClick={() => openModal("product_type", p.row_number)}
-																	size="small"
-																	className="text-blue-600 border-blue-400"
-																>
-																	{p.product_type?.name || "Tovar turini tanlash"}
-																</Button>
-															</td>
-
-															{/* 🔵 Model (useAppSelector dan Select) */}
-															{/* <td className="px-3 py-2 text-center">
-																	<Select
-																		value={p.model?.name}
-																		onChange={(val) => {
-																			const found = product_models.find(m => m.id === val);
-																			if (found) updateRow(p.row_number, "model", found);
-																		}}
-																		style={{ width: 150 }}
-																		options={product_models.map(m => ({ value: m.id, label: m.name }))}
-																		placeholder="Model"
+																{/* 🟠 Mahsulot nomi */}
+																<td className="px-3 py-2 text-center">
+																	<Input
+																		value={p.product?.name || ""}
+																		onChange={(e) =>
+																			updateRow(p.row_number, "product", {
+																				id: p.product?.id || crypto.randomUUID(),
+																				name: e.target.value,
+																			})
+																		}
+																		className="text-sm"
 																	/>
-																</td> */}
+																</td>
 
-															<td className="px-3 py-2 text-center">
-																<Button
-																	onClick={() => openModal("model", p.row_number)}
-																	size="small"
-																	className="text-blue-600 border-blue-400"
-																>
-																	{p.model?.name || "Modelni tanlash"}
-																</Button>
-															</td>
+																{/* 🔵 Tovar turi */}
+																<td className="px-3 py-2 text-center">
+																	<Button
+																		onClick={() => openModal("product_type", p.row_number)}
+																		size="small"
+																		className="text-blue-600 border-blue-400"
+																	>
+																		{p.product_type?.name || "Tovar turini tanlash"}
+																	</Button>
+																</td>
 
-															{/* 🟣 O‘lcham */}
-															{/* <td className="px-3 py-2 text-center">
-																	<Select
-																		value={p.size?.name}
-																		onChange={(val) => {
-																			const found = product_sizes.find(s => s.id === val);
-																			if (found) updateRow(p.row_number, "size", found);
-																		}}
-																		style={{ width: 120 }}
-																		options={product_sizes.map(s => ({ value: s.id, label: s.name }))}
-																		placeholder="O‘lcham"
+																{/* 🟣 Model */}
+																<td className="px-3 py-2 text-center">
+																	<Button
+																		onClick={() => openModal("model", p.row_number)}
+																		size="small"
+																		className="text-blue-600 border-blue-400"
+																	>
+																		{p.model?.name || "Modelni tanlash"}
+																	</Button>
+																</td>
+
+																{/* ⚪ O‘lcham */}
+																<td className="px-3 py-2 text-center">
+																	<Button
+																		onClick={() => openModal("size", p.row_number)}
+																		size="small"
+																		className="text-blue-600 border-blue-400"
+																	>
+																		{p.size?.name || "O‘lchamni tanlash"}
+																	</Button>
+																</td>
+
+																{/* 🧾 Birlik */}
+																<td className="px-3 py-2 text-center">
+																	<Button
+																		onClick={() => openModal("unit", p.row_number)}
+																		size="small"
+																		className="text-blue-600 border-blue-400"
+																	>
+																		{p.unit?.name || "Birlikni tanlash"}
+																	</Button>
+																</td>
+
+																{/* 🔢 Soni */}
+																<td className="px-3 py-2 text-center">
+																	<Input
+																		type="number"
+																		value={p.quantity}
+																		onChange={(e) =>
+																			updateRow(p.row_number, "quantity", Number(e.target.value))
+																		}
+																		className="text-sm text-center w-24"
 																	/>
-																</td> */}
+																</td>
 
-															<td className="px-3 py-2 text-center">
-																<Button
-																	onClick={() => openModal("size", p.row_number)}
-																	size="small"
-																	className="text-blue-600 border-blue-400"
-																>
-																	{p.size?.name || "O‘lchamni tanlash"}
-																</Button>
-															</td>
-
-															{/* ⚪ Birlik */}
-															{/* <td className="px-3 py-2 text-center">
-																	<Select
-																		value={p.unit?.id}
-																		onChange={(val) => {
-																			const found = product_units.find(u => u.id === val);
-																			if (found) updateRow(p.row_number, "unit", found);
-																		}}
-																		style={{ width: 100 }}
-																		options={product_units.map(u => ({ value: u.id, label: u.name }))}
-																		placeholder="Birlik"
+																{/* 📝 Izoh */}
+																<td className="px-3 py-2 text-center">
+																	<Input
+																		placeholder="Izoh"
+																		value={p.description || ""}
+																		onChange={(e) =>
+																			updateRow(p.row_number, "description", e.target.value)
+																		}
+																		className="text-sm"
 																	/>
-																</td> */}
-															<td className="px-3 py-2 text-center">
-																<Button
-																	onClick={() => openModal("unit", p.row_number)}
-																	size="small"
-																	className="text-blue-600 border-blue-400"
-																>
-																	{p.unit?.name || "Birlikni tanlash"}
-																</Button>
-															</td>
-
-															{/* 🔢 Soni (Input number) */}
-															<td className="px-3 py-2 text-center">
-																<Input
-																	type="number"
-																	value={p.quantity}
-																	onChange={(e) =>
-																		updateRow(p.row_number, "quantity", Number(e.target.value))
-																	}
-																	className="text-sm text-center w-24"
-																/>
-															</td>
-
-															{/* 📝 Izoh (Input text) */}
-															<td className="px-3 py-2 text-center">
-																<Input
-																	placeholder="Izoh"
-																	value={p.description || ""}
-																	onChange={(e) =>
-																		updateRow(p.row_number, "description", e.target.value)
-																	}
-																	className="text-sm"
-																/>
+																</td>
+															</tr>
+														))
+													) : (
+														<tr>
+															<td colSpan={9} className="py-6 text-center text-gray-500 text-sm font-semibold">
+																Tovar qo'shilmagan
 															</td>
 														</tr>
-													))}
+													)}
 												</tbody>
+
 											</table>
 										</div>
 									</div>
-
-
 								</div>
 
-
-								<div>
+								<div className='mb-2'>
 									<div className="bg-transparent rounded-md p-2 flex justify-between mb-2">
-										<div className='flex items-center gap-3'>
-											<Button className='cursor-pointer'
+										<div>
+											<h1 className='font-semibold text-xl text-[#000]'>Imzolovchilar</h1>
+										</div>
+										<div>
+											<button className='group relative bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white px-2 py-1.5 rounded-md shadow-md hover:shadow-lg transition-all duration-300 flex items-center gap-3 font-medium cursor-pointer'
 												onClick={() => { fetchEmployees(); setShowEmployeeModal(true); }}
 											>
-												<Plus />
-												Kiritish
-											</Button>
-											<Button className='cursor-pointer'>
-												Yuborish
-											</Button>
-										</div>
-										<div className="relative">
-											<Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4" />
-											<Input
-												type="text"
-												placeholder="Qidirish (Ctrl+F)"
-												className="w-64 h-9 pl-9 text-sm border-slate-200 bg-white"
-											/>
+												<div className='bg-white/20 p-2 rounded-lg group-hover:bg-white/30 transition-colors'>
+													<Plus className='w-3.5 h-3.5' />
+												</div>
+												Imzolovchi kiritish
+											</button>
 										</div>
 									</div>
 
-									<div className="flex items-center gap-4">
+									<div className="grid grid-cols-4 items-center gap-4">
 										{orderData.executors?.map((executor, index) => (
 											<div
 												key={index}
-												className="bg-white rounded-lg shadow-sm hover:shadow-md transition-all duration-300 border border-gray-100 overflow-hidden"
+												className="bg-white border shadow-sm p-4 rounded-xl flex flex-col gap-4 relative"
 											>
+												<button className="absolute right-0 top-0 text-xl bg-red-500 text-white w-[26px] flex items-center justify-center h-[26px] rounded-bl-md cursor-pointer"
+													onClick={() => {
+														setOrderData(prev => ({
+															...prev,
+															executors: prev.executors.filter((_, i) => i !== index)
+														}));
+													}}
+												>
+													<Trash2 size={14} />
+												</button>
+												<div className="flex justify-center gap-6" >
+													<p className="w-[35px] h-[35px] flex items-center justify-center bg-sky-400/20 rounded-full">{index + 1}</p>
+													<div>
+														<p className="text-sm text-gray-800 mb-1">Imzolovchi xodim</p>
+														<h2 className="text-lg font-semibold text-center">{executor.executor?.name}</h2>
+														{/* Message */}
+														{executor.message && (
+															<div className="mb-4">
+																<p className="text-xs text-gray-500 mb-1">Imzolash xolati</p>
+																<p className="text-sm text-gray-700">{executor.message}</p>
+															</div>
+														)}
+													</div>
+												</div>
 												<div className="p-5">
-													{/* Header with number and status */}
-													<div className="flex items-center justify-between mb-4">
-														<span className="text-xm font-semibold text-gray-500">№ {index + 1}</span>
-														<span className="px-3 py-1 bg-indigo-50 text-indigo-600 text-xs font-medium rounded-full">
-															{executor.status?.name}
-														</span>
-													</div>
-
-													{/* Employee info */}
-													<div className="mb-4">
-														<p className="text-sm text-gray-500 mb-1">Imzolovchi xodim</p>
-														<p className="text-sm font-semibold text-gray-900">{executor.executor?.name}</p>
-													</div>
-
-													{/* Message */}
-													{executor.message && (
-														<div className="mb-4">
-															<p className="text-xs text-gray-500 mb-1">Imzolash xolati</p>
-															<p className="text-sm text-gray-700">{executor.message}</p>
-														</div>
-													)}
-
 													{/* Date */}
 													<div className="pt-3 border-t border-gray-100">
 														<p className="text-xs text-gray-500">Sana</p>
@@ -797,49 +760,25 @@ const DistrictOrderDetail: React.FC = () => {
 
 								</div>
 
-								{/* Attach document */}
-								<div className='flex items-center justify-center gap-6 p-6'>
-									{/* File Upload Button */}
-									<button
-										onClick={() => setFileUploadModal(true)}
-										className='group relative bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white px-6 py-4 rounded-xl shadow-md hover:shadow-lg transition-all duration-300 flex items-center gap-3 font-medium cursor-pointer'
-									>
-										<div className='bg-white/20 p-2 rounded-lg group-hover:bg-white/30 transition-colors'>
-											<FilePlus2 className='w-5 h-5' />
-										</div>
-										<span>Hujjat biriktirish</span>
-									</button>
+								<hr />
 
-									{/* Text Area */}
-									<div className='flex-1 max-w-md'>
-										<TextArea
-											placeholder='Qisqacha mazmun yozing...'
-											className='rounded-xl border-2 border-gray-200 focus:border-blue-400 hover:border-gray-300 transition-colors shadow-sm'
-											style={{ height: "120px" }}
-										/>
+								<div className='flex items-center justify-between'>
+									<div>
+										<h1 className='font-semibold text-xl text-[#000]'>Hujjatlar ruyhati</h1>
 									</div>
-
-									{/* Save Button */}
-									<button
-										className='group bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white px-8 py-4 rounded-xl shadow-md hover:shadow-lg transition-all duration-300 flex items-center gap-3 font-medium cursor-pointer'
-										onClick={handleUpdateOrder}
-									>
-										<div className='bg-white/20 p-2 rounded-lg group-hover:bg-white/30 transition-colors'>
-											<SaveOutlined className='text-xl' />
-										</div>
-										<span>Saqlash</span>
-									</button>
-
-									<button
-										className='group bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white px-8 py-4 rounded-xl shadow-md hover:shadow-lg transition-all duration-300 flex items-center gap-3 font-medium cursor-pointer'
-										onClick={handleDeleteOrder}
-									>
-										<div className='bg-white/20 p-2 rounded-lg group-hover:bg-white/30 transition-colors'>
-											<SaveOutlined className='text-xl' />
-										</div>
-										<span>O'chirish</span>
-									</button>
+									<div className='flex items-center justify-center gap-6 p-6'>
+										<button
+											onClick={() => setFileUploadModal(true)}
+											className='group relative bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white px-2 py-1.5 rounded-md shadow-md hover:shadow-lg transition-all duration-300 flex items-center gap-3 font-medium cursor-pointer'
+										>
+											<div className='bg-white/20 p-2 rounded-lg group-hover:bg-white/30 transition-colors'>
+												<FilePlus2 className='w-3.5 h-3.5' />
+											</div>
+											Hujjat biriktirish
+										</button>
+									</div>
 								</div>
+
 
 								{fileUploadModal && (
 									<div className="fixed inset-0 bg-black/20 bg-opacity-50 flex items-center justify-center z-50" onClick={() => setFileUploadModal(false)}>
@@ -938,7 +877,7 @@ const DistrictOrderDetail: React.FC = () => {
 											})}
 										</div>
 									) : (
-										<p className="text-gray-900 font-bold text-2xl text-center">
+										<p className="text-gray-500 font-semibold text-sm text-center">
 											Hozircha fayllar mavjud emas.
 										</p>
 									)}
@@ -969,8 +908,54 @@ const DistrictOrderDetail: React.FC = () => {
 									)}
 								</div>
 							</div>
+
+							<div className="sticky bottom-0 right-0 left-0 bg-white border-t border-gray-200 shadow-sm z-40 px-6 py-4 flex flex-wrap md:flex-nowrap items-center justify-between gap-6">
+								{/* TextArea */}
+								<div className="flex-1 max-w-md w-full">
+									<TextArea
+										placeholder='Qisqacha mazmun yozing...'
+										className='rounded-xl border-2 border-gray-200 focus:border-blue-400 hover:border-gray-300 transition-colors shadow-sm'
+										style={{ height: "30px" }}
+									/>
+								</div>
+
+								{/* Buttons */}
+								<div className="flex items-center gap-4">
+									<button
+										className='group bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white px-4 py-1.5 rounded-md shadow-md hover:shadow-lg transition-all duration-300 flex items-center gap-3 font-medium cursor-pointer'
+									>
+										<div className='bg-white/20 p-2 rounded-lg group-hover:bg-white/30 transition-colors'>
+											<CircleCheckBig className="w-3 h-3" />
+										</div>
+										<span>Tasdiqlash</span>
+									</button>
+
+									<button
+										className='group bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white px-4 py-1.5 rounded-md shadow-md hover:shadow-lg transition-all duration-300 flex items-center gap-3 font-medium cursor-pointer'
+										onClick={handleUpdateOrder}
+									>
+										<div className='bg-white/20 p-2 rounded-lg group-hover:bg-white/30 transition-colors'>
+											<Save className="w-3 h-3" />
+										</div>
+										<span>Saqlash</span>
+									</button>
+
+									<button
+										className='group bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white px-4 py-1.5 rounded-md shadow-md hover:shadow-lg transition-all duration-300 flex items-center gap-3 font-medium cursor-pointer'
+										onClick={handleDeleteOrder}
+									>
+										<div className='bg-white/20 p-2 rounded-lg group-hover:bg-white/30 transition-colors'>
+											<Trash className="w-3 h-3" />
+										</div>
+										<span>O‘chirish</span>
+									</button>
+								</div>
+							</div>
+
 						</div>
+
 					</div>
+
 				) : (
 					<>
 						<DistrictOrderSigning />
@@ -1095,16 +1080,18 @@ const DistrictOrderDetail: React.FC = () => {
 					/>
 				</div>
 			</Modal>
+
+			{/* 🔴 O'chirish tasdiqlash modali */}
 			<Modal
 				title={
 					deleteModalError
-						? null // ❌ Xatolik holatida sarlavha yo‘q
-						: "Buyurtmani o‘chirishni tasdiqlaysizmi?" // ✅ Faqat shu matn chiqadi
+						? null
+						: "Buyurtmani o‘chirishni tasdiqlaysizmi?"
 				}
 				open={isDeleteModalOpen}
-				closable={!deleteModalError} // ❌ X faqat xatolik yo‘q bo‘lsa chiqadi
-				maskClosable={!deleteModalError} // ❌ Xatolikda tashqariga bosib yopilmaydi
-				width={deleteModalError ? 520 : 420} // 🔹 Xatolikda kattaroq modal
+				closable={!deleteModalError}
+				maskClosable={!deleteModalError}
+				width={deleteModalError ? 520 : 420}
 				centered
 				footer={
 					deleteModalError
@@ -1132,10 +1119,10 @@ const DistrictOrderDetail: React.FC = () => {
 				}
 				bodyStyle={{
 					textAlign: "center",
-					padding: deleteModalError ? "50px 30px" : "26px",
+					padding: deleteModalError ? "16px 16px" : "16px",
 				}}
 			>
-				{deleteModalError && (
+				{deleteModalError ? (
 					<p
 						style={{
 							color: "#ff4d4f",
@@ -1147,10 +1134,19 @@ const DistrictOrderDetail: React.FC = () => {
 					>
 						{deleteModalError}
 					</p>
+				) : (
+					<p
+						style={{
+							fontSize: "16px",
+							color: "#555",
+							lineHeight: "1.6",
+							marginBottom: 0,
+						}}
+					>
+						Bu amalni qaytarib bo‘lmaydi. Davom etasizmi?
+					</p>
 				)}
 			</Modal>
-
-
 
 
 		</>
