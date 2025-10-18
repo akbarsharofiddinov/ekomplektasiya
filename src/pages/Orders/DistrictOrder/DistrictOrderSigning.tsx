@@ -1,28 +1,19 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-/* eslint-disable react-hooks/exhaustive-deps */
 import React, { useState, useEffect, useCallback } from 'react';
-import { Plus, Search } from 'lucide-react';
 import { Input } from '@/components/UI/input';
-import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 
 import { axiosAPI } from '@/services/axiosAPI';
 import { useParams } from 'react-router-dom';
-import Accordion from '@mui/material/Accordion';
-import AccordionSummary from '@mui/material/AccordionSummary';
 import Typography from '@mui/material/Typography';
-import AccordionDetails from '@mui/material/AccordionDetails';
 import { Button, Modal } from 'antd';
 import {
   EyeOutlined, DownloadOutlined, FilePdfOutlined, FileWordOutlined, FileExcelOutlined, FileImageOutlined, FileTextOutlined,
 } from "@ant-design/icons";
-import SelectRemainsModal from '@/components/CreateForms/SelectRemainsModal';
 import { toast } from 'react-toastify';
-import { useAppSelector } from '@/store/hooks/hooks';
 
 import FilePreviewModal from "@/components/files/FilePreviewModal";
 import { arrayBufferToFile, inferMimeFromExt } from "@/utils/file_preview";
-
-
+import FilePreviewer from '@/components/files/FilePreviewer';
 
 interface IdName {
   id: string;
@@ -82,27 +73,14 @@ interface FileData {
 const DistrictOrderSigning: React.FC = () => {
   const [orderData, setOrderData] = useState<OrderDetail | null>(null);
   const [loading, setLoading] = useState(true);
-  const [file, setFile] = useState<File | null>(null);
-  const [documentTypes, setDocumentTypes] = useState<IdName[]>([]);
-  const [viewMode, setViewMode] = useState<'orders' | 'letters' | 'files'>('orders');
   const [files, setFiles] = useState<FileData[]>([]);
-  const [selectedFile, setSelectedFile] = useState<string>("");
-  const [remainders, setRemainders] = useState<ProductRemainder[]>([]);
-  const [showRemainders, setShowRemainders] = useState(false);
   const [open, setOpen] = useState(false);
-  const [documentFormData, setDocumentFormData] = useState<{
-    selectedDocumentType: string;
-    filename: string;
-    extension: string;
-    fileBinary: string;
-  }>();
-
   const [previewOpen, setPreviewOpen] = useState(false);
   const [previewFile, setPreviewFile] = useState<File | null>(null);
   const [selectedFileMeta, setSelectedFileMeta] = useState<FileData | null>(null);
+  const [messageFile, setMessageFile] = useState<File | null>(null);
 
   const { id } = useParams();
-  const { currentUserInfo } = useAppSelector(state => state.info)
 
   const handleView = async (f: FileData) => {
     try {
@@ -161,78 +139,8 @@ const DistrictOrderSigning: React.FC = () => {
     }
   }, [id]);
 
-  const fetchDocumentTypesList = async () => {
-    try {
-      const response = await axiosAPI.get('enumerations/document_types');
-      setDocumentTypes(response.data);
-    } catch (error) {
-      console.log(error);
-    }
-  }
-
-  const fetchRemaindersUserWarehouse = async () => {
-    try {
-      const response = await axiosAPI.get(`/warehouses/list?region=${currentUserInfo?.region.name}&district=${currentUserInfo?.district.name}`);
-      if (response.status === 200) {
-        const warehouseId = response.data[0].id;
-        const remaindersResponse = await axiosAPI.post("remainders/warehouses", {
-          warehouse: warehouseId,
-          date: new Date().toISOString()
-        });
-        if (remaindersResponse.status === 200) {
-          setRemainders(remaindersResponse.data);
-          setShowRemainders(true);
-        }
-      }
-    } catch (error) {
-      console.log(error)
-    }
-  }
-
-  useEffect(() => {
-    if (file) {
-      setDocumentFormData(prev => ({ ...prev!, filename: file.name, extension: file.name.split('.').pop()! }))
-      console.log(documentFormData)
-    }
-
-  }, [file, documentFormData?.filename, documentFormData?.extension]);
-
-  // Handle file attach
-  const handleFileAttach = async () => {
-    // Params
-    const params = {
-      id: orderData?.id,
-      file_name: documentFormData?.filename,
-      extension: documentFormData?.extension,
-      file_type: "ЗаявкаДокументПоРайон"
-    }
-    try {
-      const arrayBuffer = await file?.arrayBuffer();
-      const binary = new Uint8Array(arrayBuffer!);
-      const response = await axiosAPI.post(`district-orders/files/create`, binary, {
-        params,
-        headers: { 'Content-Type': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' }
-      })
-      if (response.status === 200) {
-        fetchOrderDetail();
-        fetchDocumentTypesList();
-        setFile(null);
-        setDocumentFormData({} as {
-          selectedDocumentType: string;
-          filename: string;
-          extension: string;
-          fileBinary: string;
-        });
-        toast("Fayl muvaffaqiyatli yuklandi", { type: "success" });
-      }
-    } catch (error) {
-      console.log(error)
-    }
-  };
-
   useEffect(() => {
     fetchOrderDetail();
-    fetchDocumentTypesList();
   }, [fetchOrderDetail]);
 
   // 🟢 Fayllarni olish
@@ -252,7 +160,27 @@ const DistrictOrderSigning: React.FC = () => {
       }
     };
 
-    if (id) fetchFiles();
+    const fetchMessageFileUrl = async () => {
+      try {
+        const response = await axiosAPI.get(`district-orders/${id}/order-file/`);
+        const link = document.createElement("a");
+        link.href = response.data.file_url;
+        const fileName = response.data.file_url.split("/").pop() || "file";
+        const fileExt = (fileName.split(".").pop() || "").toLowerCase();
+        const mime = inferMimeFromExt(fileName) || inferMimeFromExt(fileExt) || "application/octet-stream";
+        const res = await fetch(link.href);
+        const arrayBuffer = await res.arrayBuffer();
+        const fileObj = arrayBufferToFile(arrayBuffer, fileName, mime);
+        setMessageFile(fileObj);
+      } catch (error) {
+        console.error("Xatolik:", error);
+      }
+    };
+
+    if (id) {
+      fetchFiles();
+      fetchMessageFileUrl();
+    }
   }, [id]);
 
   // 📅 Sana formatlash
@@ -265,16 +193,6 @@ const DistrictOrderSigning: React.FC = () => {
       hour: "2-digit",
       minute: "2-digit",
     });
-  };
-
-  // 📥 Yuklab olish
-  const handleDownload = (file: FileData) => {
-    const link = document.createElement("a");
-    link.href = `https://ekomplektasiya.uz/ekomplektasiya_backend/hs/district-orders/${id}/files/${file.file_name}`;
-    link.download = file.file_name;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
   };
 
   // 📁 Fayl turiga qarab icon va rang qaytaruvchi funksiya
@@ -325,256 +243,171 @@ const DistrictOrderSigning: React.FC = () => {
     );
   }
 
+  console.log(messageFile)
+
   return (
     <>
 
       <div className="min-h-screen py-2 px-2 bg-white">
         <div className="max-w-8xl mx-auto bg-white">
-          {/* 🔹 Yuqoridagi text-style navigation */}
-          <div className="flex gap-8 mb-1 border-b border-gray-200 pb-2">
-            <span
-              onClick={() => setViewMode('orders')}
-              className={`cursor-pointer pb-2 text-base font-medium transition-all duration-200 ${viewMode === 'orders'
-                ? 'text-blue-600 border-b-2 border-blue-600'
-                : 'text-gray-500 hover:text-blue-500'
-                }`}
-            >
-              Imzolanayotgan hujjat kurinishi
-            </span>
-
-            <span
-              onClick={() => setViewMode('letters')}
-              className={`cursor-pointer pb-2 text-base font-medium transition-all duration-200 ${viewMode === 'letters'
-                ? 'text-blue-600 border-b-2 border-blue-600'
-                : 'text-gray-500 hover:text-blue-500'
-                }`}
-            >
-              Batafsil malumotlar
-            </span>
-
-            <span
-              onClick={() => setViewMode('files')}
-              className={`cursor-pointer pb-2 text-base font-medium transition-all duration-200 ${viewMode === 'files'
-                ? 'text-blue-600 border-b-2 border-blue-600'
-                : 'text-gray-500 hover:text-blue-500'
-                }`}
-            >
-              Fayllar ro‘yxati
-            </span>
-          </div>
 
           {/* 🔸 1. BUYURTMALAR OYNASI */}
-          {viewMode === 'orders' && (
-            <div className="p-6 bg-gray-50 rounded-lg shadow-sm">
-              <Button onClick={() => setOpen(true)}>
-                (QR code) tasdiqlash E-IMZO
-              </Button>
-            </div>
-          )}
+          <div className="p-6 bg-gray-50 rounded-lg shadow-sm mb-8 relative">
+            <Button onClick={() => setOpen(true)} style={{ position: "absolute", top: 30, left: 30 }}>
+              (QR code) tasdiqlash E-IMZO
+            </Button>
+            {
+              messageFile && (
+                <div style={{ width: "100%", height: "80vh", display: "flex", flexDirection: "column" }}>
+                  <div style={{ flex: 1, overflow: "auto" }}>
+                    <FilePreviewer file={messageFile!} />
+                  </div>
+                </div>
+              )
+            }
+          </div>
 
           {/* 🔸 2. YUBORILGAN XATNI KO‘RINISHI */}
 
-          {viewMode === 'letters' && (
-            <div>
+          <div className='mb-2'>
+            <div className='flex flex-col gap-4'>
+              <Typography fontSize={"20px"} fontWeight={600} color="#0f172b">Buyurtma uchun berilgan tovarlar ruyhati</Typography>
 
-              <div>
-                <Accordion>
-                  <AccordionSummary
-                    expandIcon={<ExpandMoreIcon />}
-                    aria-controls="panel1a-content"
-                  >
-                    <Typography fontSize={"20px"} fontWeight={600} color="#0f172b">Buyurtma uchun berilgan tovarlar ruyhati</Typography>
-                  </AccordionSummary>
-                  <AccordionDetails>
-
-                    <div className="bg-transparent rounded-md flex justify-between mb-4">
-                      <div className='flex items-center gap-3'>
-                        <Button className='cursor-pointer'>
-                          <Plus></Plus>
-                          Kiritish
-                        </Button>
-                        <Button className='cursor-pointer' onClick={() => fetchRemaindersUserWarehouse()}>
-                          Qoldiqlar
-                        </Button>
-                      </div>
-                      <div className="relative">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4" />
-                        <Input
-                          type="text"
-                          placeholder="Qidirish (Ctrl+F)"
-                          className="w-64 h-9 pl-9 text-sm border-slate-200 bg-white"
-                        />
-                      </div>
-                    </div>
-
-
-                    <div className="bg-white rounded-xl mb-6 overflow-hidden">
-                      <div className="overflow-x-auto">
-                        <table className="w-full">
-                          <thead className="bg-gray-50 border-b-2">
-                            <tr>
-                              <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">№</th>
-                              <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Buyurtma nomi</th>
-                              <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Model</th>
-                              <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Buyurtma turi</th>
-                              <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">O'lcham</th>
-                              <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">O'lchov birligi</th>
-                              <th className="px-6 py-4 text-right text-sm font-semibold text-gray-700">Soni</th>
-                              <th className="px-6 py-4 text-right text-sm font-semibold text-gray-700">Buyurtma bo'yicha izoh</th>
-                            </tr>
-                          </thead>
-                          <tbody className=" bg-[#f2f2f2b6]">
-                            {orderData.products?.map((product, index) => (
-                              <tr key={index} className="hover:bg-indigo-50 transition-colors">
-                                <td className="px-6 py-4 text-sm text-gray-900 font-medium">{product.row_number}</td>
-                                <td className="px-6 py-4 text-sm text-gray-900">{product.product?.name}</td>
-                                <td className="px-6 py-4 text-sm text-gray-900 font-medium">{product.model?.name}</td>
-                                <td className="px-6 py-4 text-sm text-gray-900">{product.product_type?.name}</td>
-                                <td className="px-6 py-4 text-sm text-gray-700">{product.size?.name}</td>
-                                <td className="px-6 py-4 text-sm text-gray-700">{product.unit?.name}</td>
-                                <td className="px-6 py-4 text-sm text-gray-900 text-right font-bold">{product.quantity}</td>
-                                <td className="px-6 py-4 text-sm text-gray-900 text-right font-bold">{product.description}</td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
-                    </div>
-
-                  </AccordionDetails>
-                </Accordion>
-              </div>
-
-              <div>
-                <Accordion>
-                  <AccordionSummary
-                    expandIcon={<ExpandMoreIcon />}
-                    aria-controls="panel1a-content"
-                  >
-                    <Typography fontSize={"20px"} fontWeight={600} color="#0f172b">Imzolovchilar ruyhati</Typography>
-                  </AccordionSummary>
-                  <AccordionDetails>
-
-                    <div className="bg-transparent rounded-md p-2 flex justify-between mb-2">
-                      <div className='flex items-center gap-3'>
-                        <Button className='cursor-pointer'>
-                          <Plus></Plus>
-                          Kiritish
-                        </Button>
-                        <Button className='cursor-pointer'>
-                          Yuborish
-                        </Button>
-                      </div>
-                      <div className="relative">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4" />
-                        <Input
-                          type="text"
-                          placeholder="Qidirish (Ctrl+F)"
-                          className="w-64 h-9 pl-9 text-sm border-slate-200 bg-white"
-                        />
-                      </div>
-                    </div>
-
-
-                    <div className="bg-white rounded-xl mb-6 overflow-hidden">
-                      <div className="overflow-x-auto">
-                        <table className="w-full">
-                          <thead className="bg-gray-50 border-b-2">
-                            <tr>
-                              <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">№</th>
-                              <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Xabar xolati</th>
-                              <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Imzolovchi xodim</th>
-                              <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Lavozim nomi</th>
-                              <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Imzolash xoati</th>
-                              <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Sana</th>
-                            </tr>
-                          </thead>
-                          <tbody className=" bg-[#f2f2f2b6]">
-                            {orderData.executors?.map((executor, index) => (
-                              <tr key={index} className="hover:bg-indigo-50 transition-colors">
-                                <td className="px-6 py-4 text-sm text-gray-900"></td>
-                                <td className="px-6 py-4 text-sm text-gray-900">{executor.status?.name}</td>
-                                <td className="px-6 py-4 text-sm text-gray-900 font-medium">{executor.executor?.name}</td>
-                                <td className="px-6 py-4 text-sm text-gray-900"></td>
-                                <td className="px-6 py-4 text-sm text-gray-900">{executor.message}</td>
-                                <td className="px-6 py-4 text-sm text-gray-700">{executor.confirmation_date}</td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
-                    </div>
-
-                  </AccordionDetails>
-                </Accordion>
+              {/* Tovarlar ro'yxati */}
+              <div className="bg-white rounded-xl mb-6 overflow-hidden">
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead className="bg-gray-50 border-b-2">
+                      <tr>
+                        <th className="text-center px-6 py-4 text-sm font-semibold text-gray-700">№</th>
+                        <th className="text-center px-6 py-4 text-sm font-semibold text-gray-700">Tovar nomi</th>
+                        <th className="text-center px-6 py-4 text-sm font-semibold text-gray-700">Model</th>
+                        <th className="text-center px-6 py-4 text-sm font-semibold text-gray-700">Tovar turi</th>
+                        <th className="text-center px-6 py-4 text-sm font-semibold text-gray-700">O'lcham</th>
+                        <th className="text-center px-6 py-4 text-sm font-semibold text-gray-700">O'lchov birligi</th>
+                        <th className="text-center px-6 py-4 text-sm font-semibold text-gray-700">Soni</th>
+                        <th className="text-center px-6 py-4 text-sm font-semibold text-gray-700">Tovar bo'yicha izoh</th>
+                      </tr>
+                    </thead>
+                    <tbody className=" bg-[#f2f2f2b6]">
+                      {orderData.products?.map((product, index) => (
+                        <tr key={index} className="hover:bg-indigo-50 transition-colors">
+                          <td className="text-center px-6 py-4 text-sm text-gray-700 font-medium">{product.row_number}</td>
+                          <td className="text-center px-6 py-4 text-sm text-gray-700">{product.product?.name}</td>
+                          <td className="text-center px-6 py-4 text-sm text-gray-700 font-medium">{product.model?.name}</td>
+                          <td className="text-center px-6 py-4 text-sm text-gray-700">{product.product_type?.name}</td>
+                          <td className="text-center px-6 py-4 text-sm text-gray-700">{product.size?.name}</td>
+                          <td className="text-center px-6 py-4 text-sm text-gray-700">{product.unit?.name}</td>
+                          <td className="text-center px-6 py-4 text-sm text-gray-700">{product.quantity}</td>
+                          <td className="text-center px-6 py-4 text-sm text-gray-700">{product.description}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               </div>
             </div>
-          )}
+
+            {/* Imzolovchi xodimlar */}
+            <div className='flex flex-col gap-4'>
+              <Typography fontSize={"20px"} fontWeight={600} color="#0f172b">Imzolovchilar ro'yhati</Typography>
+
+              <div className="bg-white rounded-xl mb-6 overflow-hidden">
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead className="bg-gray-50 border-b-2">
+                      <tr>
+                        <th className="text-center px-6 py-4 text-sm font-semibold text-gray-700">№</th>
+                        <th className="text-center px-6 py-4 text-sm font-semibold text-gray-700">Xabar xolati</th>
+                        <th className="text-center px-6 py-4 text-sm font-semibold text-gray-700">Imzolovchi xodim</th>
+                        <th className="text-center px-6 py-4 text-sm font-semibold text-gray-700">Lavozim</th>
+                        <th className="text-center px-6 py-4 text-sm font-semibold text-gray-700">Imzolash xoati</th>
+                        <th className="text-center px-6 py-4 text-sm font-semibold text-gray-700">Sana</th>
+                      </tr>
+                    </thead>
+                    <tbody className=" bg-[#f2f2f2b6]">
+                      {orderData.executors?.map((executor, index) => (
+                        <tr key={index} className="hover:bg-indigo-50 transition-colors">
+                          <td className="text-center px-6 py-4 text-sm text-gray-700">{index + 1}</td>
+                          <td className="text-center px-6 py-4 text-sm text-gray-700">{executor.status?.name}</td>
+                          <td className="text-center px-6 py-4 text-sm text-gray-700 font-medium">{executor.executor?.name}</td>
+                          <td className="text-center px-6 py-4 text-sm text-gray-700"></td>
+                          <td className="text-center px-6 py-4 text-sm text-gray-700">{executor.message}</td>
+                          <td className="text-center px-6 py-4 text-sm text-gray-700">{executor.confirmation_date}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
 
           {/* 🔸 3. FAYLLAR RO‘YXATI */}
-          {viewMode === 'files' && (
-            <div className="p-4">
-              {files.length !== 0 ? (
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
-                  {files.map((file, index) => {
-                    const { icon, color, bg } = getFileIcon(file.file_name);
+          <div className="p-4">
+            <Typography fontSize={"20px"} fontWeight={600} color="#0f172b" className="mb-4">
+              Buyurtmaga biriktirilgan fayllar ro‘yxati
+            </Typography>
+            {files.length !== 0 ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
+                {files.map((file, index) => {
+                  const { icon, color, bg } = getFileIcon(file.file_name);
 
-                    return (
-                      <div
-                        key={index}
-                        className="bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-all duration-300 p-4 flex flex-col justify-between"
-                      >
-                        {/* 🔹 Exit number & Row number */}
-                        <div className="flex justify-between items-center mb-3">
-                          <span className="text-sm font-semibold text-gray-700 bg-gray-100 px-3 py-1 rounded-full">
-                            {orderData.exit_number}-{file.raw_number}
-                          </span>
+                  return (
+                    <div
+                      key={index}
+                      className="bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-all duration-300 p-4 flex flex-col justify-between"
+                    >
+                      {/* 🔹 Exit number & Row number */}
+                      <div className="flex justify-between items-center mb-3">
+                        <span className="text-sm font-semibold text-gray-700 bg-gray-100 px-3 py-1 rounded-full">
+                          {orderData.exit_number}-{file.raw_number}
+                        </span>
+                      </div>
+
+                      {/* 🔸 Fayl ma’lumotlari */}
+                      <div className="flex items-center gap-4 mb-3">
+                        <div className={`p-3 rounded-lg ${bg}`}>
+                          <div className={`${color} text-3xl`}>{icon}</div>
                         </div>
-
-                        {/* 🔸 Fayl ma’lumotlari */}
-                        <div className="flex items-center gap-4 mb-3">
-                          <div className={`p-3 rounded-lg ${bg}`}>
-                            <div className={`${color} text-3xl`}>{icon}</div>
-                          </div>
-                          <div className="flex flex-col">
-                            <h4 className="text-gray-800 font-semibold text-sm truncate w-48">
-                              {file.file_name}
-                            </h4>
-                            {file.user}
-                            <p className="text-gray-500 text-sm mt-1">{formatDate(file.date)}</p>
-                          </div>
-                        </div>
-
-                        {/* 🔸 Action tugmalar */}
-                        <div className="flex justify-end gap-3 mt-auto">
-                          <button
-                            onClick={() => handleView(file)}
-                            className="p-2 rounded-md text-gray-600 hover:text-purple-700 hover:bg-gray-100 transition"
-                            title="Ko'rish"
-                          >
-                            <EyeOutlined className="text-lg" />
-                          </button>
-
-                          <button
-                            onClick={() => handleDownloadFile(file)}
-                            className="p-2 rounded-md text-gray-600 hover:text-purple-700 hover:bg-gray-100 transition"
-                            title="Yuklab olish"
-                          >
-                            <DownloadOutlined className="text-lg" />
-                          </button>
-
+                        <div className="flex flex-col">
+                          <h4 className="text-gray-800 font-semibold text-sm truncate w-48">
+                            {file.file_name}
+                          </h4>
+                          {file.user}
+                          <p className="text-gray-500 text-sm mt-1">{formatDate(file.date)}</p>
                         </div>
                       </div>
-                    );
-                  })}
-                </div>
-              ) : (
-                <p className="text-gray-900 font-bold text-2xl text-center">
-                  Hozircha fayllar mavjud emas.
-                </p>
-              )}
-            </div>
-          )}
+
+                      {/* 🔸 Action tugmalar */}
+                      <div className="flex justify-end gap-3 mt-auto">
+                        <button
+                          onClick={() => handleView(file)}
+                          className="p-2 rounded-md text-gray-600 hover:text-purple-700 hover:bg-gray-100 transition"
+                          title="Ko'rish"
+                        >
+                          <EyeOutlined className="text-lg" />
+                        </button>
+
+                        <button
+                          onClick={() => handleDownloadFile(file)}
+                          className="p-2 rounded-md text-gray-600 hover:text-purple-700 hover:bg-gray-100 transition"
+                          title="Yuklab olish"
+                        >
+                          <DownloadOutlined className="text-lg" />
+                        </button>
+
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <p className="text-gray-700 font-bold text-2xl text-center">
+                Hozircha fayllar mavjud emas.
+              </p>
+            )}
+          </div>
 
         </div>
       </div>
@@ -589,29 +422,24 @@ const DistrictOrderSigning: React.FC = () => {
         />
       )}
 
-      {
-        showRemainders && (
-          <SelectRemainsModal onClose={() => setShowRemainders(false)} remainders={remainders} />
-        )
-      }
-
       <Modal
         title="E-IMZO maxfiy raqamini kiriting !"
         open={open}
         onCancel={handleCancel}
+        style={{ minWidth: "600px" }}
         footer={null} // footer qo'l bilan yozamiz
       >
-        <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+        <div className='flex flex-col gap-3 min-h-[200px]'>
           <Input
             placeholder="Kodni kiriting..."
-            className='bg-gray-200'
+            className='bg-gray-50 mt-8 px-2 py-6 text-[20px]'
           />
           <div
             style={{
               display: "flex",
               justifyContent: "flex-end",
               gap: "10px",
-              marginTop: "10px",
+              marginTop: "auto",
             }}
           >
             <Button type="primary">
