@@ -39,6 +39,7 @@ interface Product {
 interface Executor {
 	executor: IdName;
 	status: IdName;
+	row_number: number;
 	message: string;
 	confirmation_date: string;
 }
@@ -436,10 +437,14 @@ const DistrictOrderDetail: React.FC = () => {
 				})),
 				executors: orderData.executors.map(e => ({
 					...e,
-					executor: e.executor.id,
-					status: e.status.id,
+					executor:   e.executor.id,
+					status:     e.status.id,
+					row_number: e.row_number
 				})),
 			});
+
+			console.log(orderData.executors[0].row_number);
+			
 			if (res.status === 200) {
 				toast.success("Buyurtma muvaffaqiyatli yangilandi!");
 				fetchOrderDetail();
@@ -534,7 +539,7 @@ const DistrictOrderDetail: React.FC = () => {
 												Tovar kiritish
 											</button>
 											<button
-												className='group relative bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white text-md px-2 py-1.5 rounded-md shadow-md hover:shadow-lg transition-all duration-300 flex items-center gap-3 font-medium cursor-pointer'
+												className='group relative bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white text-md px-2.5 py-1.5 rounded-md shadow-md hover:shadow-lg transition-all duration-300 flex items-center gap-3 font-medium cursor-pointer'
 												onClick={() => fetchRemaindersUserWarehouse()}
 											>
 												<div className='bg-white/20 p-2 rounded-lg group-hover:bg-white/30 transition-colors'>
@@ -836,29 +841,6 @@ const DistrictOrderDetail: React.FC = () => {
 											Hujjat biriktirish
 										</button>
 									</div>
-
-									{/* Save Button */}
-									<button
-										className='group bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white px-8 py-4 rounded-xl shadow-md hover:shadow-lg transition-all duration-300 flex items-center gap-3 font-medium cursor-pointer'
-										onClick={handleUpdateOrder}
-										aria-label="Saqlash"
-									>
-										<div className='bg-white/20 p-2 rounded-lg group-hover:bg-white/30 transition-colors'>
-											<SaveOutlined className='text-xl' />
-										</div>
-										<span>Saqlash</span>
-									</button>
-
-									<button
-										className='group bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white px-8 py-4 rounded-xl shadow-md hover:shadow-lg transition-all duration-300 flex items-center gap-3 font-medium cursor-pointer'
-										onClick={handleDeleteOrder}
-										aria-label="O'chirish"
-									>
-										<div className='bg-white/20 p-2 rounded-lg group-hover:bg-white/30 transition-colors'>
-											<SaveOutlined className='text-xl' />
-										</div>
-										<span>O'chirish</span>
-									</button>
 								</div>
 
 								{fileUploadModal && (

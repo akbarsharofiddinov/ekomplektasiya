@@ -53,7 +53,7 @@ const RepublicOrder: React.FC = () => {
   const [region_filter, setRegionFilter] = useState<RegionFilter[]>([]);
   const [selectedRegion, setSelectedRegion] = useState<string>("");
   const [isCreateFormModalOpen, setIsCreateFormModalOpen] = useState(false);
-  
+
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
@@ -83,7 +83,7 @@ const RepublicOrder: React.FC = () => {
     unseen: number;
     approved: number;
     not_approved: number;
-    unapproved:number;
+    unapproved: number;
     // filter_by_regions: RegionFilter[];
     // results: DocumentInfo[];
   }>({
@@ -96,7 +96,7 @@ const RepublicOrder: React.FC = () => {
     unseen: 0,
     approved: 0,
     not_approved: 0,
-    unapproved:0,
+    unapproved: 0,
     // filter_by_regions: [],
     // results: [],
   });
@@ -260,35 +260,35 @@ const RepublicOrder: React.FC = () => {
     unseen: totalItems.unseen || 0,
   };
 
-    useEffect(() => {
-      let mounted = true;
-      (async () => {
-        try {
-          const [orderTypeRes, productTypeRes, sizeRes, unitRes, modelRes] =
-            await Promise.all([
-              axiosAPI.get("/enumerations/order_types"),
-              axiosAPI.get("/product_types/list", { params: { limit: 200 } }),
-              axiosAPI.get("/sizes/list"),
-              axiosAPI.get("/units/list"),
-              axiosAPI.get("/models/list", { params: { limit: 200 } }), // <— model mustaqil
-            ]);
-  
-          if (!mounted) return;
-          dispatch(setOrderTypes(orderTypeRes.data))
-          dispatch(setProductTypes(productTypeRes.data))
-          dispatch(setProductSizes(sizeRes.data))
-          dispatch(setProductUnits(unitRes.data))
-          dispatch(setProductModels(modelRes.data))
-          
-        } catch (err) {
-          console.error(err);
-          message.error("Ma’lumotlarni yuklashda xatolik!");
-        }
-      })();
-      return () => {
-        mounted = false;
-      };
-    }, [dispatch]);
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        const [orderTypeRes, productTypeRes, sizeRes, unitRes, modelRes] =
+          await Promise.all([
+            axiosAPI.get("/enumerations/order_types"),
+            axiosAPI.get("/product_types/list", { params: { limit: 200 } }),
+            axiosAPI.get("/sizes/list"),
+            axiosAPI.get("/units/list"),
+            axiosAPI.get("/models/list", { params: { limit: 200 } }), // <— model mustaqil
+          ]);
+
+        if (!mounted) return;
+        dispatch(setOrderTypes(orderTypeRes.data))
+        dispatch(setProductTypes(productTypeRes.data))
+        dispatch(setProductSizes(sizeRes.data))
+        dispatch(setProductUnits(unitRes.data))
+        dispatch(setProductModels(modelRes.data))
+
+      } catch (err) {
+        console.error(err);
+        message.error("Ma’lumotlarni yuklashda xatolik!");
+      }
+    })();
+    return () => {
+      mounted = false;
+    };
+  }, [dispatch]);
 
 
   return (
@@ -308,78 +308,84 @@ const RepublicOrder: React.FC = () => {
 
               <div className="w-full flex items-center gap-30">
                 {/* Status Filter Tabs - Left Side */}
-                <div className="flex gap-4">
+                <div className="flex gap-3">
+                  {/* Barchasi */}
                   <button
                     onClick={() => setStatusFilter('all')}
-                    className={`flex items-center space-x-1 rounded-md transition-all duration-300 font-medium text-sm ${statusFilter === 'all'
-                      ? 'bg-slate-100 text-slate-900'
-                      : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+                    className={`flex items-center gap-1 px-2 py-1.5 rounded-md transition-all duration-200 font-medium text-sm border
+      ${statusFilter === 'all'
+                        ? 'bg-slate-100 border-slate-300 text-slate-900'
+                        : 'text-slate-600 hover:text-slate-800 hover:bg-slate-50 border-transparent'
                       }`}
                   >
                     <span>Barchasi</span>
-                    <span className="px-2 py-0.5 text-xs font-medium bg-slate-200 text-slate-700">
-                      {statusCounts.all}
+                    <span className="px-2 py-0.5 text-xs font-semibold bg-slate-200 text-slate-700 rounded-md">
+                      {totalItems.count || 0}
                     </span>
                   </button>
 
-                  {/* Green - Approved and Accepted */}
+                  {/* Tasdiqlangan */}
                   <button
                     onClick={() => setStatusFilter('approved')}
-                    className={`flex items-center space-x-1 px-2 py-1 rounded-md transition-all duration-300 font-medium text-sm ${statusFilter === 'approved'
-                      ? 'bg-emerald-50 text-emerald-800 border border-emerald-200'
-                      : 'text-slate-600 hover:text-emerald-700 hover:bg-emerald-50'
+                    className={`flex items-center gap-1 px-2 py-1.5 rounded-md transition-all duration-200 font-medium text-sm border
+      ${statusFilter === 'approved'
+                        ? 'bg-emerald-50 border-emerald-300 text-emerald-800'
+                        : 'text-slate-600 hover:text-emerald-700 hover:bg-emerald-50 border-transparent'
                       }`}
                   >
                     <span>Tasdiqlangan</span>
-                    <span className="px-2 py-0.5 text-xs font-medium bg-emerald-100 text-emerald-700">
-                      {statusCounts.approved}
+                    <span className="px-2 py-0.5 text-xs font-semibold bg-emerald-100 text-emerald-700 rounded-md">
+                      {totalItems.approved || 0}
                     </span>
                   </button>
 
-                  {/* Red - Not Approved */}
+                  {/* Tasdiqlanmagan */}
                   <button
                     onClick={() => setStatusFilter('not_approved')}
-                    className={`flex items-center space-x-1 px-2 py-1 rounded-md transition-all duration-300 font-medium text-sm ${statusFilter === 'not_approved'
-                      ? 'bg-red-50 text-red-800 border border-red-200'
-                      : 'text-slate-600 hover:text-red-700 hover:bg-red-50'
+                    className={`flex items-center gap-1 px-2 py-1.5 rounded-md transition-all duration-200 font-medium text-sm border
+      ${statusFilter === 'not_approved'
+                        ? 'bg-red-50 border-red-300 text-red-800'
+                        : 'text-slate-600 hover:text-red-700 hover:bg-red-50 border-transparent'
                       }`}
                   >
                     <span>Tasdiqlanmagan</span>
-                    <span className="px-2 py-0.5 text-xs font-medium bg-red-100 text-red-700">
-                      {statusCounts.not_approved}
+                    <span className="px-2 py-0.5 text-xs font-semibold bg-red-100 text-red-700 rounded-md">
+                      {totalItems.unapproved || 0}
                     </span>
                   </button>
 
+                  {/* Bekor qilingan */}
                   <button
                     onClick={() => setStatusFilter('Canceled')}
-                    className={`flex items-center space-x-1 px-2 py-1 rounded-md transition-all duration-300 font-medium text-sm ${statusFilter === 'Canceled'
-                      ? 'bg-amber-50 text-amber-800 border border-amber-200'
-                      : 'text-slate-600 hover:text-amber-700 hover:bg-amber-50'
+                    className={`flex items-center gap-1 px-2 py-1.5 rounded-md transition-all duration-200 font-medium text-sm border
+      ${statusFilter === 'Canceled'
+                        ? 'bg-amber-50 border-amber-300 text-amber-800'
+                        : 'text-slate-600 hover:text-amber-700 hover:bg-amber-50 border-transparent'
                       }`}
                   >
                     <span>Bekor qilingan</span>
-                    <span className="px-2 py-0.5 text-xs font-medium bg-amber-100 text-amber-700">
-                      {statusCounts.cancelled}
+                    <span className="px-2 py-0.5 text-xs font-semibold bg-amber-100 text-amber-700 rounded-md">
+                      {totalItems.cancelled || 0}
                     </span>
                   </button>
 
-                  {/* Yellow - Approved but not Accepted */}
+                  {/* Ko‘rilmagan */}
                   <button
                     onClick={() => setStatusFilter('approved_not_accepted')}
-                    className={`flex items-center space-x-1 px-2 py-1 rounded-md transition-all duration-300 font-medium text-sm ${statusFilter === 'approved_not_accepted'
-                      ? 'bg-amber-50 text-amber-800 shadow-sm border border-amber-200'
-                      : 'text-slate-600 hover:text-amber-700 hover:bg-amber-50'
+                    className={`flex items-center gap-1 px-2 py-1.5 rounded-md transition-all duration-200 font-medium text-sm border
+      ${statusFilter === 'approved_not_accepted'
+                        ? 'bg-indigo-50 border-indigo-300 text-indigo-800'
+                        : 'text-slate-600 hover:text-indigo-700 hover:bg-indigo-50 border-transparent'
                       }`}
                   >
-                    <span>Kurilmagan</span>
-                    <span className={`px-2 py-0.5 text-xs font-medium ${statusFilter === 'approved_not_accepted'
-                      ? 'bg-amber-100 text-amber-700'
-                      : 'bg-slate-100 text-slate-600'
-                      }`}>
-                      {/* {statusCounts.approved_not_accepted} */}
+                    <span>Ko‘rilmagan</span>
+                    <span className="px-2 py-0.5 text-xs font-semibold bg-indigo-100 text-indigo-700 rounded-md">
+                      {totalItems.unseen || 0}
                     </span>
                   </button>
                 </div>
+
+
                 <div className="w-full flex items-center gap-3">
                   <div className='w-full'>
                     <Select
@@ -434,6 +440,7 @@ const RepublicOrder: React.FC = () => {
                 {/* Action Buttons - Right Side */}
 
               </div>
+
             </div>
           </div>
           <div className="bg-white py-3 flex justify-between">

@@ -37,7 +37,7 @@ type FilterStatus = 'all' | 'approved' | 'approved_not_accepted' | 'not_approved
 
 const KomplektasiyaOrder: React.FC = () => {
   const dispatch = useAppDispatch()
-  
+
   const [data, setData] = useState<DocumentInfo[]>([]);
   const [filteredData, setFilteredData] = useState<DocumentInfo[]>([]);
   const [region_filter, setRegionFilter] = useState<RegionFilter[]>([]);
@@ -47,35 +47,35 @@ const KomplektasiyaOrder: React.FC = () => {
   const itemsPerPage = 10;
 
   const [isCreateFormModalOpen, setIsCreateFormModalOpen] = useState(false);
-  
+
   const [orderType, setOrderType] = useState<"outgoing" | "incoming">("outgoing")
 
   const [statusFilter, setStatusFilter] = useState<FilterStatus>('not_approved');
 
 
   const [totalItems, setTotalItems] = useState<{
-      count: number;
-      limit: number;
-      offset: number;
-      totalItems: number;
-      cancelled: number;
-      seen: number;
-      unseen: number;
-      approved: number;
-      not_approved: number;
-      unapproved:number;
-    }>({
-      count: 0,
-      limit: itemsPerPage,
-      offset: 0,
-      totalItems: 0,
-      cancelled: 0,
-      seen: 0,
-      unseen: 0,
-      approved: 0,
-      not_approved: 0,
-      unapproved:0,
-    });
+    count: number;
+    limit: number;
+    offset: number;
+    totalItems: number;
+    cancelled: number;
+    seen: number;
+    unseen: number;
+    approved: number;
+    not_approved: number;
+    unapproved: number;
+  }>({
+    count: 0,
+    limit: itemsPerPage,
+    offset: 0,
+    totalItems: 0,
+    cancelled: 0,
+    seen: 0,
+    unseen: 0,
+    approved: 0,
+    not_approved: 0,
+    unapproved: 0,
+  });
 
   const [searchValue] = useState("");
 
@@ -129,8 +129,8 @@ const KomplektasiyaOrder: React.FC = () => {
         (item) =>
           item.exit_number?.toLowerCase().includes(query) ||
           item.from_region?.toLowerCase().includes(query) ||
-          item.sender_from_republic?.toLowerCase().includes(query) || 
-          item.sender_from_sale?.toLowerCase().includes(query) 
+          item.sender_from_republic?.toLowerCase().includes(query) ||
+          item.sender_from_sale?.toLowerCase().includes(query)
       );
     }
 
@@ -183,49 +183,52 @@ const KomplektasiyaOrder: React.FC = () => {
       filtered = data.filter((item) => item.is_approved === false);
     } else if (statusFilter === 'Canceled') {
       filtered = data.filter((item) => item.application_status_sale === 'Bekor qilingan');
+    } else if (statusFilter === 'approved_not_accepted') {
+      filtered = data.filter((item) => item.is_shown === false || item.is_viewed === false);
     }
 
     setFilteredData(filtered);
   }, [statusFilter, data]);
+
 
   const statusCounts = {
     all: totalItems.count || 0,
     approved: totalItems.approved || 0,
     not_approved: totalItems.unapproved || 0,
     cancelled: totalItems.cancelled || 0,
-    seen: totalItems.seen || 0,
-    unseen: totalItems.unseen || 0,
+    seen: (totalItems as any)["Показат"] || totalItems.seen || 0,
+    unseen: (totalItems as any)["НеПоказат"] || totalItems.unseen || 0,
   };
 
   useEffect(() => {
-      let mounted = true;
-      (async () => {
-        try {
-          const [orderTypeRes, productTypeRes, sizeRes, unitRes, modelRes] =
-            await Promise.all([
-              axiosAPI.get("/enumerations/order_types"),
-              axiosAPI.get("/product_types/list", { params: { limit: 200 } }),
-              axiosAPI.get("/sizes/list"),
-              axiosAPI.get("/units/list"),
-              axiosAPI.get("/models/list", { params: { limit: 200 } }), 
-            ]);
-  
-          if (!mounted) return;
-          dispatch(setOrderTypes(orderTypeRes.data))
-          dispatch(setProductTypes(productTypeRes.data))
-          dispatch(setProductSizes(sizeRes.data))
-          dispatch(setProductUnits(unitRes.data))
-          dispatch(setProductModels(modelRes.data))
-          
-        } catch (err) {
-          console.error(err);
-          message.error("Ma’lumotlarni yuklashda xatolik!");
-        }
-      })();
-      return () => {
-        mounted = false;
-      };
-    }, [dispatch]);
+    let mounted = true;
+    (async () => {
+      try {
+        const [orderTypeRes, productTypeRes, sizeRes, unitRes, modelRes] =
+          await Promise.all([
+            axiosAPI.get("/enumerations/order_types"),
+            axiosAPI.get("/product_types/list", { params: { limit: 200 } }),
+            axiosAPI.get("/sizes/list"),
+            axiosAPI.get("/units/list"),
+            axiosAPI.get("/models/list", { params: { limit: 200 } }),
+          ]);
+
+        if (!mounted) return;
+        dispatch(setOrderTypes(orderTypeRes.data))
+        dispatch(setProductTypes(productTypeRes.data))
+        dispatch(setProductSizes(sizeRes.data))
+        dispatch(setProductUnits(unitRes.data))
+        dispatch(setProductModels(modelRes.data))
+
+      } catch (err) {
+        console.error(err);
+        message.error("Ma’lumotlarni yuklashda xatolik!");
+      }
+    })();
+    return () => {
+      mounted = false;
+    };
+  }, [dispatch]);
   return (
     <>
       {isCreateFormModalOpen ? (
@@ -241,77 +244,83 @@ const KomplektasiyaOrder: React.FC = () => {
               <h1 className='text-2xl text-black pb-4'>Komplektatsiya bo'yicha buyurtma</h1>
 
               <div className="w-full flex items-center gap-30">
-
-                <div className="flex gap-4">
+                <div className="flex gap-3">
+                  {/* Barchasi */}
                   <button
                     onClick={() => setStatusFilter('all')}
-                    className={`flex items-center space-x-1 rounded-md px-2 py-1 transition-all duration-300 font-medium text-sm ${statusFilter === 'all'
-                      ? 'bg-slate-100 text-slate-900 border border-slate-200'
-                      : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+                    className={`flex items-center gap-1 px-3 py-1.5 rounded-md transition-all duration-200 font-medium text-sm border 
+      ${statusFilter === 'all'
+                        ? 'bg-slate-100 border-slate-300 text-slate-900'
+                        : 'text-slate-600 hover:text-slate-800 hover:bg-slate-50 border-transparent'
                       }`}
                   >
                     <span>Barchasi</span>
-                    <span className="px-2 py-0.5 text-xs font-medium bg-slate-100 text-slate-600">
+                    <span className="px-2 py-0.5 text-xs font-semibold bg-slate-200 text-slate-700 rounded-md">
                       {statusCounts.all}
                     </span>
                   </button>
 
+                  {/* Tasdiqlangan */}
                   <button
                     onClick={() => setStatusFilter('approved')}
-                    className={`flex items-center space-x-1 rounded-md px-2 py-1 transition-all duration-300 font-medium text-sm ${statusFilter === 'approved'
-                      ? 'bg-emerald-50 text-emerald-800 border border-emerald-200'
-                      : 'text-slate-600 hover:text-emerald-700 hover:bg-emerald-50'
+                    className={`flex items-center gap-1 px-3 py-1.5 rounded-md transition-all duration-200 font-medium text-sm border
+      ${statusFilter === 'approved'
+                        ? 'bg-emerald-50 border-emerald-300 text-emerald-800'
+                        : 'text-slate-600 hover:text-emerald-700 hover:bg-emerald-50 border-transparent'
                       }`}
                   >
                     <span>Tasdiqlangan</span>
-                    <span className="px-2 py-0.5 text-xs font-medium bg-emerald-100 text-emerald-700">
+                    <span className="px-2 py-0.5 text-xs font-semibold bg-emerald-100 text-emerald-700 rounded-md">
                       {statusCounts.approved}
                     </span>
                   </button>
 
+                  {/* Tasdiqlanmagan */}
                   <button
                     onClick={() => setStatusFilter('not_approved')}
-                    className={`flex items-center space-x-1 rounded-md px-2 py-1 transition-all duration-300 font-medium text-sm ${statusFilter === 'not_approved'
-                      ? 'bg-red-50 text-red-800 border border-red-200'
-                      : 'text-slate-600 hover:text-red-700 hover:bg-red-50'
+                    className={`flex items-center gap-1 px-3 py-1.5 rounded-md transition-all duration-200 font-medium text-sm border
+      ${statusFilter === 'not_approved'
+                        ? 'bg-red-50 border-red-300 text-red-800'
+                        : 'text-slate-600 hover:text-red-700 hover:bg-red-50 border-transparent'
                       }`}
                   >
                     <span>Tasdiqlanmagan</span>
-                    <span className="px-2 py-0.5 text-xs font-medium bg-red-100 text-red-700">
+                    <span className="px-2 py-0.5 text-xs font-semibold bg-red-100 text-red-700 rounded-md">
                       {statusCounts.not_approved}
                     </span>
                   </button>
 
+                  {/* Bekor qilingan */}
                   <button
                     onClick={() => setStatusFilter('Canceled')}
-                    className={`flex items-center space-x-1 rounded-md px-2 py-1 transition-all duration-300 font-medium text-sm ${statusFilter === 'Canceled'
-                      ? 'bg-amber-50 text-amber-800 border border-amber-200'
-                      : 'text-slate-600 hover:text-amber-700 hover:bg-amber-50'
+                    className={`flex items-center gap-1 px-3 py-1.5 rounded-md transition-all duration-200 font-medium text-sm border
+      ${statusFilter === 'Canceled'
+                        ? 'bg-amber-50 border-amber-300 text-amber-800'
+                        : 'text-slate-600 hover:text-amber-700 hover:bg-amber-50 border-transparent'
                       }`}
                   >
                     <span>Bekor qilingan</span>
-                    <span className="px-2 py-0.5 text-xs font-medium bg-amber-100 text-amber-700">
+                    <span className="px-2 py-0.5 text-xs font-semibold bg-amber-100 text-amber-700 rounded-md">
                       {statusCounts.cancelled}
                     </span>
                   </button>
 
-                  {/* Yellow - Approved but not Accepted */}
+                  {/* Ko‘rilmagan */}
                   <button
-                    // onClick={() => handleStatusFilter('approved_not_accepted')}
-                    className={`flex items-center space-x-1 px-2 py-1 rounded-md transition-all duration-300 font-medium text-sm ${statusFilter === 'approved_not_accepted'
-                      ? 'bg-amber-50 text-amber-800 shadow-sm border border-amber-200'
-                      : 'text-slate-600 hover:text-amber-700 hover:bg-amber-50'
+                    onClick={() => setStatusFilter('approved_not_accepted')}
+                    className={`flex items-center gap-1 px-3 py-1.5 rounded-md transition-all duration-200 font-medium text-sm border
+      ${statusFilter === 'approved_not_accepted'
+                        ? 'bg-indigo-50 border-indigo-300 text-indigo-800'
+                        : 'text-slate-600 hover:text-indigo-700 hover:bg-indigo-50 border-transparent'
                       }`}
                   >
-                    <span>Kurilmagan</span>
-                    <span className={`px-2 py-0.5 text-xs font-medium ${statusFilter === 'approved_not_accepted'
-                      ? 'bg-amber-100 text-amber-700'
-                      : 'bg-slate-100 text-slate-600'
-                      }`}>
-                      {/* {statusCounts.approved_not_accepted} */}
+                    <span>Ko‘rilmagan</span>
+                    <span className="px-2 py-0.5 text-xs font-semibold bg-indigo-100 text-indigo-700 rounded-md">
+                      {statusCounts.unseen}
                     </span>
                   </button>
                 </div>
+
 
                 <div className="w-full flex items-center gap-3">
 
@@ -450,11 +459,11 @@ const KomplektasiyaOrder: React.FC = () => {
                             .replace(",", ". ")}
                         </TableCell>
                         <TableCell className="py-3 px-4">{item.sender_from_sale}</TableCell>
-                         <TableCell className="text-slate-700 py-3 px-4">
+                        <TableCell className="text-slate-700 py-3 px-4">
                           {item.application_status_sale}
                         </TableCell>
                         <TableCell className="py-3 px-4">
-                          { item.confirmation_date ? new Date(item.confirmation_date)
+                          {item.confirmation_date ? new Date(item.confirmation_date)
                             .toLocaleString("uz-UZ", {
                               day: "2-digit",
                               month: "2-digit",
@@ -464,7 +473,7 @@ const KomplektasiyaOrder: React.FC = () => {
                             })
                             .replace(",", ". ") : ''}
                         </TableCell>
-                       
+
                       </TableRow>
                     ))
                   )}
