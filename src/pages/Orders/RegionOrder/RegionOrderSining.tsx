@@ -69,8 +69,12 @@ interface FileData {
   date: string;
 }
 
+interface RegionOrderSiningProps {
+  for_purpose: "signing" | "for_agreement"
+}
 
-const DistrictOrderSigning: React.FC = () => {
+
+const RegionOrderSining: React.FC<RegionOrderSiningProps> = ({for_purpose}) => {
   const [orderData, setOrderData] = useState<OrderDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [files, setFiles] = useState<FileData[]>([]);
@@ -453,4 +457,4 @@ const DistrictOrderSigning: React.FC = () => {
   );
 };
 
-export default DistrictOrderSigning;
+export default RegionOrderSining;

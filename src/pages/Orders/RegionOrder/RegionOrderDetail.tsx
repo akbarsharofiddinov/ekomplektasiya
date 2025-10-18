@@ -1,12 +1,12 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useState, useEffect, useCallback } from 'react';
-import { FilePlus2, Plus, Search, Trash } from 'lucide-react';
+import { FilePlus2, Plus, Search, Trash, Pencil, CircleCheckBig, Save, Layers, X } from 'lucide-react';
 import { Input } from '@/components/UI/input';
 import { SaveOutlined } from '@ant-design/icons';
 
 import { axiosAPI } from '@/services/axiosAPI';
-import { useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { Button, message, Modal, Select } from 'antd';
 import TextArea from 'antd/es/input/TextArea';
 import FileDropZone from '@/components/FileDropZone';
@@ -62,6 +62,7 @@ interface OrderDetail {
   sender_from_region: IdName;
   to_district: IdName;
   recipient_district: IdName;
+  recipient_republic: IdName;
   products: Product[];
   executors: Executor[];
   for_purpose: "signing" | "editing" | 'from_district' | 'for_agreement';
@@ -94,9 +95,16 @@ interface DocumentFormData {
   fileBinary: string;
 }
 
+interface SenderToRepublic {
+  order_id: string;
+  receiver_republic: string;
+  receiver_republic_name: string;
+}
+
 const RegionOrderDetail: React.FC = () => {
   // State variables
   const [orderData, setOrderData] = useState<OrderDetail | null>(null);
+  const [SenderToRepublic, setSenderToRepublic] = useState<SenderToRepublic | null>(null);
   const [loading, setLoading] = useState(true);
   const [fileUploadModal, setFileUploadModal] = useState(false);
   const [file, setFile] = useState<File | null>(null);
@@ -113,7 +121,7 @@ const RegionOrderDetail: React.FC = () => {
   });
   const [showEmployeeModal, setShowEmployeeModal] = useState(false);
   const [employees, setEmployees] = useState<any[]>([]);
-  const [selectedEmployee, setSelectedEmployee] = useState<any>(null);
+  const [sender_employees, setSenderEmployees] = useState<any[]>([]);
   const { id } = useParams<{ id: string }>();
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [deleteModalError, setDeleteModalError] = useState<string | null>(null);
@@ -121,9 +129,13 @@ const RegionOrderDetail: React.FC = () => {
   const [activeField, setActiveField] = useState<{ field: FieldName; row_number: number } | null>(null);
   const [executorType, setexecutorType] = useState<any[]>([]);
   const [messageFileURL, setMessageFileURL] = useState("");
-  // Redux selectors
+  const [showRecepModal, setshowRecepModal] = useState(false);
+
+
   const { currentUserInfo } = useAppSelector(state => state.info);
   const { order_types } = useAppSelector(state => state.product);
+
+  const navigate = useNavigate();
 
   const fetchOrderDetail = useCallback(async () => {
     if (!id) return;
@@ -170,28 +182,17 @@ const RegionOrderDetail: React.FC = () => {
     }
   }, [currentUserInfo?.region.name, currentUserInfo?.district.name]);
 
-  // Fixed useEffect for file handling
   useEffect(() => {
     if (file) {
-      setDocumentFormData(prev => ({ ...prev!, filename: file.name, extension: file.name.split('.').pop()! }))
-      setFiles(prev => {
-        const exists = prev.some(f => (f.file_name || "").toLowerCase() === file.name.toLowerCase());
-        if (exists) {
-          toast("Bu fayl allaqachon biriktirilgan", { type: "warning" });
-          return prev;
-        }
-        return [...prev, {
-          raw_number: (prev.length + 1) + "",
-          user: currentUserInfo?.id || "",
-          file_name: file.name,
-          extension: file.name.split('.').pop()!,
-          date: new Date().toISOString()
-        }];
-      })
+      setDocumentFormData(prev => ({
+        ...prev,
+        filename: file.name,
+        extension: file.name.split('.').pop() || ''
+      }));
     }
   }, [file]);
 
-  // Handle file attach with proper error handling
+
   const handleFileAttach = useCallback(async () => {
     if (!file || !orderData?.id || !documentFormData.filename) {
       message.error('Fayl yoki ma\'lumotlar to\'liq emas!');
@@ -215,6 +216,23 @@ const RegionOrderDetail: React.FC = () => {
 
       if (response.status === 200) {
         await Promise.all([fetchOrderDetail(), fetchDocumentTypesList()]);
+        if (file) {
+          setDocumentFormData(prev => ({ ...prev!, filename: file.name, extension: file.name.split('.').pop()! }))
+          setFiles(prev => {
+            const exists = prev.some(f => (f.file_name || "").toLowerCase() === file.name.toLowerCase());
+            if (exists) {
+              toast("Bu fayl allaqachon biriktirilgan", { type: "warning" });
+              return prev;
+            }
+            return [...prev, {
+              raw_number: (prev.length + 1) + "",
+              user: currentUserInfo?.id || "",
+              file_name: file.name,
+              extension: file.name.split('.').pop()!,
+              date: new Date().toISOString()
+            }];
+          })
+        }
         setFile(null);
         setDocumentFormData({
           selectedDocumentType: '',
@@ -252,6 +270,20 @@ const RegionOrderDetail: React.FC = () => {
       console.error("Faylni o‘chirishda xato:", error);
     }
   }, []);
+
+  const getDistrictOrderFile = async () => {
+    if (id) {
+      try {
+        const response = await axiosAPI.get(`region-orders/${orderData?.id}/order-file`);
+        console.log(response, 'aaa3')
+        if (response.status === 200) {
+          setMessageFileURL(response.data.file_url)
+        }
+      } catch (error) {
+        console.log(error)
+      }
+    }
+  }
 
   useEffect(() => {
     Promise.all([fetchOrderDetail(), fetchDocumentTypesList()]);
@@ -325,9 +357,44 @@ const RegionOrderDetail: React.FC = () => {
     }
   };
 
+  const fetchSenderEmployees = async () => {
+    try {
+      const response = await axiosAPI.get("employees/list?region=Худудгазтаъминот");
+      if (response.status === 200 && Array.isArray(response.data.results)) {
+        console.log('wqeqw')
+        console.log(response.data.results)
+
+        setSenderEmployees(response.data.results);
+      } else {
+        setSenderEmployees([]);
+      }
+    } catch (error) {
+      console.error("Hodimlarni olishda xatolik:", error);
+    }
+  };
+  const addSendToRepublic = async () => {
+    try {
+      if (!SenderToRepublic) return;
+      const response = await axiosAPI.post('/region-orders/send-to-republic/', {
+        ...SenderToRepublic,
+        order_id: orderData?.id,
+      })
+      if (response.status === 200) {
+        toast.success("Buyurtma muvaffaqiyatli yangilandi!");
+      }
+    } catch (err: any) {
+      console.error("Yangilashda xatolik:", err);
+      toast.error(err.response?.data?.error || "Buyurtmani yangilashda xatolik yuz berdi!");
+    }
+  };
+
+
+  useEffect(() => {
+    getDistrictOrderFile();
+  })
+
   const handleSelectEmployee = useCallback(() => {
     setShowEmployeeModal(false);
-    setSelectedEmployee(null);
   }, []);
 
   const updateRow = useCallback(<K extends keyof ProductRow>(
@@ -434,7 +501,7 @@ const RegionOrderDetail: React.FC = () => {
           ...e,
           executor: e.executor.id,
           executor_type: e.executor_type?.id || e.executor_type,
-          status: e.status?.id,
+          // status: e.status?.id,
         })),
       });
       if (res.status === 200) {
@@ -446,6 +513,8 @@ const RegionOrderDetail: React.FC = () => {
       toast.error(err.response?.data?.error || "Buyurtmani yangilashda xatolik yuz berdi!");
     }
   }, [orderData, fetchOrderDetail]);
+
+
 
   // Loading state - remove duplicate
   if (loading) {
@@ -474,49 +543,67 @@ const RegionOrderDetail: React.FC = () => {
                 {/* Header */}
                 <div className="bg-white overflow-hidden mb-4">
                   <div className="flex items-center justify-between p-4">
+                    <Button
+                      variant="text"
+                      size="small"
+                      onClick={() => navigate(-1)}
+                      className="w-8 h-8 p-0 hover:bg-slate-100 transition-colors"
+                    >
+                      <X className="w-5 h-5" />
+                    </Button>
                     <div className="text-center border-gray-200">
-                      <p className="text-xs text-gray-500 uppercase font-semibold mb-2">Chiqish</p>
+                      <p className="text-xs text-gray-500 uppercase font-semibold mb-2">{orderData.for_purpose === "editing" ? "Chiqish" : 'Kirish'}</p>
                       <p className="text-md font-semibold text-gray-800">{orderData.exit_number}</p>
                     </div>
 
                     <div className="text-center border-gray-200">
-                      <p className="text-xs text-gray-500 uppercase font-semibold mb-2">Chiqish Sana</p>
+                      <p className="text-xs text-gray-500 uppercase font-semibold mb-2">{orderData.for_purpose === "editing" ? "Chiqish" : 'Kirish'} Sana</p>
                       <p className="text-md font-semibold text-gray-800">{orderData.exit_date?.split("T").join(" ")}</p>
                     </div>
 
                     <div className="text-center">
-                      <p className="text-xs text-gray-500 uppercase font-semibold mb-2">Viloyatga junatuvchi</p>
-                      <p className="text-md font-semibold text-gray-800">{orderData.sender_from_region?.name}</p>
+                      <p className="text-xs text-gray-500 uppercase font-semibold mb-2">{orderData.for_purpose === "editing" ? "Viloyatdan" : 'Tumandan'} junatuvchi</p>
+                      <p className="text-md font-semibold text-gray-800">{orderData.for_purpose === "editing" ? orderData.sender_from_region?.name : orderData.sender_from_district?.name} </p>
                     </div>
 
                     <div className="text-center border-gray-200">
-                      <p className="text-xs text-gray-500 uppercase font-semibold mb-2">Viloyatdan qabul qiluvchi</p>
-                      <p className="text-md font-semibold text-gray-800">{orderData.recipient_region?.name}</p>
+                      <p className="text-xs text-gray-500 uppercase font-semibold mb-2">{orderData.for_purpose === "from_district" ? "Viloyatda" : 'Respublikada'} qabul qiluvchi</p>
+                      <p className="text-md font-semibold text-gray-800">{SenderToRepublic?.receiver_republic_name ? SenderToRepublic.receiver_republic_name : orderData.recipient_republic?.name}</p>
                     </div>
-
                   </div>
                 </div>
 
                 <div>
                   <div className="bg-transparent rounded-md flex justify-between mb-4">
-                    <div className='flex items-center gap-3'>
-                      <Button
-                        onClick={handleAddProduct}
-                        className='cursor-pointer'>
-                        <Plus></Plus>
-                        Kiritish
-                      </Button>
-                      <Button className='cursor-pointer' onClick={fetchRemaindersUserWarehouse}>
-                        Qoldiqlar
-                      </Button>
+                    <div>
+                      <h1 className='text-xl text-[#000] font-semibold'>Buyurtma uchun berilgan tovarlar ruyxati</h1>
                     </div>
-                    <div className="relative">
-                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4" />
-                      <Input
-                        type="text"
-                        placeholder="Qidirish (Ctrl+F)"
-                        className="w-64 h-9 pl-9 text-sm border-slate-200 bg-white"
-                      />
+                    <div className='flex items-center gap-3'>
+                      <button
+                        onClick={handleAddProduct}
+                        className='group bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white text-sm px-2 py-1.5 rounded-md shadow-md hover:shadow-lg transition-all duration-300 flex items-center gap-3 font-normal cursor-pointer'
+                      >
+                        <div className='bg-white/20 p-1 rounded-lg group-hover:bg-white/30 transition-colors'>
+                          <Plus className='w-3.5 h-3.5' />
+                        </div>
+                        Kiritish
+                      </button>
+                      <button
+                        className='group bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white text-sm px-2 py-1.5 rounded-md shadow-md hover:shadow-lg transition-all duration-300 flex items-center gap-3 font-normal cursor-pointer'
+                        onClick={fetchRemaindersUserWarehouse}>
+                        <div className='bg-white/20 p-1 rounded-lg group-hover:bg-white/30 transition-colors'>
+                          <Layers className='w-3.5 h-3.5' />
+                        </div>
+                        Qoldiqlar
+                      </button>
+                      <div className="relative">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4" />
+                        <Input
+                          type="text"
+                          placeholder="Qidirish (Ctrl+F)"
+                          className="w-64 h-9 pl-9 text-sm border-slate-200 bg-white"
+                        />
+                      </div>
                     </div>
                   </div>
 
@@ -538,55 +625,57 @@ const RegionOrderDetail: React.FC = () => {
                         </thead>
 
                         <tbody className="divide-y divide-gray-100">
-                          {orderData?.products?.map((p, idx) => (
-                            <tr key={idx} className="hover:bg-gray-50 transition-all duration-200">
-                              {/* № */}
-                              <td className="px-3 py-2 text-center">
-                                <span className="inline-flex items-center justify-center w-8 h-8 rounded-xl bg-gradient-to-r from-purple-500 to-blue-500 text-white font-semibold text-sm">
-                                  {p.row_number}
-                                </span>
-                              </td>
+                          {orderData?.products && orderData.products.length > 0 ? (
+                            orderData.products.map((p, idx) => (
+                              <tr key={idx} className="hover:bg-gray-50 transition-all duration-200">
+                                {/* № */}
+                                <td className="px-3 py-2 text-center">
+                                  <span className="inline-flex items-center justify-center w-8 h-8 rounded-xl bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-semibold text-sm">
+                                    {p.row_number}
+                                  </span>
+                                </td>
 
-                              {/* 🟢 Buyurtma turi (API dan kelgan SELECT) */}
-                              <td className="px-3 py-2 text-center">
-                                <Select
-                                  value={p.order_type?.id}
-                                  onChange={(val) => {
-                                    const found = order_types.find(o => o.id === val);
-                                    if (found) updateRow(p.row_number, "order_type", found);
-                                  }}
-                                  style={{ width: 160 }}
-                                  options={order_types.map(o => ({ value: o.id, label: o.name }))}
-                                  placeholder="Tanlang"
-                                />
-                              </td>
+                                {/* 🟢 Buyurtma turi (API dan kelgan SELECT) */}
+                                <td className="px-3 py-2 text-center">
+                                  <Select
+                                    value={p.order_type?.id}
+                                    onChange={(val) => {
+                                      const found = order_types.find(o => o.id === val);
+                                      if (found) updateRow(p.row_number, "order_type", found);
+                                    }}
+                                    style={{ width: 160 }}
+                                    options={order_types.map(o => ({ value: o.id, label: o.name }))}
+                                    placeholder="Tanlang"
+                                  />
+                                </td>
 
-                              {/* 🟠 Mahsulot nomi (qo'lda Input) */}
-                              <td className="px-3 py-2 text-center">
-                                <Input
-                                  value={p.product}
-                                  placeholder='Tovar nomini kiriting'
-                                  onChange={(e) =>
-                                    updateRow(p.row_number, "product", e.target.value)
-                                  }
-                                  className="text-sm border border-gray-200 rounded-md w-full bg-white placeholder:text-gray-400"
-                                />
-                              </td>
+                                {/* 🟠 Mahsulot nomi (qo'lda Input) */}
+                                <td className="px-3 py-2 text-center">
+                                  <Input
+                                    value={p.product}
+                                    placeholder='Tovar nomini kiriting'
+                                    onChange={(e) => updateRow(p.row_number, "product", e.target.value)}
+                                    className="text-sm border border-gray-200 rounded-md w-full bg-white placeholder:text-gray-400"
+                                  />
+                                </td>
 
-                              <td className="px-3 py-2 text-center">
-                                <Button
-                                  onClick={() => setActiveField({ field: "product_type", row_number: p.row_number })}
-                                  size="small"
-                                  className="text-blue-600 border-blue-400"
-                                >
-                                  {p.product_type?.name || "Tovar turini tanlash"}
-                                </Button>
-                                {activeField?.field === "product_type"
-                                  && activeField?.row_number === p.row_number
-                                  && (
+                                {/* Tovar turi */}
+                                <td className="px-3 py-2 text-center">
+                                  <Button
+                                    onClick={() => setActiveField({ field: "product_type", row_number: p.row_number })}
+                                    size="small"
+                                    className="text-blue-600 border-blue-400"
+                                  >
+                                    {p.product_type?.name || "Tovar turini tanlash"}
+                                  </Button>
+                                  {activeField?.field === "product_type" && activeField?.row_number === p.row_number && (
                                     <FieldModal
                                       field_name={activeField.field}
-                                      selectedItem={{ id: p.product_type?.id || '', name: p.product_type?.name || '', name_uz: p.product_type?.name || '' }}
+                                      selectedItem={{
+                                        id: p.product_type?.id || '',
+                                        name: p.product_type?.name || '',
+                                        name_uz: p.product_type?.name || ''
+                                      }}
                                       setSelectedItem={newItem => {
                                         if (!newItem) {
                                           setActiveField(null);
@@ -594,241 +683,330 @@ const RegionOrderDetail: React.FC = () => {
                                         }
                                         setOrderData(prev => ({
                                           ...prev!,
-                                          products: prev!.products.map(prod => prod.row_number === p.row_number ? { ...prod, product_type: { id: newItem.id, name: newItem.name }, model: { id: '', name: '' }, size: { id: '', name: '' }, unit: { id: '', name: '' } } : prod)
-                                        }))
-                                        setActiveField(null)
+                                          products: prev!.products.map(prod =>
+                                            prod.row_number === p.row_number
+                                              ? {
+                                                ...prod,
+                                                product_type: { id: newItem.id, name: newItem.name },
+                                                model: { id: '', name: '' },
+                                                size: { id: '', name: '' },
+                                                unit: { id: '', name: '' },
+                                              }
+                                              : prod
+                                          ),
+                                        }));
+                                        setActiveField(null);
                                       }}
                                     />
                                   )}
-                              </td>
+                                </td>
 
-                              <td className="px-3 py-2 text-center">
-                                <Button
-                                  onClick={() => setActiveField({ field: "model", row_number: p.row_number })}
-                                  size="small"
-                                  className="text-blue-600 border-blue-400"
-                                >
-                                  {p.model?.name || "Modelni tanlash"}
-                                </Button>
-                                {activeField?.field === "model" && activeField?.row_number === p.row_number && (
-                                  <FieldModal
-                                    field_name={activeField.field}
-                                    selectedItem={{ id: p.model?.id || '', name: p.model?.name || '', name_uz: p.model?.name || '' }}
-                                    selectedProductTypeId={p.product_type?.name || ''}
-                                    setSelectedItem={newItem => {
-                                      if (!newItem) {
+                                {/* Model */}
+                                <td className="px-3 py-2 text-center">
+                                  <Button
+                                    onClick={() => setActiveField({ field: "model", row_number: p.row_number })}
+                                    size="small"
+                                    className="text-blue-600 border-blue-400"
+                                  >
+                                    {p.model?.name || "Modelni tanlash"}
+                                  </Button>
+                                  {activeField?.field === "model" && activeField?.row_number === p.row_number && (
+                                    <FieldModal
+                                      field_name={activeField.field}
+                                      selectedItem={{
+                                        id: p.model?.id || '',
+                                        name: p.model?.name || '',
+                                        name_uz: p.model?.name || ''
+                                      }}
+                                      selectedProductTypeId={p.product_type?.name || ''}
+                                      setSelectedItem={newItem => {
+                                        if (!newItem) {
+                                          setActiveField(null);
+                                          return;
+                                        }
+                                        setOrderData(prev => ({
+                                          ...prev!,
+                                          products: prev!.products.map(prod =>
+                                            prod.row_number === p.row_number
+                                              ? {
+                                                ...prod,
+                                                model: { id: newItem.id, name: newItem.name },
+                                                size: { id: '', name: '' },
+                                                unit: { id: '', name: '' },
+                                              }
+                                              : prod
+                                          ),
+                                        }));
                                         setActiveField(null);
-                                        return;
-                                      }
-                                      setOrderData(prev => ({
-                                        ...prev!,
-                                        products: prev!.products.map(prod => prod.row_number === p.row_number ? { ...prod, model: { id: newItem.id, name: newItem.name }, size: { id: '', name: '' }, unit: { id: '', name: '' } } : prod)
-                                      }))
-                                      setActiveField(null)
-                                    }}
-                                  />
-                                )}
-                              </td>
+                                      }}
+                                    />
+                                  )}
+                                </td>
 
-                              <td className="px-3 py-2 text-center">
-                                <Button
-                                  onClick={() => setActiveField({ field: "size", row_number: p.row_number })}
-                                  size="small"
-                                  className="text-blue-600 border-blue-400"
-                                >
-                                  {p.size?.name || "O'lchamni tanlash"}
-                                </Button>
-                                {activeField?.field === "size" && activeField?.row_number === p.row_number && (
-                                  <FieldModal
-                                    field_name={activeField.field}
-                                    selectedItem={{ id: p.size?.id || '', name: p.size?.name || '', name_uz: p.size?.name || '' }}
-                                    selectedProductTypeId={p.product_type?.name || ''}
-                                    selectedModelId={p.model?.name || ''}
-                                    setSelectedItem={newItem => {
-                                      if (!newItem) {
+                                {/* O'lcham */}
+                                <td className="px-3 py-2 text-center">
+                                  <Button
+                                    onClick={() => setActiveField({ field: "size", row_number: p.row_number })}
+                                    size="small"
+                                    className="text-blue-600 border-blue-400"
+                                  >
+                                    {p.size?.name || "O'lchamni tanlash"}
+                                  </Button>
+                                  {activeField?.field === "size" && activeField?.row_number === p.row_number && (
+                                    <FieldModal
+                                      field_name={activeField.field}
+                                      selectedItem={{
+                                        id: p.size?.id || '',
+                                        name: p.size?.name || '',
+                                        name_uz: p.size?.name || ''
+                                      }}
+                                      selectedProductTypeId={p.product_type?.name || ''}
+                                      selectedModelId={p.model?.name || ''}
+                                      setSelectedItem={newItem => {
+                                        if (!newItem) {
+                                          setActiveField(null);
+                                          return;
+                                        }
+                                        setOrderData(prev => ({
+                                          ...prev!,
+                                          products: prev!.products.map(prod =>
+                                            prod.row_number === p.row_number
+                                              ? {
+                                                ...prod,
+                                                size: { id: newItem.id, name: newItem.name },
+                                                unit: { id: '', name: '' },
+                                              }
+                                              : prod
+                                          ),
+                                        }));
                                         setActiveField(null);
-                                        return;
-                                      }
-                                      setOrderData(prev => ({
-                                        ...prev!,
-                                        products: prev!.products.map(prod => prod.row_number === p.row_number ? { ...prod, size: { id: newItem.id, name: newItem.name }, unit: { id: '', name: '' } } : prod)
-                                      }))
-                                      setActiveField(null)
-                                    }}
-                                  />
-                                )}
-                              </td>
+                                      }}
+                                    />
+                                  )}
+                                </td>
 
-                              <td className="px-3 py-2 text-center">
-                                <Button
-                                  onClick={() => setActiveField({ field: "unit", row_number: p.row_number })}
-                                  size="small"
-                                  className="text-blue-600 border-blue-400"
-                                >
-                                  {p.unit?.name || "Birlikni tanlash"}
-                                </Button>
-                                {activeField?.field === "unit" && activeField?.row_number === p.row_number && (
-                                  <FieldModal
-                                    field_name={activeField.field}
-                                    selectedItem={{ id: p.unit?.id || '', name: p.unit?.name || '', name_uz: p.unit?.name || '' }}
-                                    setSelectedItem={newItem => {
-                                      if (!newItem) {
+                                {/* Birlik */}
+                                <td className="px-3 py-2 text-center">
+                                  <Button
+                                    onClick={() => setActiveField({ field: "unit", row_number: p.row_number })}
+                                    size="small"
+                                    className="text-blue-600 border-blue-400"
+                                  >
+                                    {p.unit?.name || "Birlikni tanlash"}
+                                  </Button>
+                                  {activeField?.field === "unit" && activeField?.row_number === p.row_number && (
+                                    <FieldModal
+                                      field_name={activeField.field}
+                                      selectedItem={{
+                                        id: p.unit?.id || '',
+                                        name: p.unit?.name || '',
+                                        name_uz: p.unit?.name || ''
+                                      }}
+                                      setSelectedItem={newItem => {
+                                        if (!newItem) {
+                                          setActiveField(null);
+                                          return;
+                                        }
+                                        setOrderData(prev => ({
+                                          ...prev!,
+                                          products: prev!.products.map(prod =>
+                                            prod.row_number === p.row_number
+                                              ? { ...prod, unit: { id: newItem.id, name: newItem.name } }
+                                              : prod
+                                          ),
+                                        }));
                                         setActiveField(null);
-                                        return;
-                                      }
-                                      setOrderData(prev => ({
-                                        ...prev!,
-                                        products: prev!.products.map(prod => prod.row_number === p.row_number ? { ...prod, unit: { id: newItem.id, name: newItem.name } } : prod)
-                                      }))
-                                      setActiveField(null)
-                                    }}
+                                      }}
+                                    />
+                                  )}
+                                </td>
+
+                                {/* 🔢 Soni */}
+                                <td className="px-3 py-2 text-center">
+                                  <Input
+                                    type="number"
+                                    value={p.quantity}
+                                    onChange={(e) => updateRow(p.row_number, "quantity", Number(e.target.value))}
+                                    className="text-sm border border-gray-200 rounded-md w-full bg-white placeholder:text-gray-400"
                                   />
-                                )}
-                              </td>
+                                </td>
 
-                              {/* 🔢 Soni (Input number) */}
-                              <td className="px-3 py-2 text-center">
-                                <Input
-                                  type="number"
-                                  value={p.quantity}
-                                  onChange={(e) =>
-                                    updateRow(p.row_number, "quantity", Number(e.target.value))
-                                  }
-                                  className="text-sm border border-gray-200 rounded-md w-full bg-white placeholder:text-gray-400"
-                                />
-                              </td>
-
-                              {/* 📝 Izoh (Input text) */}
-                              <td className="px-3 py-2 text-center">
-                                <Input
-                                  placeholder="Izoh"
-                                  value={p.description || ""}
-                                  onChange={(e) =>
-                                    updateRow(p.row_number, "description", e.target.value)
-                                  }
-                                  className="text-sm border border-gray-200 rounded-md w-full bg-white placeholder:text-gray-400"
-                                />
+                                {/* 📝 Izoh */}
+                                <td className="px-3 py-2 text-center">
+                                  <Input
+                                    placeholder="Izoh"
+                                    value={p.description || ""}
+                                    onChange={(e) => updateRow(p.row_number, "description", e.target.value)}
+                                    className="text-sm border border-gray-200 rounded-md w-full bg-white placeholder:text-gray-400"
+                                  />
+                                </td>
+                              </tr>
+                            ))
+                          ) : (
+                            <tr>
+                              <td colSpan={9} className="py-6 text-center text-gray-500 text-md font-semibold">
+                                Tovar qo'shilmagan
                               </td>
                             </tr>
-                          ))}
+                          )}
                         </tbody>
+
+
                       </table>
                     </div>
                   </div>
-
-
                 </div>
-
-
-                <div>
-                  <div className="bg-transparent rounded-md p-2 flex justify-between mb-2">
-                    <div className='flex items-center gap-3'>
-                      <Button className='cursor-pointer'
-                        onClick={() => { fetchEmployees(); setShowEmployeeModal(true); }}
-                      >
-                        <Plus />
-                        Kiritish
-                      </Button>
-                      <Button className='cursor-pointer'>
-                        Yuborish
-                      </Button>
+                <div className='flex border shadow-md max-w-[700px] px-6 py-4 rounded-lg mb-4'>
+                  <div className="flex items-center gap-4 mb-3 w-full">
+                    <div className={`text-5xl p-6 flex items-center justify-center rounded-full text-blue-500 bg-blue-50`}>
+                      <FileWordOutlined />
                     </div>
-                    <div className="relative">
-                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4" />
-                      <Input
-                        type="text"
-                        placeholder="Qidirish (Ctrl+F)"
-                        className="w-64 h-9 pl-9 text-sm border-slate-200 bg-white"
-                      />
+                    <div className="flex flex-col">
+                      <h4 className="text-gray-800 font-semibold text-xl truncate w-40">
+                        {/* {file.file_name} */}
+                        {file?.name || "Hujjat fayli"}
+                      </h4>
+                      <p className="text-lg">{currentUserInfo?.name}</p>
+                      <p className="text-gray-500 mt-1">{currentUserInfo?.type_user}</p>
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-4">
-                    {orderData.executors?.map((executor, index) => (
-                      <div
-                        key={index}
-                        className="bg-white rounded-lg shadow-sm hover:shadow-md transition-all duration-300 border border-gray-100 overflow-hidden"
+                  {/* 🔸 Action tugmalar */}
+                  <div className="flex flex-col gap-2 min-w-[150px]">
+                    <button
+                      onClick={() => {
+                        const openWordURL = `ms-word:ofe|u|${messageFileURL}`;
+                        const link = document.createElement("a");
+                        link.href = openWordURL;
+                        document.body.appendChild(link);
+                        link.click();
+                        document.body.removeChild(link)
+                      }}
+                      className="p-1 rounded-md text-gray-600 hover:text-purple-700 hover:bg-gray-100 transition flex items-center justify-between gap-4 bg-gray-100 px-2 cursor-pointer"
+                      title="Ko‘rish"
+                    >
+                      <span>Ko'rish</span>
+                      <EyeOutlined className="text-[24px]" />
+                    </button>
+                    <button
+                      onClick={() => {
+                        const openWordURL = `ms-word:ofe|u|${messageFileURL}`;
+                        const link = document.createElement("a");
+                        link.href = openWordURL;
+                        document.body.appendChild(link);
+                        link.click();
+                        document.body.removeChild(link)
+                      }}
+                      className="p-1 rounded-md text-gray-600 hover:text-purple-700 hover:bg-gray-100 transition flex items-center justify-between gap-4 bg-gray-100 px-2 cursor-pointer"
+                      title="Yuklab olish"
+                    >
+                      <span>O'zgartirish</span>
+                      <Pencil className="text-[24px]" />
+                    </button>
+                    <button
+                      onClick={() => {
+                        const link = document.createElement('a');
+                        link.href = messageFileURL;
+                        link.setAttribute('download', file?.name || 'file.docm');
+                        document.body.appendChild(link);
+                        link.click();
+                        document.body.removeChild(link);
+                      }}
+                      className="p-1 rounded-md text-gray-600 hover:text-purple-700 hover:bg-gray-100 transition flex items-center justify-between gap-4 bg-gray-100 px-2 cursor-pointer"
+                      title="Yuklab olish"
+                    >
+                      <span>Yuklab olish</span>
+                      <DownloadOutlined className="text-[24px]" />
+                    </button>
+                  </div>
+
+                </div>
+
+                <hr />
+
+                <div>
+                  <div className="bg-transparent rounded-md p-2 flex justify-between mb-2">
+                    <div>
+                      <h1 className='text-xl text-[#000] font-semibold'>Imzolovchilar</h1>
+                    </div>
+                    <div className='flex items-center gap-3'>
+                      <button className='group bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white text-sm px-2 py-1.5 rounded-md shadow-md hover:shadow-lg transition-all duration-300 flex items-center gap-3 font-normal cursor-pointer'
+                        onClick={() => { fetchEmployees(), setShowEmployeeModal(true); }}
                       >
-                        <div className="p-5">
-                          {/* Header with number and status */}
-                          <div className="flex items-center justify-between mb-4">
-                            <span className="text-xm font-semibold text-gray-500">№ {index + 1}</span>
-                            <span className="px-3 py-1 bg-indigo-50 text-indigo-600 text-xs font-medium rounded-full">
-                              {executor?.executor_type.name}
-                            </span>
-                          </div>
+                        <div className='bg-white/20 p-1 rounded-lg group-hover:bg-white/30 transition-colors'>
+                          <Plus className='w-3.5 h-3.5' />
+                        </div>
+                        Kiritish
+                      </button>
+                    </div>
+                  </div>
 
-                          {/* Employee info */}
-                          <div className="mb-4">
-                            <p className="text-sm text-gray-500 mb-1">Imzolovchi xodim</p>
-                            <p className="text-sm font-semibold text-gray-900">{executor.executor?.name}</p>
-                          </div>
-
-                          {/* Message */}
-                          {executor.message && (
-                            <div className="mb-4">
-                              <p className="text-xs text-gray-500 mb-1">Imzolash xolati</p>
-                              <p className="text-sm text-gray-700">{executor.message}</p>
+                  <div className="flex flex-wrap items-center gap-4">
+                    {orderData.executors && orderData.executors.length > 0 ? (
+                      orderData.executors.map((executor, index) => (
+                        <div
+                          key={index}
+                          className="bg-white w-[300px] h-[160px] rounded-lg shadow-sm hover:shadow-md transition-all duration-300 border border-gray-100 overflow-hidden"
+                        >
+                          <div className="p-5">
+                            {/* Header with number and status */}
+                            <div className="flex items-center justify-between mb-4">
+                              <span className="text-sm font-semibold text-gray-500">№ {index + 1}</span>
+                              <span className="px-3 py-1 bg-indigo-50 text-indigo-600 text-xs font-medium rounded-full">
+                                {executor?.executor_type?.name}
+                              </span>
                             </div>
-                          )}
 
-                          {/* Date */}
-                          <div className="pt-3 border-t border-gray-100">
-                            <p className="text-xs text-gray-500">Sana</p>
-                            <p className="text-sm text-gray-900 font-medium">{executor.confirmation_date}</p>
+                            {/* Employee info */}
+                            <div className="mb-4">
+                              <p className="text-sm text-gray-500 mb-1">Imzolovchi xodim</p>
+                              <p className="text-sm font-semibold text-gray-900">{executor?.executor?.name}</p>
+                            </div>
+
+                            {/* Message */}
+                            {executor.message && (
+                              <div className="mb-4">
+                                <p className="text-xs text-gray-500 mb-1">Imzolash holati</p>
+                                <p className="text-sm text-gray-700">{executor.message}</p>
+                              </div>
+                            )}
+
+                            {/* Date */}
+                            <div className="flex items-center gap-4 pt-3 border-t border-gray-100">
+                              <p className="text-xs text-gray-500">Sana</p>
+                              <p className="text-sm text-gray-900 font-medium">{executor.confirmation_date}</p>
+                            </div>
                           </div>
                         </div>
+                      ))
+                    ) : (
+                      <div className="w-full flex flex-col items-center justify-center py-10 rounded-lg border-gray-200">
+                        <p className="text-gray-500 text-sm font-medium">Imzolovchilar mavjud emas</p>
                       </div>
-                    ))}
+                    )}
                   </div>
 
                 </div>
 
                 {/* Attach document */}
-                <div className='flex items-center justify-center gap-6 p-6'>
-                  {/* File Upload Button */}
-                  <button
-                    onClick={() => setFileUploadModal(true)}
-                    className='group relative bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white px-6 py-4 rounded-xl shadow-md hover:shadow-lg transition-all duration-300 flex items-center gap-3 font-medium cursor-pointer'
-                    aria-label="Hujjat biriktirish"
-                  >
-                    <div className='bg-white/20 p-2 rounded-lg group-hover:bg-white/30 transition-colors'>
-                      <FilePlus2 className='w-5 h-5' />
-                    </div>
-                    <span>Hujjat biriktirish</span>
-                  </button>
-
-                  {/* Text Area */}
-                  <div className='flex-1 max-w-md'>
-                    <TextArea
-                      placeholder='Qisqacha mazmun yozing...'
-                      className='rounded-xl border-2 border-gray-200 focus:border-blue-400 hover:border-gray-300 transition-colors shadow-sm'
-                      style={{ height: "120px" }}
-                    />
+                <div className='flex items-center justify-between p-6'>
+                  <div>
+                    <h1 className='text-xl text-[#000] font-semibold'>Hujjatlar ruyhati</h1>
+                  </div>
+                  <div>
+                    <button
+                      onClick={() => setFileUploadModal(true)}
+                      className='group relative bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white px-2 py-1.5 rounded-md shadow-md hover:shadow-lg transition-all duration-300 flex items-center gap-3 font-normal cursor-pointer'
+                      aria-label="Hujjat biriktirish"
+                    >
+                      <div className='bg-white/20 p-2 rounded-md group-hover:bg-white/30 transition-colors'>
+                        <FilePlus2 className='w-3 h-3' />
+                      </div>
+                      <span>Hujjat biriktirish</span>
+                    </button>
                   </div>
 
-                  {/* Save Button */}
-                  <button
-                    className='group bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white px-8 py-4 rounded-xl shadow-md hover:shadow-lg transition-all duration-300 flex items-center gap-3 font-medium cursor-pointer'
-                    onClick={handleUpdateOrder}
-                    aria-label="Saqlash"
-                  >
-                    <div className='bg-white/20 p-2 rounded-lg group-hover:bg-white/30 transition-colors'>
-                      <SaveOutlined className='text-xl' />
-                    </div>
-                    <span>Saqlash</span>
-                  </button>
 
-                  <button
-                    className='group bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white px-8 py-4 rounded-xl shadow-md hover:shadow-lg transition-all duration-300 flex items-center gap-3 font-medium cursor-pointer'
-                    onClick={handleDeleteOrder}
-                    aria-label="O'chirish"
-                  >
-                    <div className='bg-white/20 p-2 rounded-lg group-hover:bg-white/30 transition-colors'>
-                      <SaveOutlined className='text-xl' />
-                    </div>
-                    <span>O'chirish</span>
-                  </button>
                 </div>
 
                 {fileUploadModal && (
@@ -929,7 +1107,7 @@ const RegionOrderDetail: React.FC = () => {
                       })}
                     </div>
                   ) : (
-                    <p className="text-gray-900 font-bold text-2xl text-center">
+                    <p className="text-gray-500 font-semibold text-md text-center">
                       Hozircha fayllar mavjud emas.
                     </p>
                   )}
@@ -960,10 +1138,67 @@ const RegionOrderDetail: React.FC = () => {
                 </div>
               </div>
             </div>
+            <div className="sticky bottom-0 right-0 left-0 bg-white border-t border-gray-200 shadow-sm z-40 px-6 py-4 flex flex-wrap md:flex-nowrap items-center justify-between">
+              {/* Text Area */}
+              <div className='flex-1 max-w-md'>
+                <TextArea
+                  placeholder='Qisqacha mazmun yozing...'
+                  className='rounded-xl border-2 border-gray-200 focus:border-blue-400 hover:border-gray-300 transition-colors shadow-sm'
+                  style={{ height: "30px" }}
+                />
+              </div>
+
+              <div className='flex gap-4'>
+                {/* Save Button */}
+                <button
+                  className='group bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white px-4 py-1.5 rounded-md shadow-md hover:shadow-lg transition-all duration-300 flex items-center gap-3 font-normal cursor-pointer'
+                  onClick={handleUpdateOrder}
+                  aria-label="Saqlash"
+                >
+                  <div className='bg-white/20 p-2 rounded-lg group-hover:bg-white/30 transition-colors'>
+                    <CircleCheckBig className="w-3 h-3" />
+                  </div>
+                  <span>Tasdiqlash</span>
+                </button>
+
+                {/* Save Button */}
+                <button
+                  className='group bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white px-4 py-1.5 rounded-md shadow-md hover:shadow-lg transition-all duration-300 flex items-center gap-3 font-normal cursor-pointer'
+                  onClick={handleUpdateOrder}
+                  aria-label="Saqlash"
+                >
+                  <div className='bg-white/20 p-2 rounded-lg group-hover:bg-white/30 transition-colors'>
+                    <Save className="w-3 h-3" />
+                  </div>
+                  <span>Saqlash</span>
+                </button>
+
+                <button
+                  className='group bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-600 hover:to-yellow-700 text-white px-4 py-1.5 rounded-md shadow-md hover:shadow-lg transition-all duration-300 flex items-center gap-3 font-normal cursor-pointer'
+                  onClick={() => { fetchSenderEmployees(), setshowRecepModal(true); }}
+                  aria-label="Saqlash"
+                >
+                  <div className='bg-white/20 p-2 rounded-lg group-hover:bg-white/30 transition-colors'>
+                    <Save className='w-3 h-3' />
+                  </div>
+                  <span>Yuborish</span>
+                </button>
+                <button
+                  className='group bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white px-4 py-1.5 rounded-md shadow-md hover:shadow-lg transition-all duration-300 flex items-center gap-3 font-normal cursor-pointer'
+                  onClick={handleDeleteOrder}
+                  aria-label="O'chirish"
+                >
+                  <div className='bg-white/20 p-2 rounded-lg group-hover:bg-white/30 transition-colors'>
+                    <Trash className="w-3 h-3" />
+                  </div>
+                  <span>O'chirish</span>
+                </button>
+              </div>
+            </div>
           </div>
         ) : (
           <>
-            <RegionOrderSining />
+            <RegionOrderSining for_purpose={orderData.for_purpose} />
           </>
         )
       }
@@ -980,20 +1215,20 @@ const RegionOrderDetail: React.FC = () => {
           onClick={() => setShowEmployeeModal(false)}
         >
           <div
-            className="bg-white rounded-lg w-[600px] p-6 shadow-lg"
+            className="bg-white rounded-lg w-[900px] p-6 shadow-lg"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between border-b pb-3 mb-4">
               <h2 className="text-lg font-semibold">Imzolovchi hodimni tanlang</h2>
               <button
-                className="text-xl font-bold hover:text-red-500"
+                className="text-xl font-bold hover:text-black cursor-pointer"
                 onClick={() => setShowEmployeeModal(false)}
               >
                 &times;
               </button>
             </div>
 
-            <div className="max-h-[600px] overflow-y-auto">
+            <div className="max-h-[400px] max-w-[800px] overflow-y-auto">
               {employees.length === 0 ? (
                 <div className="text-center py-6 text-gray-500">Ma'lumot topilmadi</div>
               ) : (
@@ -1001,9 +1236,8 @@ const RegionOrderDetail: React.FC = () => {
                   <thead className="bg-gray-50 border-b">
                     <tr>
                       <th className="text-center px-4 py-2 text-sm font-semibold">Tanlash</th>
-                      <th className="text-left px-4 py-2 text-sm font-semibold">F.I.Sh.</th>
+                      <th className="text-left px-4 py-2 text-sm font-semibold">Xodim</th>
                       <th className="text-left px-4 py-2 text-sm font-semibold">Lavozimi</th>
-                      <th className="text-left px-4 py-2 text-sm font-semibold">Imzolash xolati</th>
                       <th className="text-left px-4 py-2 text-sm font-semibold">Imzolovchi turi	</th>
                     </tr>
                   </thead>
@@ -1046,7 +1280,6 @@ const RegionOrderDetail: React.FC = () => {
                           </td>
                           <td className="px-4 py-2 text-sm text-gray-800">{emp.name}</td>
                           <td className="px-4 py-2 text-sm text-gray-800">{emp.position}</td>
-                          <td className="px-4 py-2 text-sm text-gray-800">{emp.message}</td>
                           <td>
                             <Select
                               placeholder="Imzolovchi turini tanlang"
@@ -1095,6 +1328,85 @@ const RegionOrderDetail: React.FC = () => {
                 onClick={handleSelectEmployee}
               >
                 Tanlash
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+
+      {showRecepModal && (
+        <div
+          className="fixed inset-0 bg-black/40 flex items-center justify-center z-50"
+          onClick={() => setshowRecepModal(false)}
+        >
+          <div
+            className="bg-white rounded-lg w-[600px] p-6 shadow-lg"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between border-b pb-3 mb-4">
+              <h2 className="text-lg font-semibold">Respublikda qabul qiluvchi xodimdi tanlang</h2>
+              <button
+                className="text-xl font-bold hover:text-red-500"
+                onClick={() => setshowRecepModal(false)}
+              >
+                &times;
+              </button>
+            </div>
+
+            <div className="max-h-[400px] max-w-[700px] overflow-y-auto">
+              {sender_employees.length === 0 ? (
+                <div className="text-center py-6 text-gray-500">Ma'lumot topilmadi</div>
+              ) : (
+                <table className="w-full border-collapse">
+                  <thead className="bg-gray-50 border-b">
+                    <tr>
+                      <th className="text-center px-4 py-2 text-sm font-semibold">Tanlash</th>
+                      <th className="text-left px-4 py-2 text-sm font-semibold">F.I.Sh.</th>
+                      <th className="text-center px-4 py-2 text-sm font-semibold">Lavozimi</th>
+
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {sender_employees.map((emp, index) => {
+                      return (
+                        <tr
+                          key={index}
+                          className={`hover:bg-blue-50 transition }`}
+                        >
+                          <td className="px-4 py-2 text-center">
+                            <input
+                              type="checkbox"
+                              onChange={(e) => {
+                                if (e.target.checked) {
+                                  setSenderToRepublic({
+                                    order_id: orderData?.id || "",
+                                    receiver_republic: emp.id,
+                                    receiver_republic_name: emp.name,
+                                  });
+                                } else {
+                                  setSenderToRepublic(null);
+                                }
+                              }}
+                              checked={SenderToRepublic?.receiver_republic === emp.id}
+                            />
+                          </td>
+                          <td className="px-4 py-2 text-sm text-gray-800">{emp.name}</td>
+                          <td className="px-4 py-2 text-sm text-gray-800">{emp.position}</td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              )}
+            </div>
+
+            <div className="flex justify-end mt-5">
+              <Button
+                type="primary"
+                onClick={addSendToRepublic}
+              >
+                Saqlash
               </Button>
             </div>
           </div>
