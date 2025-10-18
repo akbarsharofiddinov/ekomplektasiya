@@ -754,7 +754,7 @@ const DistrictOrderDetail: React.FC = () => {
 										</div>
 									</div>
 
-									<div className="flex items-center gap-4">
+									<div className="grid grid-cols-4 items-center gap-4">
 										{orderData.executors?.map((executor, index) => (
 											<div
 												key={index}
@@ -882,7 +882,6 @@ const DistrictOrderDetail: React.FC = () => {
 										<div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
 											{files.map((file, index) => {
 												const { icon, color, bg } = getFileIcon(file.file_name);
-
 												return (
 													<div
 														key={index}

@@ -54,30 +54,8 @@ interface FormDataType {
   executors: Executors[]
 }
 
-interface DocumentInfo {
-  id: string;
-  type_document_for_filter: string; // "Вилоятдан" | "Тумандан"
-  application_status_district: string; // "Bekor qilingan" va h.k.
-  confirmation_date: string;
-  is_approved: boolean;
-  is_seen: boolean;
-  exit_date: string;
-  exit_number: string;
-  from_district: string;
-  sender_from_district: string;
-  to_region: string;
-  recipient_region: string;
-  reception_date: string;
-  reception_number: string;
-  from_region: string;
-  sender_from_region: string;
-  to_district: string;
-  recipient_district: string;
-}
-
 interface IDistrictOrderFormProps {
-  setIsCreateFormModalOpen: React.Dispatch<React.SetStateAction<boolean>>;
-  setData: React.Dispatch<React.SetStateAction<DocumentInfo[]>>
+  setIsCreateFormModalOpen: React.Dispatch<React.SetStateAction<boolean>>
 }
 
 const initialFormData = {
@@ -99,11 +77,11 @@ const defaultProductRow = {
   description: "",
 }
 
-const CREATE_ENDPOINT = "/region-orders/create/";
+const CREATE_ENDPOINT = "/republic-orders/create/";
 
 type Executors = { id: string; name: string; number: number; position: string; region: string; district: string; executor_type:string;};
 
-const OrderWIndow: React.FC<IDistrictOrderFormProps> = ({ setIsCreateFormModalOpen, setData }) => {
+const OrderWIndow: React.FC<IDistrictOrderFormProps> = ({ setIsCreateFormModalOpen }) => {
   // FormData
   const [formData, setFormData] = useState<FormDataType>(initialFormData);
   // yuqoriga qo'shing
@@ -133,8 +111,8 @@ const OrderWIndow: React.FC<IDistrictOrderFormProps> = ({ setIsCreateFormModalOp
   const { currentUserInfo } = useAppSelector(state => state.info);
   const { order_types } = useAppSelector(state => state.product);
   const [executorType, setexecutorType] = useState<any[]>([]);
-  
-  console.log(order_types)
+  console.log(order_types, 'allalwelwewl')
+  console.log(currentUserInfo, 'allalwelwewl')
 
 
   const handleView = async (f: FileData) => {
@@ -145,7 +123,7 @@ const OrderWIndow: React.FC<IDistrictOrderFormProps> = ({ setIsCreateFormModalOp
         return;
       }
       // For others, fetch as blob and open in a new tab
-      const res = await axiosAPI.get(`region-orders/${docId}/file/${f.raw_number}`, {
+      const res = await axiosAPI.get(`republic-orders/${docId}/file/${f.raw_number}`, {
         responseType: "blob",
       });
       const url = URL.createObjectURL(res.data);
@@ -166,7 +144,7 @@ const OrderWIndow: React.FC<IDistrictOrderFormProps> = ({ setIsCreateFormModalOp
         return;
       }
 
-      const res = await axiosAPI.get(`region-orders/${docId}/file/${f.raw_number}`, {
+      const res = await axiosAPI.get(`republic-orders/${docId}/file/${f.raw_number}`, {
         responseType: "blob",
       });
 
@@ -209,9 +187,9 @@ const OrderWIndow: React.FC<IDistrictOrderFormProps> = ({ setIsCreateFormModalOp
   ) => {
     const updatedProducts = formData.products.map((product) => {
       if (product.raw_number === Number(raw_number)) {
-        return { ...product, [key]: value };
+        return { ...product, [key]: value }; // faqat kerakli tovarni yangilaymiz
       }
-      return product;
+      return product; // boshqa tovarlar o'zgarmaydi
     });
 
     setFormData((prev) => ({
@@ -247,12 +225,14 @@ const OrderWIndow: React.FC<IDistrictOrderFormProps> = ({ setIsCreateFormModalOp
         const response = await axiosAPI.get("employees/list");
         const type_response = await axiosAPI.get('enumerations/excuter_types');
         
+        // Executor type larni to'g'ri olish
         if (type_response.status === 200 && Array.isArray(type_response.data)) {
           setexecutorType(type_response.data);
         } else {
           setexecutorType([]);
         }
         
+        // Hodimlarni olish
         if (response.status === 200 && Array.isArray(response.data.results)) {
           setEmployees(response.data.results);
         } else {
@@ -285,7 +265,7 @@ const OrderWIndow: React.FC<IDistrictOrderFormProps> = ({ setIsCreateFormModalOp
   const getDistrictOrderFile = async (id: string) => {
     if (id) {
       try {
-        const response = await axiosAPI.get(`region-orders/${id}/order-file`);
+        const response = await axiosAPI.get(`republic-orders/${id}/order-file`);
         if (response.status === 200) {
           setMessageFileURL(response.data.file_url)
         }
@@ -328,9 +308,8 @@ const OrderWIndow: React.FC<IDistrictOrderFormProps> = ({ setIsCreateFormModalOp
     };
   
     try {
-      const response = await axiosAPI.post(`/region-orders/update/${documentID}`, payload);
+      const response = await axiosAPI.post(`/republic-orders/update/${documentID}`, payload);
       if (response.status === 200) {
-        setData(prev => [...prev, response.data])
         toast("Hujjat muvofaqqiyatli saqlandi", { type: "success" });
         setIsCreateFormModalOpen(false);
       }
@@ -355,7 +334,7 @@ const handleCreateDefaultDocument = useCallback(async () => {
   
   const formattedExecutors = formData.executors.map((ex) => ({
     executor: ex.id,
-    executor_type: ex.executor_type,
+    executor_type: ex.executor_type, // ID sifatida
   }));
 
   const payload = {
@@ -414,7 +393,7 @@ const handleCreateDefaultDocument = useCallback(async () => {
     try {
       const arrayBuffer = await file?.arrayBuffer();
       const binary = new Uint8Array(arrayBuffer!);
-      const response = await axiosAPI.post(`region-orders/files/create`, binary, {
+      const response = await axiosAPI.post(`republic-orders/files/create`, binary, {
         params,
         headers: { 'Content-Type': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' }
       })
