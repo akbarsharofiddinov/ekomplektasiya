@@ -111,7 +111,6 @@ const RegionOrderDetail: React.FC = () => {
   });
   const [showEmployeeModal, setShowEmployeeModal] = useState(false);
   const [employees, setEmployees] = useState<any[]>([]);
-  const [selectedEmployee, setSelectedEmployee] = useState<any | null>(null);
   const { id } = useParams<{ id: string }>();
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [deleteModalError, setDeleteModalError] = useState<string | null>(null);
@@ -119,7 +118,8 @@ const RegionOrderDetail: React.FC = () => {
   const [activeField, setActiveField] = useState<{ field: FieldName; row_number: number } | null>(null);
   const [executorType, setexecutorType] = useState<any[]>([]);
   const [messageFileURL, setMessageFileURL] = useState("");
-  // Redux selectors
+  
+  
   const { currentUserInfo } = useAppSelector(state => state.info);
   const { order_types } = useAppSelector(state => state.product);
 
@@ -325,7 +325,6 @@ const RegionOrderDetail: React.FC = () => {
 
   const handleSelectEmployee = useCallback(() => {
     setShowEmployeeModal(false);
-    setSelectedEmployee(null);
   }, []);
 
   const updateRow = useCallback(<K extends keyof ProductRow>(
